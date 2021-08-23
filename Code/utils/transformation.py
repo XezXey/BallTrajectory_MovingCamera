@@ -91,104 +91,110 @@ def project_2d(world, cam_params_dict, normalize=False):
   return u, v, d
 
 def IE_array(trajectory, col):
-    '''
-    Input :
-        1. trajectory : in shape (seq_len, features)
-        2. col : Index of intrinsic/extrinsic column
-    Output :
-        1. 4x4 Matrix : in shape (seq_len, 4, 4)
-    '''
-    mat = [t[col].reshape(-1, 4, 4) for t in trajectory]
-    mat = np.array(mat)
-    mat = np.squeeze(mat, axis=1)
-    return mat
+  '''
+  Input :
+      1. trajectory : in shape (seq_len, features)
+      2. col : Index of intrinsic/extrinsic column
+  Output :
+      1. 4x4 Matrix : in shape (seq_len, 4, 4)
+  '''
+  mat = [t[col].reshape(-1, 4, 4) for t in trajectory]
+  mat = np.array(mat)
+  mat = np.squeeze(mat, axis=1)
+  return mat
 
-def to_3D():
-    pass
+def h_to_3d(intr, E, height):
+  cam_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  R = pt.tensor(cam_pos - intr).to(device)
+  norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)
+  magnitude = height / (norm_R[..., [1]] + 1e-16)
+  xyz = (pt.tensor(intr).to(device) + (norm_R * magnitude))
+  return xyz
 
-def cast_ray(uv, I, E):
-    '''
-    Casting a ray given UV-coordinates, intrinisc, extrinsic
-    Input : 
-        - UV : 2d screen points in shape=(batch, seq_len, 2)
-        - I : camera position in shape=(batch, seq_len, 4, 4)
-        - E : camera position in shape=(batch, seq_len, 4, 4)
-    Output :
-        - ray : Ray direction (batch, seq_len, 3)
-        (Can check with ray.x, ray.y, ray.z for debugging)
-    '''
-    #print("UV: : ", uv.shape)
-    #print("I : ", I.shape)
-    #print("E : ", E.shape)
-
-    w = 1664.0
-    h = 1088.0
     
 
-    transf = I @ E
-    transf_inv = np.linalg.inv(transf.cpu().numpy())
+def cast_ray(uv, I, E):
+  '''
+  Casting a ray given UV-coordinates, intrinisc, extrinsic
+  Input : 
+      - UV : 2d screen points in shape=(batch, seq_len, 2)
+      - I : camera position in shape=(batch, seq_len, 4, 4)
+      - E : camera position in shape=(batch, seq_len, 4, 4)
+  Output :
+      - ray : Ray direction (batch, seq_len, 3)
+      (Can check with ray.x, ray.y, ray.z for debugging)
+  '''
+  #print("UV: : ", uv.shape)
+  #print("I : ", I.shape)
+  #print("E : ", E.shape)
 
-    u = ((uv[..., [0]] / w) * 2) - 1
-    v = ((uv[..., [1]] / h) * 2) - 1
+  w = 1664.0
+  h = 1088.0
+  
+  transf = I @ E
+  transf_inv = np.linalg.inv(transf.cpu().numpy())
 
-    ones = np.ones(u.shape)
+  u = ((uv[..., [0]] / w) * 2) - 1
+  v = ((uv[..., [1]] / h) * 2) - 1
 
-    ndc = np.concatenate((u, v, ones, ones), axis=-1)
-    ndc = np.expand_dims(ndc, axis=-1)
+  ones = np.ones(u.shape)
 
-    ndc = transf_inv @ ndc
+  ndc = np.concatenate((u, v, ones, ones), axis=-1)
+  ndc = np.expand_dims(ndc, axis=-1)
 
-    cam_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-    ray = ndc[..., [0, 1, 2], -1] - cam_pos
-    return ray
+  ndc = transf_inv @ ndc
+
+  cam_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  ray = ndc[..., [0, 1, 2], -1] - cam_pos
+  return ray
 
 def ray_to_plane(E, ray):
-    '''
-    Find the intersection points on the plane given ray-vector and camera position
-    Input :
-        - cam_pos : camera position in shape=(batch, seq_len, 3)
-        - ray : ray vector in shape=(batch, seq_len, 3)
-    Output : 
-        - intr_pts : ray to plane intersection points from camera through the ball tracking
-    '''
-    c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-    normal = np.array([0, 1, 0])
-    p0 = np.array([0, 0, 0])
-    ray_norm = ray / np.linalg.norm(ray, axis=-1, keepdims=True)
+  '''
+  Find the intersection points on the plane given ray-vector and camera position
+  Input :
+      - cam_pos : camera position in shape=(batch, seq_len, 3)
+      - ray : ray vector in shape=(batch, seq_len, 3)
+  Output : 
+      - intr_pts : ray to plane intersection points from camera through the ball tracking
+  '''
+  c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  normal = np.array([0, 1, 0])
+  p0 = np.array([0, 0, 0])
+  ray_norm = ray / np.linalg.norm(ray, axis=-1, keepdims=True)
 
-    t = np.dot((p0-c_pos), normal) / np.dot(ray_norm, normal)
-    t = np.expand_dims(t, axis=-1)
+  t = np.dot((p0-c_pos), normal) / np.dot(ray_norm, normal)
+  t = np.expand_dims(t, axis=-1)
 
-    intr_pos = c_pos + (ray_norm * t)
+  intr_pos = c_pos + (ray_norm * t)
 
-    return intr_pos
+  return intr_pos
 
 
 def compute_azimuth(ray):
-    '''
-    Compute Azimuth from camera position and it's ray(2d tracking)
-    Input : 
-        1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
-        2. Cam : camera position in shape = (batch, seq_len, 3)
-    Output : 
-        1. Azimuth angle between ray-direction and x-axis (1, 0) in shape = (batch, seq_len, 1)
-    '''
-    azimuth = np.arctan2(ray[..., [2]], ray[..., [0]]) * 180.0 / np.pi
-    azimuth = (azimuth + 360.0) % 360.0
-    return azimuth
+  '''
+  Compute Azimuth from camera position and it's ray(2d tracking)
+  Input : 
+      1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
+      2. Cam : camera position in shape = (batch, seq_len, 3)
+  Output : 
+      1. Azimuth angle between ray-direction and x-axis (1, 0) in shape = (batch, seq_len, 1)
+  '''
+  azimuth = np.arctan2(ray[..., [2]], ray[..., [0]]) * 180.0 / np.pi
+  azimuth = (azimuth + 360.0) % 360.0
+  return azimuth
 
 def compute_elevation(intr, E):
-    '''
-    Compute Elevation from camera position and it's ray(2d tracking)
-    Input : 
-        1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
-    Output : 
-        1. Elevation angle between ray-direction and xz-plane (1, 0) in shape = (batch, seq_len, 1)
-    '''
-    c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-    ray = c_pos - intr
-    elevation = np.arcsin(c_pos[..., [1]]/(np.sqrt(np.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
-    return elevation
+  '''
+  Compute Elevation from camera position and it's ray(2d tracking)
+  Input : 
+      1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
+  Output : 
+      1. Elevation angle between ray-direction and xz-plane (1, 0) in shape = (batch, seq_len, 1)
+  '''
+  c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  ray = c_pos - intr
+  elevation = np.arcsin(c_pos[..., [1]]/(np.sqrt(np.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
+  return elevation
 
 
 def canonicalize(pts, E, deg=None):
@@ -207,17 +213,18 @@ def canonicalize(pts, E, deg=None):
   #print("pts: ", pts.shape)
 
   cam = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  pts = pt.tensor(pts).float().to(device)
   if deg is not None:
     # De-canonicalized the world coordinates
     deR = Ry(deg)
     # Canonicalized points
-    pts = np.expand_dims(pts, axis=-1)
+    pts = pt.unsqueeze(pts, dim=-1)
     pts_decl = deR @ pts
-    pts_decl = np.squeeze(pts_decl, axis=-1)
+    pts_decl = pt.squeeze(pts_decl, axis=-1)
     # Canonicalized camera
-    cam = np.expand_dims(cam, axis=-1)
+    cam = pt.unsqueeze(pt.tensor(cam).to(device), dim=-1)
     cam_decl = deR @ cam
-    cam_decl = np.squeeze(cam_decl, axis=-1)
+    cam_decl = pt.squeeze(cam_decl, dim=-1)
 
     return pts_decl, cam_decl, deg
 
@@ -235,27 +242,26 @@ def canonicalize(pts, E, deg=None):
     R = Ry(-angle)
 
     # Canonicalize points
-    pts = np.expand_dims(pts, axis=-1)
+    pts = pt.unsqueeze(pts, dim=-1)
     pts_cl = R @ pts
-    pts_cl = np.squeeze(pts_cl, axis=-1)
+    pts_cl = pt.squeeze(pts_cl, dim=-1)
     # Canonicalize camera
-    cam = np.expand_dims(cam, axis=-1)
+    cam = pt.unsqueeze(pt.tensor(cam).to(device), dim=-1)
     cam_cl = R @ cam
-    cam_cl = np.squeeze(cam_cl, axis=-1)
+    cam_cl = pt.squeeze(cam_cl, dim=-1)
 
     return pts_cl, cam_cl, angle
         
 def Ry(theta):
-    zeros = np.zeros(theta.shape)
-    ones = np.ones(theta.shape)
+  '''
+  Return a rotation matrix given theta
+  '''
+  zeros = np.zeros(theta.shape)
+  ones = np.ones(theta.shape)
 
-    R = np.array([[np.cos(theta), zeros, np.sin(theta)], 
-                  [zeros, ones, zeros],
-                  [-np.sin(theta), zeros, np.cos(theta)]])
+  R = np.array([[np.cos(theta), zeros, np.sin(theta)], 
+                [zeros, ones, zeros],
+                [-np.sin(theta), zeros, np.cos(theta)]])
 
-    #print(R[:, :, 0, 0])
-    R = np.transpose(R, (2, 3, 0, 1))
-    #print(R[0][0])
-    #print(R.shape)
-
-    return R
+  R = np.transpose(R, (2, 3, 0, 1))
+  return pt.tensor(R).float().to(device)

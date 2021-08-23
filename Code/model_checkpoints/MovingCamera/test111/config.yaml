@@ -53,7 +53,7 @@ si_pred_ramp: False
 
 # Features
 selected_features: []
-i_s: 'dt'  # Input space
+i_s: 't'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # azim(+1), elev(+1), both(+2)
 
