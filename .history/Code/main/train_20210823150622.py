@@ -161,7 +161,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   # Evaluating mode
   utils_model.eval_mode(model_dict=model_dict)
 
-  pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val)
+  pred_dict_val, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   val_loss_dict, val_loss = utils_model.calculate_loss(pred_xyz=pred_dict_val['xyz'], input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, annealing_w=annealing_weight) # Calculate the loss

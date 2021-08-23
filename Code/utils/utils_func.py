@@ -276,7 +276,6 @@ def load_ckpt_predict(model_dict, ckpt):
   else:
     print("[#] ckpt not found...")
     exit()
-  print("="*100)
 
 def duplicate_at_length(seq, lengths):
   rep_mask = pt.zeros(size=seq.shape).to(device)
@@ -370,7 +369,7 @@ def uv_noise(uv):
     return noisy_uv
 
 
-def add_noise(in_f, cam_dict):
+def add_noise(cam_dict, in_f=None):
   '''
   - Adding noise to uv tracking
   - Need to recalculate all features since
@@ -406,7 +405,7 @@ def add_noise(in_f, cam_dict):
 
   return noise_in_f.float(), noisy_ray
 
-def generate_input(in_f, cam_dict):
+def generate_input(cam_dict, in_f=None):
   '''
   - Adding noise to uv tracking
   - Need to recalculate all features since
@@ -417,23 +416,31 @@ def generate_input(in_f, cam_dict):
 
   # Intersect Plane
   intr = utils_transform.ray_to_plane(E=cam_dict['E'], ray=ray)
-  #print(noisy_intr[0][:10], in_f[0][:10, :3])
-  #print(noisy_intr[0][:10] - in_f[0][:10, :3])
+  #print(intr[0][:10], in_f[0][:10, :3])
+  #print("DIFF : ", intr[0][:10] - in_f[0][:10, :3])
+  #print("MAX : ", pt.max(intr[0] - in_f[0][:, :3], dim=1))
+  #print("MEAN : ", pt.mean(intr[0] - in_f[0][:, :3]))
+  #input("Prev is intr check")
 
   # New azimuth
   azim = utils_transform.compute_azimuth(ray=ray)
-  #print(noisy_azim[0][:10, :], in_f[0][:10, [4]])
-  #print(noisy_azim[0][:10, :] - in_f[0][:10, [4]])
+  #print(azim[0][:10, :], in_f[0][:10, [4]])
+  #print("DIFF : ", azim[0][:10] - in_f[0][:10, [4]])
+  #print("MAX : ", pt.max(azim[0] - in_f[0][:, [4]], dim=1))
+  #print("MEAN : ", pt.mean(azim[0] - in_f[0][:, [4]]))
+  #input("Prev is azim check")
 
   # New elevation
   elev = utils_transform.compute_elevation(intr=intr, E=cam_dict['E'])
-  #print(noisy_elev[0][:10, :], in_f[0][:10, [3]])
-  #print(noisy_elev[0][:10, :] - in_f[0][:10, [3]])
+  #print(elev[0][:10, :], in_f[0][:10, [3]])
+  #print("DIFF : ", elev[0][:10] - in_f[0][:10, [3]])
+  #print("MAX : ", pt.max(elev[0] - in_f[0][:, [3]], dim=1))
+  #print("MEAN : ", pt.mean(elev[0] - in_f[0][:, [3]]))
+  #input("Prev is elev check")
 
   # Replace in_f
-  in_f = pt.cat((intr, elev, azim), dim=-1)
-
-  return in_f.float(), ray
+  in_f = np.concatenate((intr, elev, azim), axis=-1)
+  return in_f, ray
 
 
 def save_reconstructed(eval_metrics, trajectory):

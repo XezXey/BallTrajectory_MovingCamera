@@ -5,7 +5,7 @@ trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
-wandb_dir: './'
+wandb_dir: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/'
 wandb_notes: null
 wandb_tags: 'MovingCamera'
 wandb_name: 'test111'
@@ -15,7 +15,7 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 10
+batch_size: 1
 n_epochs: 100000
 lr: 0.001
 clip: 0
@@ -30,7 +30,7 @@ annealing_gamma:  0.7
 
 # Visualization
 visualize: True
-visualization_path: '../visualize_html/'
+visualization_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
 
 # Model
 pipeline:
