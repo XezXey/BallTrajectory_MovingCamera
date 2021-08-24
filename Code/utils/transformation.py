@@ -108,9 +108,8 @@ def h_to_3d(intr, E, height):
   R = pt.tensor(cam_pos - intr).to(device)
   norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)
   magnitude = height / (norm_R[..., [1]] + 1e-16)
-  xyz = (pt.tensor(intr).to(device) + (norm_R * magnitude))
+  xyz = pt.tensor(intr).to(device) + (norm_R * magnitude)
   return xyz
-
     
 
 def cast_ray(uv, I, E):

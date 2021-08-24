@@ -54,7 +54,7 @@ class Trainable_LSTM(pt.nn.Module):
       # print("O : ", idx, pad_packed_sequence(out_packed, batch_first=True, padding_value=-10)[0].shape)
 
     # Residual from recurrent block to FC
-    out_unpacked = pad_packed_sequence(out_packed, batch_first=True, padding_value=-1000.0)[0]
+    out_unpacked = pad_packed_sequence(out_packed, batch_first=True, padding_value=-1000)[0]
     return out_unpacked, (h, c)
 
   def initial_state(self):

@@ -15,7 +15,7 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 1
+batch_size: 2
 n_epochs: 100000
 lr: 0.001
 clip: 0
@@ -53,7 +53,7 @@ si_pred_ramp: False
 
 # Features
 selected_features: []
-i_s: 't'  # Input space
+i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # azim(+1), elev(+1), both(+2)
 

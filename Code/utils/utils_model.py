@@ -48,13 +48,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   # Input
   in_f = input_dict['input']
 
+  # Prediction dict
+  pred_dict = {}
+
   # Add noise
   if args.noise:
     in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
 
   # Generate Input directly from tracking
   in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
-
 
   if args.canonicalize:
     in_f_cl, _, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
@@ -64,14 +66,16 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     #in_f_decl, _, _ = utils_transform.canonicalize(pts=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
     #ray_decl, _, _ = utils_transform.canonicalize(pts=ray_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
   
-
   intr_recon = in_f[..., [0, 1, 2]].copy()
-  in_f = input_manipulate(in_f=in_f)
+  in_f = pt.tensor(in_f).float().to(device)
+  #in_f = input_manipulate(in_f=in_f)
   
   if 'height' in args.pipeline:
-    height, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    pred_dict['h'] = pred_h
     
-  #height = output_space(height)
+  #height = output_space(pred_h, lengths=input_dict['lengths'])
+
   height = gt_dict['gt'][..., [1]]
   pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'])
 
@@ -79,14 +83,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   if args.canonicalize:
     pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
 
-  print(pred_xyz - gt_dict['gt'])
-  print(pt.max(pred_xyz - gt_dict['gt']))
-  print(pt.mean(pred_xyz - gt_dict['gt']))
-  exit()
+  #print(pred_xyz - gt_dict['gt'])
+  #print(pred_xyz - gt_dict['gt'])
+  #print(pt.max(pred_xyz - gt_dict['gt']))
+  #print(pt.mean(pred_xyz - gt_dict['gt']))
   
-  return pred_xyz
-      
+  pred_dict['xyz'] = pred_xyz
 
+  return pred_dict, in_f
+      
 def input_manipulate(in_f):
   '''
   Prepare input to have correct space(t, dt, tdt), sin-cos
@@ -132,30 +137,68 @@ def input_space(in_f):
   return in_f
 
 
-def output_space(height):
+def output_space(pred_h, lengths, search_h=None):
   '''
-  Prepare input to have correct space(t, dt, tdt), sin-cos
+  Aggregate the height-prediction into (t, dt)
   Input : 
-    1. in_f : input features in shape (batch, seq_len, 5)
+    1. height : height in shape (batch, seq_len, 1)
+    2. lengths : lengths of each seq to determine the wegiht size, and position to reverse the seq(always comes in t-space)
+    3. search_h(optional) : In scenario which is trajectory didn't start/end on the ground. (Handling by search for h)
+      in shape {'first_h' : (batch, 1, 1), 'last_h' : (batch, 1, 1)}
   Output : 
-    1. in_f : input features after change into specified space(t, dt, tdt) and sin-cos
+    1. height :height after aggregation into t-space
   '''
-  pass
+
+  if args.o_s == 't':
+    return pred_h 
+    
+  elif args.o_s == 'dt':
+    if args.i_s == 't_dt':
+      assert False
+      
+    elif args.i_s == 'dt':
+      pred_h = pred_h
+
+    w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
+    last_idx = lengths - 2  # from lengths : [-1 is idx in t-space] and [-2  is index in dt-space]
+
+    if search_h is None:
+      first_h = pt.zeros(size=(pred_h.shape[0], 1, 1)).to(device)
+      last_h = pt.zeros(size=(pred_h.shape[0], 1, 1)).to(device)
+    else:
+      first_h = search_h['first_h']
+      last_h = search_h['last_h']
+
+    # forward aggregate
+    h_fw = utils_func.cumsum(seq=pred_h, t_0=first_h)
+    # backward aggregate
+    pred_h_bw = utils_func.reverse_masked_seq(seq=-pred_h, lengths=lengths-1) # This fn required len(seq) of dt-space
+    #print(pt.cat((pred_h, pred_h_bw), dim=-1))
+    h_bw = utils_func.cumsum(seq=pred_h_bw, t_0=last_h)
+    h_bw = utils_func.reverse_masked_seq(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
+    #print(pt.cat((h_fw[0], h_bw[0], w_ramp[0]), dim=1))
+    #print(pt.cat((h_fw[1], h_bw[1], w_ramp[1]), dim=1))
+    height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+      
+    return height
 
 
-def calculate_loss():
+def calculate_loss(input_dict, gt_dict, pred_dict):
   # Calculate loss term
   ######################################
   ############# Trajectory #############
   ######################################
-  if 'depth' in args.pipeline or 'refinement' in args.pipeline:
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    gravity_loss = utils_loss.GravityLoss(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  #gravity_loss = utils_loss.GravityLoss(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  #below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
-  else:
-    trajectory_loss = pt.tensor(0.).to(device)
-    gravity_loss = pt.tensor(0.).to(device)
-    below_ground_loss = pt.tensor(0.).to(device)
+  gravity_loss = pt.tensor(0.).to(device)
+  below_ground_loss = pt.tensor(0.).to(device)
 
+  loss = trajectory_loss# + gravity_loss + below_ground_loss
+  loss_dict = {"Trajectory Loss":trajectory_loss.item(),
+               "Gravity Loss":gravity_loss.item(),
+               "BelowGnd Loss":below_ground_loss.item()}
+
+  print(loss)
   return loss_dict, loss

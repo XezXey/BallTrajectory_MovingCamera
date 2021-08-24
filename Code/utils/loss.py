@@ -70,12 +70,12 @@ def BelowGroundPenalize(pred, gt, mask, lengths):
 
 def TrajectoryLoss(pred, gt, mask, lengths=None, delmask=True):
   # L2 loss of reconstructed trajectory
-  x_trajectory_loss = (pt.sum((((gt[..., 0] - pred[..., 0]))**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-  y_trajectory_loss = (pt.sum((((gt[..., 1] - pred[..., 1]))**2) * mask[..., 1]) / pt.sum(mask[..., 1]))
-  z_trajectory_loss = (pt.sum((((gt[..., 2] - pred[..., 2]))**2) * mask[..., 2]) / pt.sum(mask[..., 2]))
-  #print(x_trajectory_loss)
-  #print(y_trajectory_loss)
-  #print(z_trajectory_loss)
+  x_trajectory_loss = pt.sum(((gt[..., 0] - pred[..., 0])**2) * mask[..., 0]) / pt.sum(mask[..., 0])
+  y_trajectory_loss = pt.sum(((gt[..., 1] - pred[..., 1])**2) * mask[..., 1]) / pt.sum(mask[..., 1])
+  z_trajectory_loss = pt.sum(((gt[..., 2] - pred[..., 2])**2) * mask[..., 2]) / pt.sum(mask[..., 2])
+  print(x_trajectory_loss)
+  print(y_trajectory_loss)
+  print(z_trajectory_loss)
 
   #x_trajectory_loss = (pt.sum((((gt[:, 3:, 0] - pred[:, 3:, 0]))**2) * mask[:, 3:, 0]) / pt.sum(mask[:, 3:, 0]))
   #y_trajectory_loss = (pt.sum((((gt[:, 3:, 1] - pred[:, 3:, 1]))**2) * mask[:, 3:, 1]) / pt.sum(mask[:, 3:, 1]))

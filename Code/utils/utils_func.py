@@ -156,9 +156,10 @@ def reverse_masked_seq(seq, lengths):
   eg. x = [1, 2, 3, 4 , 5], len = 5
   pt.flip(x[:len], dims=[0]) ===> [5, 4, 3, 2, 1]
   '''
+  seq_flip = seq.clone()
   for i in range(seq.shape[0]):
-    seq[i][:lengths[i]] = pt.flip(seq[i][:lengths[i], :], dims=[0])
-  return seq
+    seq_flip[i][:lengths[i]] = pt.flip(seq[i][:lengths[i], :], dims=[0])
+  return seq_flip
 
 def construct_bipred_weight(weight, lengths):
   weight_scaler = pt.nn.Sigmoid()
@@ -179,10 +180,15 @@ def construct_bipred_weight(weight, lengths):
 def construct_w_ramp(weight_template, lengths):
   '''
   Create the ramp weight from weight template tensor
-    - Output : shape is equal to weight_template)
+  Input : 
+    1. weight_template : tensor that determined the weight shape -> (batch, seq_len, 1)
+    2. lengths : legnths of each seq to construct the ramp weight and ignore the padding
+  Output : 
+    1. weight : shape same as weight_template
   '''
-  fw_weight = pt.zeros(weight_template.shape[0], weight_template.shape[1], weight_template.shape[2]).cuda()
-  bw_weight = pt.zeros(weight_template.shape[0], weight_template.shape[1], weight_template.shape[2]).cuda()
+
+  fw_weight = pt.zeros(size=weight_template.shape).cuda()
+  bw_weight = pt.zeros(size=weight_template.shape).cuda()
   for i in range(weight_template.shape[0]):
     # Forward prediction weight
     fw_weight[i][:lengths[i]] = 1 - pt.linspace(start=0, end=1, steps=lengths[i]).view(-1, 1).to(device)
