@@ -103,14 +103,28 @@ def IE_array(trajectory, col):
   mat = np.squeeze(mat, axis=1)
   return mat
 
-def h_to_3d(intr, E, height, cam_pos):
-  #cam_pos = pt.tensor(np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]).to(device)
-  R = pt.tensor(cam_pos - intr).to(device)
+def h_to_3d(intr, E, height, cam_pos=None):
+  '''
+  [#] 3D reconstruction by get the position along the ray from a given height
+  Input : (All torch.tensor dtype)
+    1. intr : intersect plane position in shape(batch, seq_len, 3)
+    2. E : extrinsic parameters to compute camera position in shape(batch, seq_len, 4, 4)
+    3. height : from height prediction in shape(batch, seq_len, 3)
+    4. cam_pos (*opt-required when used canonicalize) : camera position after canonicalization
+  Output : (All torch.tensor dtype)
+    1. xyz : reconstructed position in shape(batch, seq_len, 3)
+
+  ***Function need to have no detach() to prevent the c-graph discontinue***
+  '''
+  if cam_pos is None:
+    cam_pos = pt.tensor(np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]).to(device)
+
+  R = cam_pos - intr
   norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)
   magnitude = height / (norm_R[..., [1]] + 1e-16)
-  xyz = pt.tensor(intr).to(device) + (norm_R * magnitude)
+  xyz = intr + (norm_R * magnitude)
   return xyz
-    
+
 
 def cast_ray(uv, I, E):
   '''
@@ -149,7 +163,7 @@ def cast_ray(uv, I, E):
 
 def ray_to_plane(E, ray):
   '''
-  Find the intersection points on the plane given ray-vector and camera position
+  [#] Find the intersection points on the plane given ray-vector and camera position
   Input :
       - cam_pos : camera position in shape=(batch, seq_len, 3)
       - ray : ray vector in shape=(batch, seq_len, 3)
@@ -171,7 +185,7 @@ def ray_to_plane(E, ray):
 
 def compute_azimuth(ray):
   '''
-  Compute Azimuth from camera position and it's ray(2d tracking)
+  [#] Compute Azimuth from camera position and it's ray(2d tracking)
   Input : 
       1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
       2. Cam : camera position in shape = (batch, seq_len, 3)
@@ -184,7 +198,7 @@ def compute_azimuth(ray):
 
 def compute_elevation(intr, E):
   '''
-  Compute Elevation from camera position and it's ray(2d tracking)
+  [#] Compute Elevation from camera position and it's ray(2d tracking)
   Input : 
       1. Ray : ray direction through 2d-tracking (Obtained from ray-casting function) in shape = (batch, seq_len, 3)
   Output : 
@@ -198,13 +212,14 @@ def compute_elevation(intr, E):
 
 def canonicalize(pts, E, deg=None):
   '''
+  ***Function has no detach() to prevent the grad_fn***
   Input : Ignore (Y dimension cuz we rotate over Y-axis)
       - pts : 3d points in shape=(batch, seq_len, 3)
       - extrinsic : extrinsic in shape=(batch, seq_len, 4, 4)
       - degree : 
           - if given => decanonicalized the points
           - else => Rotate to reference angle
-  Output :
+  Output :  (All are torch.tensor dtype)
       - pts_cl : 3d points that canonicalized
       - cam : camera position after canonicalized (To further find the new azimuth)
       - degree : the degree that we rotate the camera
@@ -212,7 +227,6 @@ def canonicalize(pts, E, deg=None):
   #print("pts: ", pts.shape)
 
   cam = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-  pts = pt.tensor(pts).float().to(device)
   if deg is not None:
     # De-canonicalized the world coordinates
     deR = Ry(deg)
@@ -221,35 +235,36 @@ def canonicalize(pts, E, deg=None):
     pts_decl = deR @ pts
     pts_decl = pt.squeeze(pts_decl, axis=-1)
     # Canonicalized camera
-    cam = pt.unsqueeze(pt.tensor(cam).to(device), dim=-1)
+    cam = pt.tensor(cam).to(device)
+    cam = pt.unsqueeze(cam, dim=-1)
     cam_decl = deR @ cam
     cam_decl = pt.squeeze(cam_decl, dim=-1)
 
     return pts_decl, cam_decl, deg
 
-
   else:
     # Find the angle to rotate(canonicalize)
     ref_cam = np.array([0.0, 0.0, 1.0]).reshape(1, 1, 3)
-    angle = np.arctan2(ref_cam[..., 2], ref_cam[..., 0]) - np.arctan2(cam[..., 2], cam[..., 0])
+    deg = np.arctan2(ref_cam[..., 2], ref_cam[..., 0]) - np.arctan2(cam[..., 2], cam[..., 0])
     
-    l_pi = angle > np.pi
-    h_pi = angle <= np.pi
-    angle[l_pi] = angle[l_pi] - 2 * np.pi
-    angle[h_pi] = angle[h_pi] + 2 * np.pi
+    l_pi = deg > np.pi
+    h_pi = deg <= np.pi
+    deg[l_pi] = deg[l_pi] - 2 * np.pi
+    deg[h_pi] = deg[h_pi] + 2 * np.pi
 
-    R = Ry(-angle)
+    R = Ry(-deg)
 
     # Canonicalize points
     pts = pt.unsqueeze(pts, dim=-1)
     pts_cl = R @ pts
     pts_cl = pt.squeeze(pts_cl, dim=-1)
     # Canonicalize camera
-    cam = pt.unsqueeze(pt.tensor(cam).to(device), dim=-1)
+    cam = pt.tensor(cam).to(device)
+    cam = pt.unsqueeze(cam, dim=-1)
     cam_cl = R @ cam
     cam_cl = pt.squeeze(cam_cl, dim=-1)
 
-    return pts_cl, cam_cl, angle
+    return pts_cl, cam_cl, deg
         
 def Ry(theta):
   '''
@@ -262,4 +277,5 @@ def Ry(theta):
                 [-np.sin(theta), zeros, np.cos(theta)]])
 
   R = np.transpose(R, (2, 3, 0, 1))
-  return pt.tensor(R).float().to(device)
+  R = pt.tensor(R).float().to(device)
+  return R

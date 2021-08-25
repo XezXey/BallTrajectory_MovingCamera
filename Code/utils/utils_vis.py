@@ -43,9 +43,9 @@ def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val,
     fig_traj = visualize_layout_update(fig=fig_traj, n_vis=n_vis)
 
     #plotly.offline.plot(fig_traj, filename='./{}/trajectory_visualization_depth_pitch_scaled.html'.format(visualization_path), auto_open=False)
-    plotly.offline.plot(fig_traj, filename='./{}/tracknetV1_g1c1.html'.format(visualization_path), auto_open=False)
+    plotly.offline.plot(fig_traj, filename='{}/vis.html'.format(visualization_path), auto_open=False)
     try:
-      wandb.log({"PITCH SCALED : Trajectory Visualization(Col1=Train, Col2=Val)":wandb.Html(open('./{}/trajectory_visualization_depth_pitch_scaled.html'.format(visualization_path)))})
+      wandb.log({"PITCH SCALED : Trajectory Visualization(Col1=Train, Col2=Val)":wandb.Html(open('{}/vis.html'.format(visualization_path)))})
     except ValueError:
       print("[#] Wandb is not init")
 

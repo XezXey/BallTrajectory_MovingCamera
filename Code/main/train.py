@@ -62,6 +62,7 @@ parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=fl
 parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=False)
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=5)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=0.95)
+parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmented training', default=None)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=False)
@@ -169,18 +170,74 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 10 == 0:
+  if args.visualize and epoch % 25 == 0:
     utils_vis.make_visualize(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                               input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                               pred_dict_train=pred_dict_train, pred_dict_val=pred_dict_val, 
                               visualization_path=visualization_path, pred='height')
-    exit()
 
   return train_loss.item(), val_loss.item(), model_dict
 
+#def collate_fn_padd(batch):
+#    # Padding batch of variable length
+#    # Columns convention : (x, y, z, u, v, d, eot, og, rad)
+#    padding_value = -1000.0
+#    ## Get sequence lengths
+#    lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
+#    # Input features : columns 4-5 contain u, v in screen space
+#    ## Padding
+#    input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
+#    input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
+#    ## Compute mask
+#    input_mask = (input_batch != padding_value)
+#
+#    # Output features : columns 6 cotain depth from camera to projected screen
+#    ## Padding
+#    gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
+#    gt_batch = pad_sequence(gt_batch, batch_first=True, padding_value=padding_value)
+#    ## Compute mask
+#    gt_mask = (gt_batch != padding_value)
+#
+#    # Extra columns : columns that contains information for recon/auxiliary
+#    ## Padding
+#    cpos_batch = [pt.Tensor(trajectory[:, cpos_col].astype(np.float64)) for trajectory in batch] 
+#    cpos_batch = pad_sequence(cpos_batch, batch_first=True, padding_value=0)
+#
+#    max_len = pt.max(lengths)
+#    # Intrinsic/Extrinsic columns
+#    I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
+#    E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
+#    E_inv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+#    # Manually pad with eye to prevent non-invertible matrix
+#    for i in range(len(lengths)):
+#      pad_len = max_len - lengths[i]
+#      if pad_len == 0:
+#        continue
+#      else:
+#        pad_mat = pt.stack(pad_len * [pt.eye(4)])
+#        I[i] = pt.cat((I[i], pad_mat), dim=0)
+#        E[i] = pt.cat((E[i], pad_mat), dim=0)
+#        E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
+#    I = pt.stack(I)
+#    E = pt.stack(E)
+#    E_inv = pt.stack(E_inv)
+#
+#    # Tracking
+#    tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
+#    tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
+#
+#    return {'input':[input_batch, lengths, input_mask],
+#            'gt':[gt_batch, lengths, gt_mask],
+#            'cpos':[cpos_batch],
+#            'tracking':[tracking],
+#            'I':[I], 'E':[E], 'E_inv':[E_inv]}
+
 def collate_fn_padd(batch):
     # Padding batch of variable length
-    # Columns convention : (x, y, z, u, v, d, eot, og, rad)
+    
+    if args.augment is not None:
+      batch = utils_func.augment(batch=batch, aug_col=eot)
+
     padding_value = -1000.0
     ## Get sequence lengths
     lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
@@ -243,7 +300,8 @@ if __name__ == '__main__':
 
   # Create Datasetloader for train and validation
   dataset_train = TrajectoryDataset(dataset_path=args.dataset_train_path, trajectory_type=args.trajectory_type)
-  dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
+  #dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
+
   # Create Datasetloader for validation
   dataset_val = TrajectoryDataset(dataset_path=args.dataset_val_path, trajectory_type=args.trajectory_type)
   dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
@@ -293,9 +351,11 @@ if __name__ == '__main__':
     # Log metrics with wandb
     wandb.watch(model_dict[model])
 
-  # Training settings
+  # Training Loop
   trajectory_val_iterloader = iter(dataloader_val)
   for epoch in range(start_epoch, args.n_epochs+1):
+    # Data loader is refreshed every epoch(in case of augment)
+    dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
     accumulate_train_loss = []
     accumulate_val_loss = []
     # Fetch the Validation set (Get each batch for each training epochs)
@@ -303,6 +363,7 @@ if __name__ == '__main__':
     try:
       batch_val = next(trajectory_val_iterloader)
     except StopIteration:
+      dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
       trajectory_val_iterloader = iter(dataloader_val)
       batch_val = next(trajectory_val_iterloader)
 

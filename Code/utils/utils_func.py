@@ -532,3 +532,28 @@ def save_cam_traj(eval_metrics, trajectory):
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
   print("[#] Saving reconstruction to {}".format(save_path))
+
+def augment(batch, aug_col=eot):
+
+  len_ = np.array([trajectory.shape[0] for trajectory in batch])
+  # Split by percentage
+  perc = [0.25, 0.50, 0.75, 1]
+  perc = np.random.choice(a=perc, size=len(batch))
+  len_aug = np.ceil(len_.copy() * perc).astype(int)
+
+  for i in range(len(batch)):
+    #print("L : ", len_[i], "L_aug : ", len_aug[i], "P : ", perc[i])
+    h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
+    try :
+      start = np.random.randint(low=0, high=h, size=1)[0]
+    except ValueError:
+      print("TRY FAILED : ", len_[i], len_aug[i])
+      exit()
+    end = start + len_aug[i]
+    batch[i] = batch[i][start:end]
+    #print("S : ", start, "E : ", end)
+    #print("A", i, batch[i].shape)
+    #print("="*50)
+
+  return batch 
+    

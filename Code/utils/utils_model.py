@@ -1,3 +1,4 @@
+from re import search
 from numpy.lib import utils
 from Code.utils.utils_func import generate_input
 import torch as pt
@@ -22,7 +23,6 @@ else:
 def share_args(a):
   global args
   args = a
-
 
 def train_mode(model_dict):
   for model in model_dict.keys():
@@ -58,39 +58,39 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   # Generate Input directly from tracking
   _, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
 
+  # Canonicalize
   if args.canonicalize:
     in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
     ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
     azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
-    #in_f = np.concatenate((in_f_cl.cpu().numpy(), azim_cl, in_f[..., [3]]), axis=2)
-    in_f_decl, _, _ = utils_transform.canonicalize(pts=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
-    ray_decl, _, _ = utils_transform.canonicalize(pts=ray_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
-    #print(ray - ray_decl.cpu().numpy())
-    #print(in_f[..., [0, 1, 2]].cpu().numpy() - in_f_decl.cpu().numpy())
+    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
 
-  intr_recon = in_f[..., [0, 1, 2]].cpu().numpy()
-  in_f = pt.tensor(in_f).float().to(device)
-  #in_f = input_manipulate(in_f=in_f)
+  intr_recon = in_f[..., [0, 1, 2]]
+  in_f = input_manipulate(in_f=in_f)
+
+  search_h = None
+  # Aug
+  if args.augment:
+    search_h = {}
+    search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
+    search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
+    search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+    search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
   
   if 'height' in args.pipeline:
     pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
     pred_dict['h'] = pred_h
-    
-  #height = output_space(pred_h, lengths=input_dict['lengths'])
 
-  height = gt_dict['gt'][..., [1]]
-  pred_xyz = utils_transform.h_to_3d(height=height, intr=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], cam_pos=cam_cl)
+
+  height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
+  #height = gt_dict['gt'][..., [1]]
+
+  pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
 
   # Decoanonicalize
   if args.canonicalize:
     pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
 
-  print(pred_xyz - gt_dict['gt'])
-  #print(pt.sum(pred_xyz - gt_dict['gt'], dim=1))
-  #exit()
-  #print(pt.max(pred_xyz - gt_dict['gt']))
-  #print(pt.mean(pred_xyz - gt_dict['gt']))
-  
   pred_dict['xyz'] = pred_xyz
 
   return pred_dict, in_f
@@ -105,18 +105,17 @@ def input_manipulate(in_f):
   '''
 
   if args.sc == 'azim':
-    azim_sc = np.concatenate(np.sin(in_f[..., 4]), np.cos(in_f[..., 4]), axis=2)
-    in_f = np.concatenate((in_f[..., [0, 1, 2]], in_f[..., [3], azim_sc]), axis=2)
+    azim_sc = pt.cat((pt.sin(in_f[..., 4]), pt.cos(in_f[..., 4])), axis=2)
+    in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3], azim_sc]), axis=2)
   elif args.sc == 'elev':
-    elev_sc = np.concatenate(np.sin(in_f[..., 3]), np.cos(in_f[..., 3]), axis=2)
-    in_f = np.concatenate((in_f[..., [0, 1, 2]], elev_sc, in_f[..., [4]]), axis=2)
+    elev_sc = pt.cat((pt.sin(in_f[..., 3]), pt.cos(in_f[..., 3])), axis=2)
+    in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, in_f[..., [4]]), axis=2)
   elif args.sc == 'both':
-    azim_sc = np.concatenate(np.sin(in_f[..., 4]), np.cos(in_f[..., 4]), axis=2)
-    elev_sc = np.concatenate(np.sin(in_f[..., 3]), np.cos(in_f[..., 3]), axis=2)
-    in_f = np.concatenate((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
+    azim_sc = pt.cat((pt.sin(in_f[..., 4]), pt.cos(in_f[..., 4])), axis=2)
+    elev_sc = pt.cat((pt.sin(in_f[..., 3]), pt.cos(in_f[..., 3])), axis=2)
+    in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
 
   in_f = input_space(in_f)
-  in_f = pt.tensor(in_f).float().to(device)
 
   return in_f
     
@@ -198,10 +197,9 @@ def calculate_loss(input_dict, gt_dict, pred_dict):
   gravity_loss = pt.tensor(0.).to(device)
   below_ground_loss = pt.tensor(0.).to(device)
 
-  loss = trajectory_loss# + gravity_loss + below_ground_loss
+  loss = trajectory_loss + gravity_loss + below_ground_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item()}
 
-  print(loss)
   return loss_dict, loss
