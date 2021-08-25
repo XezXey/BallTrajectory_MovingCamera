@@ -18,7 +18,7 @@ load_ckpt: null # Lastest or Best
 batch_size: 512
 n_epochs: 100000
 lr: 0.001
-clip: 0
+clip: 10
 decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize : False
@@ -27,7 +27,7 @@ noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
-augment: 'perc'
+augment: 'eot'
 
 # Visualization
 visualize: True

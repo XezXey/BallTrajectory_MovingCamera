@@ -141,8 +141,10 @@ def cast_ray(uv, I, E):
   #print("I : ", I.shape)
   #print("E : ", E.shape)
 
-  w = 1664.0
-  h = 1088.0
+  #w = 1664.0
+  #h = 1088.0
+  w = 1280.0
+  h = 720.0
   
   transf = I @ E
   transf_inv = np.linalg.inv(transf.cpu().numpy())

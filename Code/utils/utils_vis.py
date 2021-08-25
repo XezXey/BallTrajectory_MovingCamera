@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import wandb
 import yaml
 import utils.utils_func as utils_func
+import utils.transformation as utils_transform
 import utils.loss as utils_loss
 
 # marker_dict for contain the marker properties
@@ -17,6 +18,7 @@ marker_dict_gt = dict(color='rgba(0, 0, 255, 0.4)', size=4)
 marker_dict_noisy = dict(color='rgba(204, 102, 0, 0.4)', size=4)
 marker_dict_pred = dict(color='rgba(255, 0, 0, 0.4)', size=4)
 marker_dict_eot = dict(color='rgba(0, 255, 0, 0.4)', size=4)
+marker_dict_cam = dict(color='rgba(255, 0, 0, 0.4)', size=10)
 
 def visualize_layout_update(fig=None, n_vis=3):
   # Save to html file and use wandb to log the html and display (Plotly3D is not working)
@@ -25,7 +27,10 @@ def visualize_layout_update(fig=None, n_vis=3):
     fig['layout']['scene{}'.format(i+1)].update(yaxis = dict(nticks=5, range=[-2, 6],),)
   return fig
 
-def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, pred_dict_train, pred_dict_val, visualization_path, pred):
+def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, 
+                  pred_dict_train, pred_dict_val, visualization_path, 
+                  cam_dict_train, cam_dict_val):
+
     # Visualize by make a subplots of trajectory
     n_vis = 5
     # Random the index the be visualize
@@ -38,9 +43,14 @@ def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val,
     fig_traj = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
     visualize_trajectory(pred=pred_dict_train['xyz'][..., [0, 1, 2]], gt=gt_dict_train['gt'][..., [0, 1, 2]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0, 1, 2]], fig=fig_traj, flag='Train', vis_idx=train_vis_idx)
     visualize_trajectory(pred=pred_dict_val['xyz'][..., [0, 1, 2]], gt=gt_dict_val['gt'][..., [0, 1, 2]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0, 1, 2]], fig=fig_traj, flag='Validation', vis_idx=val_vis_idx)
+    ####################################
+    ############### Ray ################
+    ####################################
+    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, flag='Train', vis_idx=train_vis_idx)
+    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, flag='Val', vis_idx=val_vis_idx)
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
-    fig_traj = visualize_layout_update(fig=fig_traj, n_vis=n_vis)
+    #fig_traj = visualize_layout_update(fig=fig_traj, n_vis=n_vis)
 
     #plotly.offline.plot(fig_traj, filename='./{}/trajectory_visualization_depth_pitch_scaled.html'.format(visualization_path), auto_open=False)
     plotly.offline.plot(fig_traj, filename='{}/vis.html'.format(visualization_path), auto_open=False)
@@ -48,9 +58,62 @@ def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val,
       wandb.log({"PITCH SCALED : Trajectory Visualization(Col1=Train, Col2=Val)":wandb.Html(open('{}/vis.html'.format(visualization_path)))})
     except ValueError:
       print("[#] Wandb is not init")
-
     #plotly.offline.plot(fig_displacement, filename='./{}/trajectory_visualization_displacement.html'.format(visualization_path), auto_open=True)
     #wandb.log({"DISPLACEMENT VISUALIZATION":fig_displacement})
+
+def visualize_ray(cam_dict, input_dict, fig, flag, vis_idx):
+  col = 1 if flag == 'Train' else 2
+  # Iterate to plot each trajectory
+  #ray = cam_dict['ray'].cpu().numpy()
+  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
+  cam_pos = np.linalg.inv(cam_dict['E'].cpu().numpy())[..., 0:3, -1]
+  len_ = input_dict['lengths']
+
+  for idx, i in enumerate(vis_idx):
+    draw_ray_x = list()
+    draw_ray_y = list()
+    draw_ray_z = list()
+    len_temp = len_[i]
+    c_temp = cam_pos[i][:len_temp]
+    r_temp = ray[i][:len_temp]
+
+    for j in range(c_temp.shape[0]):
+        # Cam
+        draw_ray_x.append(c_temp[j, 0])
+        draw_ray_y.append(c_temp[j, 1])
+        draw_ray_z.append(c_temp[j, 2])
+        # Ray
+        draw_ray_x.append(c_temp[j, 0] + r_temp[j, 0]*70)
+        draw_ray_y.append(c_temp[j, 1] + r_temp[j, 1]*70)
+        draw_ray_z.append(c_temp[j, 2] + r_temp[j, 2]*70)
+        # No-interconnect
+        draw_ray_x.append(None)
+        draw_ray_y.append(None)
+        draw_ray_z.append(None)
+
+    ## set the mode to lines to plot only the lines and not the balls/markers
+    fig.add_trace(go.Scatter3d(
+        x=draw_ray_x,
+        y=draw_ray_y,
+        z=draw_ray_z,
+        mode='lines',
+        line = dict(width = 0.7, color = 'rgba(0, 255, 0, 0.7)'),
+        name='{}-Ray-Trajectory [{}]'.format(flag, i).format(i), 
+        legendgroup=int(i)
+    ), row=idx+1, col=col)
+  
+    c_temp = np.unique(c_temp, axis=0)
+    fig.add_trace(go.Scatter3d(
+        x=c_temp[..., 0],
+        y=c_temp[..., 1],
+        z=c_temp[..., 2],
+        mode='markers',
+        marker=marker_dict_cam,
+        name='{}-Cam-Trajectory [{}]'.format(flag, i).format(i), 
+        legendgroup=int(i)
+    ), row=idx+1, col=col)
+
+  return fig
 
 def visualize_displacement(input_dict, pred_dict, gt_dict, pred_eot, gt_eot, vis_idx, pred, cam_params_dict, fig=None, flag='train', n_vis=5):
   duv = pred_dict['input'][..., [0, 1]].cpu().detach().numpy()

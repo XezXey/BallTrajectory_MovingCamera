@@ -170,11 +170,12 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 25 == 0:
+  if args.visualize and epoch % 100 == 0:
     utils_vis.make_visualize(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                               input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                               pred_dict_train=pred_dict_train, pred_dict_val=pred_dict_val, 
-                              visualization_path=visualization_path, pred='height')
+                              visualization_path=visualization_path, cam_dict_train=cam_dict_train,
+                              cam_dict_val=cam_dict_val)
 
   return train_loss.item(), val_loss.item(), model_dict
 
@@ -289,7 +290,6 @@ def collate_fn_padd(batch):
             'tracking':[tracking],
             'I':[I], 'E':[E], 'E_inv':[E_inv]}
 
-
 if __name__ == '__main__':
   print('[#]Training : Trajectory Estimation')
 
@@ -300,7 +300,6 @@ if __name__ == '__main__':
 
   # Create Datasetloader for train and validation
   dataset_train = TrajectoryDataset(dataset_path=args.dataset_train_path, trajectory_type=args.trajectory_type)
-  #dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
 
   # Create Datasetloader for validation
   dataset_val = TrajectoryDataset(dataset_path=args.dataset_val_path, trajectory_type=args.trajectory_type)

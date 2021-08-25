@@ -446,8 +446,11 @@ def generate_input(cam_dict, in_f=None):
 
   # Replace in_f
   in_f = np.concatenate((intr, elev, azim), axis=-1)
-  return in_f, ray
 
+  # Cast to tensor
+  ray = pt.tensor(ray).float().to(device)
+  in_f = pt.tensor(in_f).float().to(device)
+  return in_f, ray
 
 def save_reconstructed(eval_metrics, trajectory):
   # Take the evaluation metrics and reconstructed trajectory to create the save file for ranking visualization
@@ -536,24 +539,35 @@ def save_cam_traj(eval_metrics, trajectory):
 def augment(batch, aug_col=eot):
 
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
-  # Split by percentage
-  perc = [0.25, 0.50, 0.75, 1]
-  perc = np.random.choice(a=perc, size=len(batch))
-  len_aug = np.ceil(len_.copy() * perc).astype(int)
 
-  for i in range(len(batch)):
-    #print("L : ", len_[i], "L_aug : ", len_aug[i], "P : ", perc[i])
-    h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
-    try :
-      start = np.random.randint(low=0, high=h, size=1)[0]
-    except ValueError:
-      print("TRY FAILED : ", len_[i], len_aug[i])
-      exit()
-    end = start + len_aug[i]
-    batch[i] = batch[i][start:end]
-    #print("S : ", start, "E : ", end)
-    #print("A", i, batch[i].shape)
-    #print("="*50)
+  if args.augment == 'perc':
+    # Split by percentage
+    perc = [0.25, 0.50, 0.75, 1]
+    perc = np.random.choice(a=perc, size=len(batch))
+    len_aug = np.ceil(len_.copy() * perc).astype(int)
+
+    for i in range(len(batch)):
+      #print("L : ", len_[i], "L_aug : ", len_aug[i], "P : ", perc[i])
+      h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
+      try :
+        start = np.random.randint(low=0, high=h, size=1)[0]
+      except ValueError:
+        print("TRY FAILED : ", len_[i], len_aug[i])
+        exit()
+      end = start + len_aug[i]
+      batch[i] = batch[i][start:end]
+  
+  elif args.augment == 'eot':
+    # Split by EOT
+    for i in range(len(batch)):
+      aug_pos = np.where(batch[i][:, eot] == 1)[0]
+      start = np.random.randint(low=0, high=aug_pos[0], size=1)[0]
+      end = np.random.randint(low=aug_pos[0] + (aug_pos[1] - aug_pos[0])//2, high=aug_pos[1], size=1)[0]
+      batch[i] = batch[i][start:end]
+
+  else:
+    print("[#] Augmentation method is incorrect!!!")
+    exit()
 
   return batch 
     

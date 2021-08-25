@@ -63,6 +63,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
     ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
     azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
+    azim_cl = pt.tensor(azim_cl).float().to(device)
     in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
 
   intr_recon = in_f[..., [0, 1, 2]]
@@ -83,7 +84,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
-  #height = gt_dict['gt'][..., [1]]
 
   pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
 
