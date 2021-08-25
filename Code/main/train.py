@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
   # Create Datasetloader for train and validation
   dataset_train = TrajectoryDataset(dataset_path=args.dataset_train_path, trajectory_type=args.trajectory_type)
-  dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
+  dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
   # Create Datasetloader for validation
   dataset_val = TrajectoryDataset(dataset_path=args.dataset_val_path, trajectory_type=args.trajectory_type)
   dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)

@@ -56,17 +56,19 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
 
   # Generate Input directly from tracking
-  in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
+  _, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
 
   if args.canonicalize:
-    in_f_cl, _, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
+    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
     ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
     azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
-    in_f = np.concatenate((in_f_cl.cpu().numpy(), azim_cl, in_f[..., [3]]), axis=2)
-    #in_f_decl, _, _ = utils_transform.canonicalize(pts=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
-    #ray_decl, _, _ = utils_transform.canonicalize(pts=ray_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
-  
-  intr_recon = in_f[..., [0, 1, 2]].copy()
+    #in_f = np.concatenate((in_f_cl.cpu().numpy(), azim_cl, in_f[..., [3]]), axis=2)
+    in_f_decl, _, _ = utils_transform.canonicalize(pts=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
+    ray_decl, _, _ = utils_transform.canonicalize(pts=ray_cl[..., [0, 1, 2]], E=cam_dict['E'], deg=angle)
+    #print(ray - ray_decl.cpu().numpy())
+    #print(in_f[..., [0, 1, 2]].cpu().numpy() - in_f_decl.cpu().numpy())
+
+  intr_recon = in_f[..., [0, 1, 2]].cpu().numpy()
   in_f = pt.tensor(in_f).float().to(device)
   #in_f = input_manipulate(in_f=in_f)
   
@@ -77,14 +79,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   #height = output_space(pred_h, lengths=input_dict['lengths'])
 
   height = gt_dict['gt'][..., [1]]
-  pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'])
+  pred_xyz = utils_transform.h_to_3d(height=height, intr=in_f_cl[..., [0, 1, 2]], E=cam_dict['E'], cam_pos=cam_cl)
 
   # Decoanonicalize
   if args.canonicalize:
     pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
 
-  #print(pred_xyz - gt_dict['gt'])
-  #print(pred_xyz - gt_dict['gt'])
+  print(pred_xyz - gt_dict['gt'])
+  #print(pt.sum(pred_xyz - gt_dict['gt'], dim=1))
+  #exit()
   #print(pt.max(pred_xyz - gt_dict['gt']))
   #print(pt.mean(pred_xyz - gt_dict['gt']))
   

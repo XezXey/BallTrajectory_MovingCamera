@@ -103,8 +103,8 @@ def IE_array(trajectory, col):
   mat = np.squeeze(mat, axis=1)
   return mat
 
-def h_to_3d(intr, E, height):
-  cam_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+def h_to_3d(intr, E, height, cam_pos):
+  #cam_pos = pt.tensor(np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]).to(device)
   R = pt.tensor(cam_pos - intr).to(device)
   norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)
   magnitude = height / (norm_R[..., [1]] + 1e-16)
@@ -257,7 +257,6 @@ def Ry(theta):
   '''
   zeros = np.zeros(theta.shape)
   ones = np.ones(theta.shape)
-
   R = np.array([[np.cos(theta), zeros, np.sin(theta)], 
                 [zeros, ones, zeros],
                 [-np.sin(theta), zeros, np.cos(theta)]])
