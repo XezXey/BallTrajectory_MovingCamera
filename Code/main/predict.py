@@ -66,6 +66,11 @@ parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=fl
 parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=False)
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=5)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=0.95)
+parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmented training', default=None)
+
+# Optimization
+parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', default=False, action='store_true')
+
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=False)
@@ -241,8 +246,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test)
-
-  test_loss_dict, test_loss = utils_model.calculate_loss(pred_xyz=pred_dict_test['xyz'], input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, annealing_w=0) # Calculate the loss
+  test_loss_dict, test_loss = utils_model.calculate_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
 
   ####################################
   ############# Evaluation ###########
@@ -263,13 +267,16 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
     utils_vis.make_visualize(input_dict_train=input_dict_test, gt_dict_train=gt_dict_test, 
                               input_dict_val=input_dict_test, gt_dict_val=gt_dict_test, 
                               pred_dict_train=pred_dict_test, pred_dict_val=pred_dict_test, 
-                              visualization_path=visualization_path, pred='height')
+                              visualization_path=visualization_path, cam_dict_train=cam_dict_test,
+                              cam_dict_val=cam_dict_test)
 
   return evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred
 
 def collate_fn_padd(batch):
     # Padding batch of variable length
-    # Columns convention : (x, y, z, u, v, d, eot, og, rad)
+    if args.augment is not None:
+      batch = utils_func.augment(batch=batch, aug_col=eot)
+
     padding_value = -1000.0
     ## Get sequence lengths
     lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])

@@ -58,6 +58,7 @@ def make_visualize(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val,
       wandb.log({"PITCH SCALED : Trajectory Visualization(Col1=Train, Col2=Val)":wandb.Html(open('{}/vis.html'.format(visualization_path)))})
     except ValueError:
       print("[#] Wandb is not init")
+    input()
     #plotly.offline.plot(fig_displacement, filename='./{}/trajectory_visualization_displacement.html'.format(visualization_path), auto_open=True)
     #wandb.log({"DISPLACEMENT VISUALIZATION":fig_displacement})
 

@@ -9,9 +9,12 @@ import os
 import math
 from tqdm import tqdm
 sys.path.append(os.path.realpath('../..'))
+# Utils
 import utils.transformation as utils_transform
 import utils.utils_func as utils_func
 import utils.loss as utils_loss
+# Models
+from models.optimization import Optimization
 args = None
 
 # GPU initialization
@@ -72,26 +75,41 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   search_h = None
   # Aug
   if args.augment:
-    search_h = {}
-    search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
-    search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
-    search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
-    search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+    if args.optim_h:
+      search_h = {}
+      optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+      optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+      train_mode(model_dict=model_dict)
+      optim_first_h.train()
+      optim_last_h.train()
+      search_h['first_h'] = optim_first_h.get_params()
+      search_h['last_h'] = optim_last_h.get_params()
+    else:
+      search_h = {}
+      search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
+      search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
   
-  if 'height' in args.pipeline:
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
-    pred_dict['h'] = pred_h
+  for i in range(250):
+    if 'height' in args.pipeline:
+      pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+      pred_dict['h'] = pred_h
 
 
-  height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
+    height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
 
-  pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
 
-  # Decoanonicalize
-  if args.canonicalize:
-    pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
+    # Decoanonicalize
+    if args.canonicalize:
+      pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
 
-  pred_dict['xyz'] = pred_xyz
+    pred_dict['xyz'] = pred_xyz
+
+    _, loss = calculate_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
+    optim_first_h(loss)
+    optim_last_h(loss)
 
   return pred_dict, in_f
       
