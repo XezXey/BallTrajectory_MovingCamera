@@ -11,3 +11,5 @@ Code/reconstructed/tags_MovingCamera_TracknetV1_augment/dt_dt_cl_ub2c2_nowall_eo
 Code/model_checkpoints/MovingCamera_test/mock/mock_best.pth
 Code/model_checkpoints/MovingCamera_test/mock/mock_lastest.pth
 Code/main/wandb/
+Code/utils/__pycache__/transformation.cpython-36.pyc
+Code/utils/__pycache__/utils_vis.cpython-36.pyc

@@ -248,7 +248,7 @@ def check_latent_distrubution(data):
     bar.set_alpha(0.5)
 
   plt.legend()
-  c_hist_fn = './etc/c_hist.png'
+  c_hist_fn = '../../visualize_html/c_hist.png'
   plt.savefig(c_hist_fn)
   plt.show()
   plt.clf()
@@ -258,7 +258,7 @@ def check_latent_distrubution(data):
   plt.hist(x=deg, **kwargs, label='Deg (mean={:.3f}, std={:.3f})'.format(np.mean(deg), np.std(deg)))
 
   plt.legend()
-  b_hist_fn = './etc/b_hist.png'
+  b_hist_fn = '../../visualize_html/b_hist.png'
   plt.savefig(b_hist_fn)
   plt.show()
   plt.clf()
