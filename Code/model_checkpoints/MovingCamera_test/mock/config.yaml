@@ -15,7 +15,7 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 512
+batch_size: 1
 n_epochs: 100000
 lr: 0.001
 clip: 10
@@ -27,7 +27,7 @@ noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
-augment: 'eot'
+augment: 'perc_25'
 
 # Visualization
 visualize: True

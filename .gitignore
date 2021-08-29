@@ -13,3 +13,4 @@ Code/model_checkpoints/MovingCamera_test/mock/mock_lastest.pth
 Code/main/wandb/
 Code/utils/__pycache__/transformation.cpython-36.pyc
 Code/utils/__pycache__/utils_vis.cpython-36.pyc
+visualize_html/vis_G.html

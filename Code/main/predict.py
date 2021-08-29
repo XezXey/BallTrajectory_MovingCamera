@@ -71,10 +71,9 @@ parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmen
 # Optimization
 parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', default=False, action='store_true')
 
-
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=False)
-parser.add_argument('--visualization_path', dest='visualization_path', type=str, help='Path to visualization directory', default='./visualize_html/')
+parser.add_argument('--vis_path', dest='vis_path', type=str, help='Path to visualization directory', default='../../visualize_html/')
 
 # Weighted combining
 parser.add_argument('--si_pred_ramp', help='Directional prediction with ramp weight', action='store_true', default=False)
@@ -101,6 +100,7 @@ parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, de
 # Miscellaneous
 parser.add_argument('--cuda_device_num', dest='cuda_device_num', type=int, help='Provide cuda device number', default=0)
 parser.add_argument('--save_cam_traj', dest='save_cam_traj', type=str, help='Save a camera-trajectory with loss', default=None)
+parser.add_argument('--no_gt', dest='no_gt', help='If gt is exists.', default=False, action='store_true')
 
 # YAML-Config
 parser.add_argument('--config_yaml', dest='config_yaml', type=str, help='Config parameters file', required=True)
@@ -117,6 +117,7 @@ utils_func.share_args(args)
 utils_transform.share_args(args)
 utils_model.share_args(args)
 utils_loss.share_args(args)
+utils_vis.share_args(args)
 
 # GPU initialization
 if pt.cuda.is_available():
@@ -204,9 +205,6 @@ def evaluate(all_batch_trajectory):
       continue
     trajectory[key] = pt.cat((all_batch_trajectory[key]), dim=0)
 
-  gt_xyz = trajectory['gt_xyz']
-  pred_xyz = trajectory['pred_xyz']
-
   for each_space in space:
     print("Space : ", each_space)
     gt = trajectory['gt_{}'.format(each_space)]
@@ -233,11 +231,10 @@ def evaluate(all_batch_trajectory):
         #print("RMSE-DISTANCE-2 : ", rmse_distance_2.cpu().detach().numpy())
     print("*"*100)
 
-def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=0.01, visualization_path='./visualize_html/'):
+def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=0.01):
   # Testing RNN/LSTM model
   # Run over each example
   # Test a model
-
   pred_dict_test = {}
   ####################################
   ############# Testing ##############
@@ -246,118 +243,96 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test)
-  test_loss_dict, test_loss = utils_model.calculate_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
+  #test_loss_dict, test_loss = utils_model.calculate_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
 
   ####################################
   ############# Evaluation ###########
   ####################################
   # Calculate loss per trajectory
-  evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
-  reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-                              'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
-                              'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
-                              'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
+  #evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
+  #reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
+  #                            'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
+  #                            'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
+  #                            'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 
-  each_batch_trajectory = get_each_batch_trajectory(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'])
-  each_batch_pred=None
+  #each_batch_trajectory = get_each_batch_trajectory(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'])
+  #each_batch_pred=None
 
-  utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
+  #utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
 
   if args.visualize:
-    utils_vis.make_visualize(input_dict_train=input_dict_test, gt_dict_train=gt_dict_test, 
-                              input_dict_val=input_dict_test, gt_dict_val=gt_dict_test, 
-                              pred_dict_train=pred_dict_test, pred_dict_val=pred_dict_test, 
-                              visualization_path=visualization_path, cam_dict_train=cam_dict_test,
-                              cam_dict_val=cam_dict_test)
+    utils_vis.inference_vis(input_dict=input_dict_test, pred_dict=pred_dict_test, gt_dict=gt_dict_test, 
+                            cam_dict=cam_dict_test)
 
   return evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred
 
 def collate_fn_padd(batch):
-    # Padding batch of variable length
-    if args.augment is not None:
-      batch = utils_func.augment(batch=batch, aug_col=eot)
+  #args.env = ''
+  if args.env != 'unity':
+    global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
+    u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
+    global input_col, gt_col
+    input_col = [u, v]
+    gt_col = [x, y, z]
 
-    padding_value = -1000.0
-    ## Get sequence lengths
-    lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
-    # Input features : columns 4-5 contain u, v in screen space
-    ## Padding
-    input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
-    input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
-    ## Compute mask
-    input_mask = (input_batch != padding_value)
+  # Padding batch of variable length
+  if args.augment is not None:
+    batch = utils_func.augment(batch=batch, aug_col=eot)
 
-    # Output features : columns 6 cotain depth from camera to projected screen
-    ## Padding
+  padding_value = -1000.0
+  ## Get sequence lengths
+  lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
+  # Input features : (u, v)
+  input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch]
+  input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
+  ## Compute mask
+  input_mask = (input_batch != padding_value)
+  input_mask = input_mask[..., [0]].repeat(1, 1, 3)
+
+  # Output features : (x, y, z)
+  if args.no_gt:
+    gt_batch = None
+    gt_mask = None
+  else:
     gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
     gt_batch = pad_sequence(gt_batch, batch_first=True, padding_value=padding_value)
     ## Compute mask
     gt_mask = (gt_batch != padding_value)
 
-    # Extra columns : columns that contains information for recon/auxiliary
-    ## Padding
-    cpos_batch = [pt.Tensor(trajectory[:, cpos_col].astype(np.float64)) for trajectory in batch] 
-    cpos_batch = pad_sequence(cpos_batch, batch_first=True, padding_value=0)
+  max_len = pt.max(lengths)
+  # Intrinsic/Extrinsic columns
+  I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
+  E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
+  E_inv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+  cpos_batch = []
+  # Manually pad with eye to prevent non-invertible matrix
+  for i in range(len(lengths)):
+    pad_len = max_len - lengths[i]
+    if pad_len == 0:
+      continue
+    else:
+      pad_mat = pt.stack(pad_len * [pt.eye(4)])
+      I[i] = pt.cat((I[i], pad_mat), dim=0)
+      E[i] = pt.cat((E[i], pad_mat), dim=0)
+      E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
+      cpos_batch.append(E_inv[i][:, :3, -1])
+  if len(cpos_batch) == 0:
+    cpos_batch.append(E_inv[i][:, :3, -1])
 
-    max_len = pt.max(lengths)
-    # Intrinsic/Extrinsic columns
-    I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
-    E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
-    E_inv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
-    # Manually pad with eye to prevent non-invertible matrix
-    for i in range(len(lengths)):
-      pad_len = max_len - lengths[i]
-      if pad_len == 0:
-        continue
-      else:
-        pad_mat = pt.stack(pad_len * [pt.eye(4)])
-        I[i] = pt.cat((I[i], pad_mat), dim=0)
-        E[i] = pt.cat((E[i], pad_mat), dim=0)
-        E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
-    I = pt.stack(I)
-    E = pt.stack(E)
-    E_inv = pt.stack(E_inv)
+  cpos_batch = pt.stack(cpos_batch)
+  I = pt.stack(I)
+  E = pt.stack(E)
+  E_inv = pt.stack(E_inv)
 
-    # Tracking
-    tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
-    tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
+  # Tracking
+  tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
+  tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
 
-    return {'input':[input_batch, lengths, input_mask],
-            'gt':[gt_batch, lengths, gt_mask],
-            'cpos':[cpos_batch],
-            'tracking':[tracking],
-            'I':[I], 'E':[E], 'E_inv':[E_inv]}
-
-#def collate_fn_padd(batch):
-#    # Padding batch of variable length
-#    # Columns convention : (x, y, z, u, v, d, eot, og, rad)
-#    padding_value = -1000.0
-#    ## Get sequence lengths
-#    lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
-#    # Input features : columns 4-5 contain u, v in screen space
-#    ## Padding
-#    input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
-#    input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
-#    ## Compute mask
-#    input_mask = (input_batch != padding_value)
-#
-#    # Output features : columns 6 cotain depth from camera to projected screen
-#    ## Padding
-#    gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
-#    gt_batch = pad_sequence(gt_batch, batch_first=True, padding_value=padding_value)
-#    ## Compute mask
-#    gt_mask = (gt_batch != padding_value)
-#
-#    # Extra columns : columns that contains information for recon/auxiliary
-#    ## Padding
-#    extra_batch = [pt.Tensor(trajectory[:, extra_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
-#    extra_batch = pad_sequence(extra_batch, batch_first=True, padding_value=padding_value)
-#    ## Compute mask
-#    extra_mask = (extra_batch != padding_value)
-#
-#    return {'input':[input_batch, lengths, input_mask],
-#            'gt':[gt_batch, lengths, gt_mask],
-#            'extra':[extra_batch, lengths, extra_mask]}
+  return {'input':[input_batch, lengths, input_mask],
+          'gt':[gt_batch, lengths, gt_mask],
+          'cpos':[cpos_batch],
+          'tracking':[tracking],
+          'I':[I], 'E':[E], 'E_inv':[E_inv]}
 
 def summary(evaluation_results_all):
   print("="*100)
@@ -386,7 +361,7 @@ if __name__ == '__main__':
   print('[#]Testing : Trajectory Estimation')
 
   # Initialize folder
-  utils_func.initialize_folder(args.visualization_path)
+  utils_func.initialize_folder(args.vis_path)
 
   # Create Datasetloader for test and testidation
   dataset_test = TrajectoryDataset(dataset_path=args.dataset_test_path, trajectory_type=args.trajectory_type)
@@ -394,7 +369,7 @@ if __name__ == '__main__':
   # Cast it to iterable object
   trajectory_test_iterloader = iter(dataloader_test)
 
-  utils_func.show_dataset_info(dataloader_test, 'Test')
+  #utils_func.show_dataset_info(dataloader_test, 'Test')
 
   # Model definition
   model_dict, model_cfg = utils_func.get_model(args=args)
@@ -427,20 +402,19 @@ if __name__ == '__main__':
   all_batch_pred = {'xyz':[], 'lengths':[]}
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test)):
-    #print("[#]Batch-{}".format(batch_idx))
-    # Testing set (Each index in batch_test came from the collate_fn_padd)
-
+    print("[#]Batch-{}".format(batch_idx))
     input_dict_test = {'input':batch_test['input'][0].to(device), 'lengths':batch_test['input'][1].to(device), 'mask':batch_test['input'][2].to(device)}
-    gt_dict_test = {'gt':batch_test['gt'][0].to(device), 'lengths':batch_test['gt'][1].to(device), 'mask':batch_test['gt'][2].to(device)}
+    if args.no_gt:
+      gt_dict_test = None
+    else:
+      gt_dict_test = {'gt':batch_test['gt'][0].to(device), 'lengths':batch_test['gt'][1].to(device), 'mask':batch_test['gt'][2].to(device)}
     cam_dict_test = {'I':batch_test['I'][0].to(device), 'E':batch_test['E'][0].to(device), 'E_inv':batch_test['E_inv'][0].to(device),
                     'tracking':batch_test['tracking'][0], 'cpos':batch_test['cpos'][0].to(device)}
 
     # Call function to test
     start_time = time.time()
-
     evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred = predict(input_dict_test=input_dict_test, gt_dict_test=gt_dict_test, 
-                                                                                                  cam_dict_test=cam_dict_test,
-                                                                                                  model_dict=model_dict, visualization_path=args.visualization_path)
+                                                                                                  cam_dict_test=cam_dict_test, model_dict=model_dict)
 
     reconstructed_trajectory_all.append(reconstructed_trajectory)
     evaluation_results_all.append(evaluation_results)

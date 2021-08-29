@@ -34,7 +34,7 @@ augment: 'perc'
 
 # Visualization
 visualize: True
-visualization_path: '../../visualize_html/'
+vis_path: '../../visualize_html/'
 
 # Model
 pipeline:

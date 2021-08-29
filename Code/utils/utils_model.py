@@ -59,7 +59,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
 
   # Generate Input directly from tracking
-  _, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
+  in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
 
   # Canonicalize
   if args.canonicalize:
@@ -91,11 +91,10 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
       search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
       search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
   
-  for i in range(250):
+  for i in range(10):
     if 'height' in args.pipeline:
       pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
       pred_dict['h'] = pred_h
-
 
     height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
 
@@ -107,7 +106,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
     pred_dict['xyz'] = pred_xyz
 
-    _, loss = calculate_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
+    _, loss = optimization_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
     optim_first_h(loss)
     optim_last_h(loss)
 
@@ -156,7 +155,6 @@ def input_space(in_f):
 
   return in_f
 
-
 def output_space(pred_h, lengths, search_h=None):
   '''
   Aggregate the height-prediction into (t, dt)
@@ -168,7 +166,6 @@ def output_space(pred_h, lengths, search_h=None):
   Output : 
     1. height :height after aggregation into t-space
   '''
-
   if args.o_s == 't':
     return pred_h 
     
@@ -202,22 +199,38 @@ def output_space(pred_h, lengths, search_h=None):
       
     return height
 
-
-def calculate_loss(input_dict, gt_dict, pred_dict):
+def training_loss(input_dict, gt_dict, pred_dict):
   # Calculate loss term
   ######################################
   ############# Trajectory #############
   ######################################
   trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #gravity_loss = utils_loss.GravityLoss(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_xyz[..., [0, 1, 2]], gt=gt_dict['xyz'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
-  gravity_loss = pt.tensor(0.).to(device)
-  below_ground_loss = pt.tensor(0.).to(device)
+  #gravity_loss = pt.tensor(0.).to(device)
+  #below_ground_loss = pt.tensor(0.).to(device)
 
   loss = trajectory_loss + gravity_loss + below_ground_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item()}
+
+  return loss_dict, loss
+
+def optimization_loss(input_dict, gt_dict, pred_dict):
+  # Optimization loss term
+  ######################################
+  ############# Trajectory #############
+  ######################################
+  trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=input_dict['mask'], lengths=input_dict['lengths'])
+
+  #gravity_loss = pt.tensor(0.).to(device)
+  #below_ground_loss = pt.tensor(0.).to(device)
+
+  loss = below_ground_loss + trajectory_loss
+  loss_dict = {"Trajectory Loss":trajectory_loss.item(),
+              "BelowGnd Loss":below_ground_loss.item()}
 
   return loss_dict, loss

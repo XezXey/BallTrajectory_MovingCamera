@@ -61,11 +61,11 @@ def GravityLoss(pred, gt, mask, lengths):
 
   return pt.mean(gravity_constraint_penalize)
 
-def BelowGroundPenalize(pred, gt, mask, lengths):
+def BelowGroundPenalize(pred, mask, lengths):
   # Penalize when the y-axis is below on the ground
   pred = pred * mask
-  below_ground_mask = pred[..., 1] < 0
-  below_ground_constraint_penalize = pt.mean((pred[..., 1] * below_ground_mask)**2)
+  below_ground_mask = pred[..., [1]] < 0
+  below_ground_constraint_penalize = pt.mean((pred[..., [1]] * below_ground_mask)**2)
   return below_ground_constraint_penalize
 
 def TrajectoryLoss(pred, gt, mask, lengths=None, delmask=True):

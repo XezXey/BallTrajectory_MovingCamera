@@ -42,12 +42,12 @@ def initialize_folder(path):
       os.makedirs(path)
 
 def random_seed():
-  print('-' * 50)
-  print("[#] Seeding...")
-  print("OLD RNG : ", pt.get_rng_state())
+  #print('-' * 50)
+  #print("[#] Seeding...")
+  #print("OLD RNG : ", pt.get_rng_state())
   pt.manual_seed(time.time())
-  print("NEW RNG : ", pt.get_rng_state())
-  print('-' * 50)
+  #print("NEW RNG : ", pt.get_rng_state())
+  #print('-' * 50)
 
 def get_selected_cols(args, pred):
   # Flag/Extra features columns
@@ -537,13 +537,12 @@ def save_cam_traj(eval_metrics, trajectory):
   print("[#] Saving reconstruction to {}".format(save_path))
 
 def augment(batch, aug_col=eot):
-
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
 
   if args.augment == 'perc':
     # Split by percentage
-    perc = [0.25, 0.50, 0.75, 1]
-    perc = np.random.choice(a=perc, size=len(batch))
+    perc = 25
+    perc = np.random.randint(low=perc, high=100, size=len(batch))[0]/100
     len_aug = np.ceil(len_.copy() * perc).astype(int)
 
     for i in range(len(batch)):
