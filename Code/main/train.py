@@ -64,6 +64,7 @@ parser.add_argument('--annealing', dest='annealing', help='Apply annealing', act
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=5)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=0.95)
 parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmented training', default=None)
+parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction selection (noisy/clean)', default=None)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=False)
@@ -135,7 +136,7 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, og, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, cpos_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
 
-def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, annealing_weight, visualization_path='./visualize_html/'):
+def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, annealing_weight):
   ####################################
   ############# Training #############
   ####################################
@@ -171,7 +172,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 100 == 0:
+  if args.visualize and epoch % 200 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
@@ -338,7 +339,7 @@ if __name__ == '__main__':
       train_loss, val_loss, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
                                               input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
                                               annealing_weight=annealing_weight, model_dict=model_dict, optimizer=optimizer,
-                                              epoch=epoch, visualization_path=args.visualization_path)
+                                              epoch=epoch)
 
       accumulate_val_loss.append(val_loss)
       accumulate_train_loss.append(train_loss)

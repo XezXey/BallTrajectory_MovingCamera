@@ -1,34 +1,37 @@
 # Dataset
-# dataset_train_path: '../../Dataset/Single/train_set/'
-# dataset_val_path: '../../Dataset/Single/val_set/'
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1/bounce2_cont2_nowall/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1/bounce2_cont2_nowall/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
 wandb_dir: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/'
 wandb_notes: null
-wandb_tags: 'MovingCamera_test'
-wandb_name: 'mock'
+wandb_tags: 'Mocap_AllCamera'
+wandb_name: 'dt_dt_cl_b2c2_nowall_clean_recon'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 10
+batch_size: 512
 n_epochs: 100000
 lr: 0.001
 clip: 10
 decay_gamma: 0.7
 decay_cycle: 10000
-canonicalize : False
+canonicalize: True
 noise: True
 noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
 augment: null
-recon: 'noisy'
+recon: 'clean'
 
 # Visualization
 visualize: True
@@ -62,7 +65,6 @@ pipeline:
     extra_in: []
     extra_out: []
 
-
 # Weighted Combining
 si_pred_ramp: False
 
@@ -70,7 +72,7 @@ si_pred_ramp: False
 selected_features: []
 i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
-sc: ''  # azim(+1), elev(+1), both(+2)
+sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []

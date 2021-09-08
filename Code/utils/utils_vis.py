@@ -62,12 +62,11 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
 
-    plotly.offline.plot(fig_traj, filename='{}/vis.html'.format(args.vis_path), auto_open=False)
+    plotly.offline.plot(fig_traj, filename='{}/wandb_vis.html'.format(args.vis_path), auto_open=False)
     try:
-      wandb.log({"Trajectory(Col1=Train, Col2=Val)":wandb.Html(open('{}/vis.html'.format(args.vis_path)))})
+      wandb.log({"Trajectory(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis.html'.format(args.vis_path)))})
     except ValueError:
       print("[#] Wandb is not init")
-    input()
 
 def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
     n_vis = 10 if input_dict['input'].shape[0] > 10 else input_dict['input'].shape[0]

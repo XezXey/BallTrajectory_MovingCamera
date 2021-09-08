@@ -15,23 +15,24 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 1
+batch_size: 512
 n_epochs: 100000
 lr: 0.001
 clip: 10
 decay_gamma: 0.7
 decay_cycle: 10000
-canonicalize : True
-noise: False 
+canonicalize : True 
+noise: True
 noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
-augment: 'perc_25'
+augment: null
+recon: 'noisy'
 
 # Visualization
 visualize: True
-visn_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
+vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
 
 # Model
 pipeline:
@@ -45,6 +46,19 @@ pipeline:
     mlp_stack: 2
     in_node: 5
     out_node: 1
+    extra_in: []
+    extra_out: []
+
+  refinement:
+    arch: 'lstm'
+    bidirectional: True
+    trainable_init: True
+    rnn_hidden: 64
+    rnn_stack: 2
+    mlp_hidden: 32
+    mlp_stack: 2
+    in_node: 3
+    out_node: 3
     extra_in: []
     extra_out: []
 

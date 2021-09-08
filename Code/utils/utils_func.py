@@ -18,6 +18,7 @@ import utils.transformation as utils_transform
 
 # Models
 from models.height_module import Height_Module
+from models.refinement_module import Refinement_Module
 # Loss
 import utils.loss as loss
 
@@ -102,11 +103,6 @@ def get_extra_fsize(module):
     #############################################
     extra_out = sum(module['extra_out'])
 
-    # Weighted Combining 
-    if args.si_pred_ramp:
-      # Predict only one direction, but aggregate into 2 direction
-      extra_out += 1
-
     return extra_in, extra_out
     
 def get_model(args):
@@ -127,6 +123,16 @@ def get_model(args):
 
     if module_name == 'height': 
       model = Height_Module(in_node=in_node, out_node=out_node, 
+                    batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                    is_bidirectional=module['bidirectional'], 
+                    mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],)
+
+      model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
+                      'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
+                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],}
+    elif module_name == 'refinement': 
+      model = Refinement_Module(in_node=in_node, out_node=out_node, 
                     batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                     is_bidirectional=module['bidirectional'], 
                     mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
@@ -407,9 +413,13 @@ def add_noise(cam_dict, in_f=None):
   #print(noisy_elev[0][:10, :] - in_f[0][:10, [3]])
 
   # Replace in_f
-  noise_in_f = pt.cat((noisy_intr, noisy_elev, noisy_azim), dim=-1)
+  noisy_in_f = np.concatenate((noisy_intr, noisy_elev, noisy_azim), axis=-1)
 
-  return noise_in_f.float(), noisy_ray
+  # Cast to tensor
+  noisy_ray = pt.tensor(noisy_ray).float().to(device)
+  noisy_in_f = pt.tensor(noisy_in_f).float().to(device)
+
+  return noisy_in_f, noisy_ray
 
 def generate_input(cam_dict, in_f=None):
   '''

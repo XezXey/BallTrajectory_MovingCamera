@@ -35,8 +35,8 @@ def eval_mode(model_dict):
   for model in model_dict.keys():
     model_dict[model].eval()
 
+'''
 def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
-  '''
   Forward Pass to the whole pipeline
   Input :
       1. model_dict : contains modules in the pipeline
@@ -46,7 +46,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   Output : 
       1. pred_dict : prediction of each moduel and reconstructed xyz
       2. in_f : in case of we used noisy (u, v) 
-  '''
 
   # Input
   in_f = input_dict['input']
@@ -111,6 +110,109 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     optim_last_h(loss)
 
   return pred_dict, in_f
+'''
+
+def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
+  '''
+  Forward Pass to the whole pipeline
+  Input :
+      1. model_dict : contains modules in the pipeline
+      2. input_dict : input to the model => {input, lengths, mask}
+      3. cam_dict : contains I, E, E_inv and cpos => {I, E, E_inv, tracking, cpos}
+      4. gt_dict : contains ground truth trajectories => {gt, lengths, mask}
+  Output : 
+      1. pred_dict : prediction of each moduel and reconstructed xyz
+      2. in_f : in case of we used noisy (u, v) 
+  '''
+
+  # Input
+  in_f = input_dict['input']
+
+  # Prediction dict
+  pred_dict = {}
+
+  # Add noise
+  if args.noise:
+    in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
+
+  else:
+    # Generate Input directly from tracking
+    in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
+
+  # Canonicalize
+  if args.canonicalize:
+    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
+    ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
+    azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
+    azim_cl = pt.tensor(azim_cl).float().to(device)
+    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
+  else:
+    cam_cl = None
+
+  intr_noise = in_f[..., [0, 1, 2]]
+
+  in_f = input_manipulate(in_f=in_f)
+
+  search_h = None
+  # Aug
+  if args.augment:
+    if args.optim_h:
+      search_h = {}
+      optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+      optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+      train_mode(model_dict=model_dict)
+      optim_first_h.train()
+      optim_last_h.train()
+      search_h['first_h'] = optim_first_h.get_params()
+      search_h['last_h'] = optim_last_h.get_params()
+    else:
+      search_h = {}
+      search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
+      search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+  
+  if 'height' in args.pipeline:
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    pred_dict['h'] = pred_h
+
+  height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
+
+  pred_xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, input_dict)
+
+  if 'refinement' in args.pipeline:
+    pred_refoff, _ = model_dict['refinement'](in_f=pred_xyz, lengths=input_dict['lengths'])
+    pred_dict['refine_offset'] = pred_refoff
+    pred_xyz = pred_xyz + pred_refoff
+    
+
+  # Decoanonicalize
+  if args.canonicalize:
+    pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
+
+  pred_dict['xyz'] = pred_xyz
+
+  return pred_dict, in_f
+
+def reconstruct(height, cam_dict, intr_noise, cam_cl, input_dict):
+
+  # Recreate clean samples
+  in_f, ray = generate_input(in_f=input_dict['input'], cam_dict=cam_dict)
+  if args.canonicalize:
+    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
+    ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
+    azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
+    azim_cl = pt.tensor(azim_cl).float().to(device)
+    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
+
+  intr_clean = in_f[..., [0, 1, 2]]
+
+  if args.recon == 'clean':
+    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+  elif args.recon == 'noisy':
+    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_noise, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+  
+  return pred_xyz
       
 def input_manipulate(in_f):
   '''
