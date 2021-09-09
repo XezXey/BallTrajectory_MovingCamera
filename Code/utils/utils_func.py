@@ -535,6 +535,10 @@ def save_cam_traj(eval_metrics, trajectory):
     pred_tmp =  trajectory[i]['pred']
     seq_len = trajectory[i]['seq_len']
     cpos_tmp = trajectory[i]['cpos']
+    print(cpos_tmp.shape)
+    print(gt_tmp.shape)
+    print(pred_tmp.shape)
+    print(seq_len.shape)
 
     for j in range(seq_len.shape[0]):
       # Each trajectory

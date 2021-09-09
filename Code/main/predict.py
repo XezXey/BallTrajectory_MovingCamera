@@ -53,7 +53,7 @@ parser.add_argument('--save_ckpt', dest='save_ckpt', type=str, help='Path to sav
 parser.add_argument('--load_ckpt', dest='load_ckpt', type=str, help='Path to load a trained model ckpt', default=None)
 
 # Training parameters
-parser.add_argument('--batch_size', dest='batch_size', type=int, help='Samples in batch', default=512)
+parser.add_argument('--batch_size', dest='batch_size', type=int, help='Samples in batch', default=None)
 parser.add_argument('--n_epochs', dest='n_epochs', type=int, help='Train for #n epoch', default=100000)
 parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)
 parser.add_argument('--clip', dest='clip', type=float, help='Clipping gradients value', default=10)
@@ -67,6 +67,7 @@ parser.add_argument('--annealing', dest='annealing', help='Apply annealing', act
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=5)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=0.95)
 parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmented training', default=None)
+parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction selection (noisy/clean)', default=None)
 
 # Optimization
 parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', default=False, action='store_true')
@@ -243,22 +244,22 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test)
-  #test_loss_dict, test_loss = utils_model.calculate_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
+  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
 
-  ####################################
-  ############# Evaluation ###########
-  ####################################
+  ###################################
+  ############ Evaluation ###########
+  ###################################
   # Calculate loss per trajectory
-  #evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
-  #reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-  #                            'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
-  #                            'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
-  #                            'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
+  evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
+  reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
+                              'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
+                              'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
+                              'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 
-  #each_batch_trajectory = get_each_batch_trajectory(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'])
-  #each_batch_pred=None
+  each_batch_trajectory = get_each_batch_trajectory(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'])
+  each_batch_pred=None
 
-  #utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
+  utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
 
   if args.visualize:
     utils_vis.inference_vis(input_dict=input_dict_test, pred_dict=pred_dict_test, gt_dict=gt_dict_test, 
@@ -267,7 +268,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   return evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred
 
 def collate_fn_padd(batch):
-  #args.env = ''
+  args.env = ''
   if args.env != 'unity':
     global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
     u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
@@ -309,15 +310,16 @@ def collate_fn_padd(batch):
   for i in range(len(lengths)):
     pad_len = max_len - lengths[i]
     if pad_len == 0:
-      continue
+      cpos_batch.append(E_inv[i][:, :3, -1])
     else:
       pad_mat = pt.stack(pad_len * [pt.eye(4)])
       I[i] = pt.cat((I[i], pad_mat), dim=0)
       E[i] = pt.cat((E[i], pad_mat), dim=0)
       E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
       cpos_batch.append(E_inv[i][:, :3, -1])
-  if len(cpos_batch) == 0:
-    cpos_batch.append(E_inv[i][:, :3, -1])
+
+  #if len(cpos_batch) == 0:
+  #  cpos_batch.append(E_inv[i][:, :3, -1])
 
   cpos_batch = pt.stack(cpos_batch)
   I = pt.stack(I)

@@ -8,7 +8,8 @@ trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
-wandb_dir: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/'
+#wandb_dir: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/'
+wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'Mocap_AllCamera'
 wandb_name: 'dt_dt_cl_noisy_recon'
@@ -35,7 +36,8 @@ recon: 'noisy'
 
 # Visualization
 visualize: True
-vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
+#vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
+vis_path: '../../visualize_html/'
 
 # Model
 pipeline:

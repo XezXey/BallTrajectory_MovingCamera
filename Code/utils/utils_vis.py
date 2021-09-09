@@ -93,9 +93,65 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
 
-    plotly.offline.plot(fig_traj, filename='{}/vis_pred.html'.format(args.vis_path), auto_open=False)
+    plotly.offline.plot(fig_traj, filename='{}/pred_vis.html'.format(args.vis_path), auto_open=False)
 
 
+def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
+  # Iterate to plot each trajectory
+  #ray = cam_dict['ray'].cpu().numpy()
+  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
+  intr = utils_transform.ray_to_plane(E=cam_dict['E'], ray=ray)
+  cam_pos = np.linalg.inv(cam_dict['E'].cpu().numpy())[..., 0:3, -1]
+  len_ = input_dict['lengths']
+
+  for idx, i in enumerate(vis_idx):
+    draw_ray_x = list()
+    draw_ray_y = list()
+    draw_ray_z = list()
+    len_temp = len_[i]
+    c_temp = cam_pos[i][:len_temp]
+    r_temp = ray[i][:len_temp]
+    intr_temp = intr[i][:len_temp]
+
+    for j in range(c_temp.shape[0]):
+        # Cam
+        draw_ray_x.append(c_temp[j, 0])
+        draw_ray_y.append(c_temp[j, 1])
+        draw_ray_z.append(c_temp[j, 2])
+        # Ray
+        draw_ray_x.append(intr_temp[j, 0])
+        draw_ray_y.append(intr_temp[j, 1])
+        draw_ray_z.append(intr_temp[j, 2])
+        # No-interconnect
+        draw_ray_x.append(None)
+        draw_ray_y.append(None)
+        draw_ray_z.append(None)
+
+    ## set the mode to lines to plot only the lines and not the balls/markers
+    fig.add_trace(go.Scatter3d(
+        x=draw_ray_x,
+        y=draw_ray_y,
+        z=draw_ray_z,
+        mode='lines',
+        line = dict(width = 0.2, color = 'rgba(0, 255, 0, 0.7)'),
+        name='{}-Ray-Trajectory [{}]'.format(set, i).format(i), 
+        legendgroup=int(i)
+    ), row=idx+1, col=col)
+  
+    c_temp = np.unique(c_temp, axis=0)
+    fig.add_trace(go.Scatter3d(
+        x=c_temp[..., 0],
+        y=c_temp[..., 1],
+        z=c_temp[..., 2],
+        mode='markers',
+        marker=marker_dict_cam,
+        name='{}-Cam-Trajectory [{}]'.format(set, i).format(i), 
+        legendgroup=int(i)
+    ), row=idx+1, col=col)
+
+  return fig
+
+'''
 def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
   # Iterate to plot each trajectory
   #ray = cam_dict['ray'].cpu().numpy()
@@ -148,6 +204,7 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
     ), row=idx+1, col=col)
 
   return fig
+'''
 
 def visualize_displacement(input_dict, pred_dict, gt_dict, pred_eot, gt_eot, vis_idx, pred, cam_params_dict, fig=None, flag='train', n_vis=5):
   duv = pred_dict['input'][..., [0, 1]].cpu().detach().numpy()
