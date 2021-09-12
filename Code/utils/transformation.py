@@ -89,9 +89,9 @@ def cast_ray(uv, I, E, cpos):
   ndc = pt.cat((u, v, ones, ones), axis=-1).to(device)
   ndc = pt.unsqueeze(ndc, axis=-1)
 
-  ndc = transf_inv @ ndc
+  cdt = transf_inv @ ndc
 
-  ray = ndc[..., [0, 1, 2], -1] - cpos
+  ray = cdt[..., [0, 1, 2], -1] - cpos
   return ray
 
 def ray_to_plane(cpos, ray):
@@ -103,25 +103,7 @@ def ray_to_plane(cpos, ray):
   Output : 
       - intr_pts : ray to plane intersection points from camera through the ball tracking
   '''
-  normal = np.array([0, 1, 0])
-  p0 = np.array([0, 0, 0])
-  ray_norm = ray.cpu().numpy() / np.linalg.norm(ray.cpu().numpy(), axis=-1, keepdims=True)
-
-  t = np.dot((p0-cpos.cpu().numpy()), normal) / np.dot(ray_norm, normal)
-  t = np.expand_dims(t, axis=-1)
-
-  intr_pos = cpos.cpu().numpy() + (ray_norm * t)
-  print(intr_pos)
-
-  intr = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
-  print(intr)
-  print(intr_pos-intr.cpu().numpy())
-  print(np.sum(intr_pos-intr.cpu().numpy()))
-  print(np.max(intr_pos-intr.cpu().numpy()))
-  print(np.min(intr_pos-intr.cpu().numpy()))
-  print(np.mean(intr_pos-intr.cpu().numpy()))
-  exit()
-
+  intr_pos = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
   return intr_pos
 
 
@@ -134,7 +116,7 @@ def compute_azimuth(ray):
   Output : 
       1. Azimuth angle between ray-direction and x-axis (1, 0) in shape = (batch, seq_len, 1)
   '''
-  azimuth = np.arctan2(ray[..., [2]], ray[..., [0]]) * 180.0 / np.pi
+  azimuth = pt.atan2(ray[..., [2]], ray[..., [0]]) * 180.0 / np.pi
   azimuth = (azimuth + 360.0) % 360.0
   return azimuth
 
@@ -147,11 +129,11 @@ def compute_elevation(intr, cpos):
       1. Elevation angle between ray-direction and xz-plane (1, 0) in shape = (batch, seq_len, 1)
   '''
   ray = cpos - intr
-  elevation = np.arcsin(cpos[..., [1]]/(np.sqrt(np.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
+  elevation = pt.asin(cpos[..., [1]]/(pt.sqrt(pt.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
   return elevation
 
 
-def canonicalize(pts, cpos, deg=None):
+def canonicalize_tmp(pts, R):
   '''
   ***Function has no detach() to prevent the grad_fn***
   Input : Ignore (Y dimension cuz we rotate over Y-axis)
@@ -170,23 +152,22 @@ def canonicalize(pts, cpos, deg=None):
   cpos = Einv[..., 0:3, -1]
   if deg is not None:
     # De-canonicalized the world coordinates
-    deR = Ry(deg)
+    deR = Ry(cpos)
     # Canonicalized points
     pts = pt.unsqueeze(pts, dim=-1)
     pts_decl = deR @ pts
     pts_decl = pt.squeeze(pts_decl, axis=-1)
     # Canonicalized camera
-    cam = pt.tensor(cam).to(device)
-    cam = pt.unsqueeze(cam, dim=-1)
-    cam_decl = deR @ cam
-    cam_decl = pt.squeeze(cam_decl, dim=-1)
+    cpos = pt.unsqueeze(cpos, dim=-1)
+    cpos_decl = deR @ cpos
+    cpos_decl = pt.squeeze(cpos_decl, dim=-1)
 
-    return pts_decl, cam_decl, deg
+    return pts_decl, cpos_decl, deg
 
   else:
     # Find the angle to rotate(canonicalize)
-    ref_cam = np.array([0.0, 0.0, 1.0]).reshape(1, 1, 3)
-    deg = np.arctan2(ref_cam[..., 2], ref_cam[..., 0]) - np.arctan2(cam[..., 2], cam[..., 0])
+    ref_cam = pt.tensor([0.0, 0.0, 1.0]).reshape(1, 1, 3).to(device)
+    deg = pt.atan2(ref_cam[..., 2], ref_cam[..., 0]) - pt.atan2(cpos[..., 2], cpos[..., 0])
     
     l_pi = deg > np.pi
     h_pi = deg <= np.pi
@@ -200,23 +181,73 @@ def canonicalize(pts, cpos, deg=None):
     pts_cl = R @ pts
     pts_cl = pt.squeeze(pts_cl, dim=-1)
     # Canonicalize camera
-    cam = pt.tensor(cam).to(device)
+    cam = pt.tensor(cpos).to(device)
     cam = pt.unsqueeze(cam, dim=-1)
     cam_cl = R @ cam
     cam_cl = pt.squeeze(cam_cl, dim=-1)
 
     return pts_cl, cam_cl, deg
         
+
+def find_R(Einv):
+  '''
+  Return a rotation matrix given theta(radian)
+  Input : 
+    1. theta : radian in shape (batch_size, seq_len)
+  Output : 
+    1. R : rotation matrix from given radian in shape (batch_size, seq_len, 3, 3)
+  '''
+  cpos = Einv[..., 0:3, -1].cpu().numpy()
+  c = cpos[..., [0, 2]] / (np.linalg.norm(cpos[..., [0, 2]], axis=-1, keepdims=True) + 1e-16)
+  sin = c[..., 0]
+  cos = c[..., 1]
+  zeros = np.zeros(sin.shape)
+  ones = np.ones(sin.shape)
+  R = np.array([[cos, zeros, -sin], 
+              [zeros, ones, zeros],
+              [sin, zeros, cos]])
+  R = np.transpose(R, (2, 3, 0, 1))
+  return pt.tensor(R).float().to(device)
+
+def canonicalize(pts, R, inv=False):
+  '''
+  Input : Ignore (Y dimension cuz we rotate over Y-axis)
+    1. pts : 3d points in shape=(batch, seq_len, 3)
+    2. R : Rotation matrix from find_R function in shape(batch, seq_len, 3, 3)
+    3. inv : inverse the rotation (For decanonicalization)
+  Output :  (All are torch.tensor dtype)
+    1. pts : 3d points that (de)canonicalized in shape=(batch, seq_len, 3)
+  '''
+  if inv:
+    inv_mat = pt.tensor([[[[1, 1, -1], 
+                        [1, 1, 1],
+                        [-1, 1, 1]]]]).to(device)
+    R = pt.mul(R, inv_mat)
+
+  pts = pt.unsqueeze(pts, dim=-1)
+  pts = R @ pts
+  return pt.squeeze(pts, dim=-1)
+
+  
 def Ry(theta):
   '''
-  Return a rotation matrix given theta
+  Return a rotation matrix given theta(radian)
+  Input : 
+    1. theta : radian in shape (batch_size, seq_len)
+  Output : 
+    1. R : rotation matrix from given radian in shape (batch_size, seq_len, 3, 3)
   '''
+  print(theta.shape)
+  theta = theta.cpu().numpy()
   zeros = np.zeros(theta.shape)
   ones = np.ones(theta.shape)
   R = np.array([[np.cos(theta), zeros, np.sin(theta)], 
                 [zeros, ones, zeros],
                 [-np.sin(theta), zeros, np.cos(theta)]])
+  R = pt.tensor(R)
 
+  print(R.shape)
   R = np.transpose(R, (2, 3, 0, 1))
-  R = pt.tensor(R).float().to(device)
+  print(R.shape)
+  exit()
   return R

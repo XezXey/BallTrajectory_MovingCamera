@@ -360,14 +360,14 @@ def uv_noise(uv):
         1. Noisy-UV in shape = (batch, seq_len, 2)
     '''
     # Generate noise
-    noise_u = np.random.normal(loc=0.0, scale=5, size=uv[..., [0]].shape)
-    noise_v = np.random.normal(loc=0.0, scale=5, size=uv[..., [1]].shape)
-    noise_uv = np.concatenate((noise_u, noise_v), axis=-1)
+    noise_u = pt.normal(mean=0.0, std=5, size=uv[..., [0]].shape)
+    noise_v = pt.normal(mean=0.0, std=5, size=uv[..., [1]].shape)
+    noise_uv = pt.cat((noise_u, noise_v), axis=-1).to(device)
 
     # Masking noise
-    noise_mask_u = np.random.uniform(size=uv[..., [0]].shape) > np.random.random_sample(size=1)
-    noise_mask_v = np.random.uniform(size=uv[..., [1]].shape) > np.random.random_sample(size=1)
-    noise_mask_uv = np.concatenate((noise_mask_u, noise_mask_v), axis=-1)
+    noise_mask_u = pt.rand(size=uv[..., [0]].shape) > pt.rand(1)
+    noise_mask_v = pt.rand(size=uv[..., [1]].shape) > pt.rand(1)
+    noise_mask_uv = pt.cat((noise_mask_u, noise_mask_v), axis=-1).to(device)
 
     # Noise index selection
     n = round(uv.shape[0] * 0.5)
@@ -389,7 +389,7 @@ def add_noise(cam_dict):
   '''
 
   # UV-noise
-  cpos = cam_dict['E'][..., 0:3, -1]
+  cpos = cam_dict['Einv'][..., 0:3, -1]
   noisy_uv = uv_noise(uv=cam_dict['tracking'])
   #print(noisy_uv[0][:10], cam_dict['tracking'][0][:10])
   #print(noisy_uv[0][:10] - cam_dict['tracking'][0][:10])
@@ -399,7 +399,7 @@ def add_noise(cam_dict):
   #noisy_ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
 
   # Intersect Plane
-  noisy_intr = utils_transform.ray_to_plane(E=cam_dict['E'], ray=noisy_ray)
+  noisy_intr = utils_transform.ray_to_plane(ray=noisy_ray, cpos=cpos)
   #print(noisy_intr[0][:10], in_f[0][:10, :3])
   #print(noisy_intr[0][:10] - in_f[0][:10, :3])
 
@@ -409,16 +409,12 @@ def add_noise(cam_dict):
   #print(noisy_azim[0][:10, :] - in_f[0][:10, [4]])
 
   # New elevation
-  noisy_elev = utils_transform.compute_elevation(intr=noisy_intr, E=cam_dict['E'])
+  noisy_elev = utils_transform.compute_elevation(intr=noisy_intr, cpos=cpos)
   #print(noisy_elev[0][:10, :], in_f[0][:10, [3]])
   #print(noisy_elev[0][:10, :] - in_f[0][:10, [3]])
 
   # Replace in_f
-  noisy_in_f = np.concatenate((noisy_intr, noisy_elev, noisy_azim), axis=-1)
-
-  # Cast to tensor
-  noisy_ray = pt.tensor(noisy_ray).float().to(device)
-  noisy_in_f = pt.tensor(noisy_in_f).float().to(device)
+  noisy_in_f = pt.cat((noisy_intr, noisy_elev, noisy_azim), axis=-1)
 
   return noisy_in_f, noisy_ray
 
@@ -429,7 +425,7 @@ def generate_input(cam_dict):
     => UV changed -> Ray changed -> Intersect/Azimuth/Elevation changed
   '''
   # Cast-Ray
-  cpos = cam_dict['E'][..., 0:3, -1]
+  cpos = cam_dict['Einv'][..., 0:3, -1]
   ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
 
   # Intersect Plane
@@ -457,11 +453,8 @@ def generate_input(cam_dict):
   #print("MEAN : ", pt.mean(elev[0] - in_f[0][:, [3]]))
 
   # Replace in_f
-  in_f = np.concatenate((intr, elev, azim), axis=-1)
+  in_f = pt.cat((intr, elev, azim), axis=-1)
 
-  # Cast to tensor
-  ray = pt.tensor(ray).float().to(device)
-  in_f = pt.tensor(in_f).float().to(device)
   return in_f, ray
 
 def save_reconstructed(eval_metrics, trajectory):

@@ -137,17 +137,19 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   else:
     # Generate Input directly from tracking
-    in_f, ray = generate_input(cam_dict=cam_dict)
+    in_f, ray = utils_func.generate_input(cam_dict=cam_dict)
 
   # Canonicalize
   if args.canonicalize:
-    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
-    ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
-    azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
-    azim_cl = pt.tensor(azim_cl).float().to(device)
+    R = utils_transform.find_R(Einv=cam_dict['Einv'])
+    in_f_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
+    cam_cl = utils_transform.canonicalize(pts=cam_dict['Einv'][..., 0:3, -1], R=R)
+    ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
+    azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
     in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
   else:
     cam_cl = None
+    R = None
 
   intr_noise = in_f[..., [0, 1, 2]]
 
@@ -178,7 +180,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
 
-  pred_xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, input_dict)
+  pred_xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, R)
 
   if 'refinement' in args.pipeline:
     pred_refoff, _ = model_dict['refinement'](in_f=pred_xyz, lengths=input_dict['lengths'])
@@ -188,21 +190,21 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   # Decoanonicalize
   if args.canonicalize:
-    pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
+    pred_xyz = utils_transform.canonicalize(pts=pred_xyz, R=R, inv=True)
 
   pred_dict['xyz'] = pred_xyz
 
   return pred_dict, in_f
 
-def reconstruct(height, cam_dict, intr_noise, cam_cl, input_dict):
+def reconstruct(height, cam_dict, intr_noise, cam_cl, R):
 
   # Recreate clean samples
-  in_f, ray = generate_input(in_f=input_dict['input'], cam_dict=cam_dict)
+  in_f, ray = generate_input(cam_dict=cam_dict)
   if args.canonicalize:
-    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
-    ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
-    azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
-    azim_cl = pt.tensor(azim_cl).float().to(device)
+    in_f_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
+    cam_cl = utils_transform.canonicalize(pts=cam_dict['Einv'][..., 0:3, -1], R=R)
+    ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
+    azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
     in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
 
   intr_clean = in_f[..., [0, 1, 2]]

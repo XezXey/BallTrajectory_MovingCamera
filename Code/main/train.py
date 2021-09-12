@@ -165,12 +165,13 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 150 == 0:
+  if args.visualize and epoch % 1 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                         pred_dict_val=pred_dict_val, cam_dict_val=cam_dict_val)
 
+  input()
   return train_loss.item(), val_loss.item(), model_dict
 
 def collate_fn_padd(batch):
@@ -201,6 +202,7 @@ def collate_fn_padd(batch):
   I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
   E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
   Einv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+
   cpos_batch = []
   # Manually pad with eye to prevent non-invertible matrix
   for i in range(len(lengths)):

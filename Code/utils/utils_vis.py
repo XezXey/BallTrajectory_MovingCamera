@@ -99,9 +99,14 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
 def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
   # Iterate to plot each trajectory
   #ray = cam_dict['ray'].cpu().numpy()
-  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
-  intr = utils_transform.ray_to_plane(E=cam_dict['E'], ray=ray)
-  cam_pos = np.linalg.inv(cam_dict['E'].cpu().numpy())[..., 0:3, -1]
+  cpos = cam_dict['Einv'][..., 0:3, -1]
+  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
+  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos)
+
+  cpos = cpos.cpu().numpy()
+  ray = ray.cpu().numpy()
+  intr = intr.cpu().numpy()
+
   len_ = input_dict['lengths']
 
   for idx, i in enumerate(vis_idx):
@@ -109,7 +114,7 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
     draw_ray_y = list()
     draw_ray_z = list()
     len_temp = len_[i]
-    c_temp = cam_pos[i][:len_temp]
+    c_temp = cpos[i][:len_temp]
     r_temp = ray[i][:len_temp]
     intr_temp = intr[i][:len_temp]
 
@@ -133,7 +138,7 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
         y=draw_ray_y,
         z=draw_ray_z,
         mode='lines',
-        line = dict(width = 0.2, color = 'rgba(0, 255, 0, 0.7)'),
+        line = dict(width = 0.4, color = 'rgba(0, 255, 0, 0.7)'),
         name='{}-Ray-Trajectory [{}]'.format(set, i).format(i), 
         legendgroup=int(i)
     ), row=idx+1, col=col)
