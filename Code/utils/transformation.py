@@ -132,63 +132,6 @@ def compute_elevation(intr, cpos):
   elevation = pt.asin(cpos[..., [1]]/(pt.sqrt(pt.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
   return elevation
 
-
-def canonicalize_tmp(pts, R):
-  '''
-  ***Function has no detach() to prevent the grad_fn***
-  Input : Ignore (Y dimension cuz we rotate over Y-axis)
-      - pts : 3d points in shape=(batch, seq_len, 3)
-      - extrinsic : extrinsic in shape=(batch, seq_len, 4, 4)
-      - degree : 
-          - if given => decanonicalized the points
-          - else => Rotate to reference angle
-  Output :  (All are torch.tensor dtype)
-      - pts_cl : 3d points that canonicalized
-      - cam : camera position after canonicalized (To further find the new azimuth)
-      - degree : the degree that we rotate the camera
-  '''
-  #print("pts: ", pts.shape)
-
-  cpos = Einv[..., 0:3, -1]
-  if deg is not None:
-    # De-canonicalized the world coordinates
-    deR = Ry(cpos)
-    # Canonicalized points
-    pts = pt.unsqueeze(pts, dim=-1)
-    pts_decl = deR @ pts
-    pts_decl = pt.squeeze(pts_decl, axis=-1)
-    # Canonicalized camera
-    cpos = pt.unsqueeze(cpos, dim=-1)
-    cpos_decl = deR @ cpos
-    cpos_decl = pt.squeeze(cpos_decl, dim=-1)
-
-    return pts_decl, cpos_decl, deg
-
-  else:
-    # Find the angle to rotate(canonicalize)
-    ref_cam = pt.tensor([0.0, 0.0, 1.0]).reshape(1, 1, 3).to(device)
-    deg = pt.atan2(ref_cam[..., 2], ref_cam[..., 0]) - pt.atan2(cpos[..., 2], cpos[..., 0])
-    
-    l_pi = deg > np.pi
-    h_pi = deg <= np.pi
-    deg[l_pi] = deg[l_pi] - 2 * np.pi
-    deg[h_pi] = deg[h_pi] + 2 * np.pi
-
-    R = Ry(-deg)
-
-    # Canonicalize points
-    pts = pt.unsqueeze(pts, dim=-1)
-    pts_cl = R @ pts
-    pts_cl = pt.squeeze(pts_cl, dim=-1)
-    # Canonicalize camera
-    cam = pt.tensor(cpos).to(device)
-    cam = pt.unsqueeze(cam, dim=-1)
-    cam_cl = R @ cam
-    cam_cl = pt.squeeze(cam_cl, dim=-1)
-
-    return pts_cl, cam_cl, deg
-        
-
 def find_R(Einv):
   '''
   Return a rotation matrix given theta(radian)
@@ -227,27 +170,3 @@ def canonicalize(pts, R, inv=False):
   pts = pt.unsqueeze(pts, dim=-1)
   pts = R @ pts
   return pt.squeeze(pts, dim=-1)
-
-  
-def Ry(theta):
-  '''
-  Return a rotation matrix given theta(radian)
-  Input : 
-    1. theta : radian in shape (batch_size, seq_len)
-  Output : 
-    1. R : rotation matrix from given radian in shape (batch_size, seq_len, 3, 3)
-  '''
-  print(theta.shape)
-  theta = theta.cpu().numpy()
-  zeros = np.zeros(theta.shape)
-  ones = np.ones(theta.shape)
-  R = np.array([[np.cos(theta), zeros, np.sin(theta)], 
-                [zeros, ones, zeros],
-                [-np.sin(theta), zeros, np.cos(theta)]])
-  R = pt.tensor(R)
-
-  print(R.shape)
-  R = np.transpose(R, (2, 3, 0, 1))
-  print(R.shape)
-  exit()
-  return R
