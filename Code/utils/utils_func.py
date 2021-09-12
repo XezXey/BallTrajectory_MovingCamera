@@ -381,7 +381,7 @@ def uv_noise(uv):
     return noisy_uv
 
 
-def add_noise(cam_dict, in_f=None):
+def add_noise(cam_dict):
   '''
   - Adding noise to uv tracking
   - Need to recalculate all features since
@@ -389,12 +389,13 @@ def add_noise(cam_dict, in_f=None):
   '''
 
   # UV-noise
+  cpos = cam_dict['E'][..., 0:3, -1]
   noisy_uv = uv_noise(uv=cam_dict['tracking'])
-
   #print(noisy_uv[0][:10], cam_dict['tracking'][0][:10])
   #print(noisy_uv[0][:10] - cam_dict['tracking'][0][:10])
+
   # Cast-Ray
-  noisy_ray = utils_transform.cast_ray(uv=noisy_uv, I=cam_dict['I'], E=cam_dict['E'])
+  noisy_ray = utils_transform.cast_ray(uv=noisy_uv, I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
   #noisy_ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
 
   # Intersect Plane
@@ -421,38 +422,39 @@ def add_noise(cam_dict, in_f=None):
 
   return noisy_in_f, noisy_ray
 
-def generate_input(cam_dict, in_f=None):
+def generate_input(cam_dict):
   '''
   - Adding noise to uv tracking
   - Need to recalculate all features since
     => UV changed -> Ray changed -> Intersect/Azimuth/Elevation changed
   '''
   # Cast-Ray
-  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
+  cpos = cam_dict['E'][..., 0:3, -1]
+  ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
 
   # Intersect Plane
-  intr = utils_transform.ray_to_plane(E=cam_dict['E'], ray=ray)
+  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos)
+  #input("Intr check")
   #print(intr[0][:10], in_f[0][:10, :3])
   #print("DIFF : ", intr[0][:10] - in_f[0][:10, :3])
   #print("MAX : ", pt.max(intr[0] - in_f[0][:, :3], dim=1))
   #print("MEAN : ", pt.mean(intr[0] - in_f[0][:, :3]))
-  #input("Prev is intr check")
 
   # New azimuth
   azim = utils_transform.compute_azimuth(ray=ray)
+  #input("Azim check")
   #print(azim[0][:10, :], in_f[0][:10, [4]])
   #print("DIFF : ", azim[0][:10] - in_f[0][:10, [4]])
   #print("MAX : ", pt.max(azim[0] - in_f[0][:, [4]], dim=1))
   #print("MEAN : ", pt.mean(azim[0] - in_f[0][:, [4]]))
-  #input("Prev is azim check")
 
   # New elevation
-  elev = utils_transform.compute_elevation(intr=intr, E=cam_dict['E'])
+  elev = utils_transform.compute_elevation(intr=intr, cpos=cpos)
+  #input("Elev check")
   #print(elev[0][:10, :], in_f[0][:10, [3]])
   #print("DIFF : ", elev[0][:10] - in_f[0][:10, [3]])
   #print("MAX : ", pt.max(elev[0] - in_f[0][:, [3]], dim=1))
   #print("MEAN : ", pt.mean(elev[0] - in_f[0][:, [3]]))
-  #input("Prev is elev check")
 
   # Replace in_f
   in_f = np.concatenate((intr, elev, azim), axis=-1)
@@ -515,16 +517,8 @@ def save_reconstructed(eval_metrics, trajectory):
 
 
 def save_cam_traj(eval_metrics, trajectory):
-  #wandb_name = args.config_yaml.split('/')[-2]
-  #wandb_tag = args.config_yaml.split('/')[-1]
-  #print(args.wandb_name, args.wandb_tags)
-  #print(args.config_yaml.split('/'))
   save_path = '{}/tags_{}/{}'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name)
   initialize_folder(save_path)
-  #print(len(trajectory))
-  #print(trajectory[0])
-  #print(eval_metrics.keys())
-  #print(eval_metrics['RMSE']['loss_3axis'].shape)
 
   pred = []
   gt = []
@@ -550,7 +544,7 @@ def save_cam_traj(eval_metrics, trajectory):
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
   print("[#] Saving reconstruction to {}".format(save_path))
 
-def augment(batch, aug_col=eot):
+def augment(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
 
   if args.augment == 'perc':

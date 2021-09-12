@@ -76,13 +76,6 @@ parser.add_argument('--si_pred_ramp', help='Directional prediction with ramp wei
 # Model
 parser.add_argument('--pipeline', dest='pipeline', help='Pipeline', nargs='+', default=None)
 
-# Refinement stuff
-#parser.add_argument('--in_refine', dest='in_refine', help='Input for refinement network', default='xyz')
-#parser.add_argument('--out_refine', dest='out_refine', help='Output for refinement network', default='xyz')
-#parser.add_argument('--n_refinement', dest='n_refinement', help='Refinement Iterations', type=int, default=1)
-#parser.add_argument('--fix_refinement', dest='fix_refinement', help='Fix Refinement for 1st and last points', action='store_true', default=False)
-#parser.add_argument('--refine', dest='refine', help='I/O for refinement network', default='position')
-
 # Loss
 parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multiview loss', nargs='+', default=[])
 
@@ -189,45 +182,44 @@ def collate_fn_padd(batch):
   padding_value = -1000.0
   ## Get sequence lengths
   lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
-  # Input features : columns 4-5 contain u, v in screen space
+  # Input features : intersect_xyz, azimuth, elevation
   ## Padding
-  input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
+  input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch]
   input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
   ## Compute mask
   input_mask = (input_batch != padding_value)
 
-  # Output features : columns 6 cotain depth from camera to projected screen
+  # Output features : x, y, z
   ## Padding
   gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
   gt_batch = pad_sequence(gt_batch, batch_first=True, padding_value=padding_value)
   ## Compute mask
   gt_mask = (gt_batch != padding_value)
 
-  # Extra columns : columns that contains information for recon/auxiliary
-  ## Padding
-  cpos_batch = [pt.Tensor(trajectory[:, cpos_col].astype(np.float64)) for trajectory in batch] 
-  cpos_batch = pad_sequence(cpos_batch, batch_first=True, padding_value=0)
-
-  max_len = pt.max(lengths)
   # Intrinsic/Extrinsic columns
+  max_len = pt.max(lengths)
   I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
   E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
-  E_inv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+  Einv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+  cpos_batch = []
   # Manually pad with eye to prevent non-invertible matrix
   for i in range(len(lengths)):
     pad_len = max_len - lengths[i]
     if pad_len == 0:
-      continue
+      cpos_batch.append(Einv[i][:, :3, -1])
     else:
       pad_mat = pt.stack(pad_len * [pt.eye(4)])
       I[i] = pt.cat((I[i], pad_mat), dim=0)
       E[i] = pt.cat((E[i], pad_mat), dim=0)
-      E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
+      Einv[i] = pt.cat((Einv[i], pad_mat), dim=0)
+      cpos_batch.append(Einv[i][:, :3, -1])
+
   I = pt.stack(I)
   E = pt.stack(E)
-  E_inv = pt.stack(E_inv)
+  Einv = pt.stack(Einv)
+  cpos_batch = pt.stack(cpos_batch)
 
-  # Tracking
+  # Tracking : u, v
   tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
   tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
 
@@ -235,7 +227,7 @@ def collate_fn_padd(batch):
           'gt':[gt_batch, lengths, gt_mask],
           'cpos':[cpos_batch],
           'tracking':[tracking],
-          'I':[I], 'E':[E], 'E_inv':[E_inv]}
+          'I':[I], 'E':[E], 'Einv':[Einv]}
 
 if __name__ == '__main__':
   print('[#]Training : Trajectory Estimation')
@@ -293,7 +285,6 @@ if __name__ == '__main__':
     print(model_dict[model])
     for name, param in model_dict[model].named_parameters():
       print(name, param.shape)
-    # exit()
     # Log metrics with wandb
     wandb.watch(model_dict[model])
 
@@ -315,8 +306,8 @@ if __name__ == '__main__':
 
     input_dict_val = {'input':batch_val['input'][0].to(device), 'lengths':batch_val['input'][1].to(device), 'mask':batch_val['input'][2].to(device)}
     gt_dict_val = {'gt':batch_val['gt'][0].to(device), 'lengths':batch_val['gt'][1].to(device), 'mask':batch_val['gt'][2].to(device)}
-    cam_dict_val = {'I':batch_val['I'][0].to(device), 'E':batch_val['E'][0].to(device), 'E_inv':batch_val['E_inv'][0].to(device),
-                    'tracking':batch_val['tracking'][0], 'cpos':batch_val['cpos'][0].to(device)}
+    cam_dict_val = {'I':batch_val['I'][0].to(device), 'E':batch_val['E'][0].to(device), 'Einv':batch_val['Einv'][0].to(device),
+                    'tracking':batch_val['tracking'][0].to(device), 'cpos':batch_val['cpos'][0].to(device)}
 
     print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[Epoch : {}/{}]<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(epoch, args.n_epochs))
 
@@ -331,8 +322,8 @@ if __name__ == '__main__':
       # Training set (Each index in batch_train came from the collate_fn_padd)
       input_dict_train = {'input':batch_train['input'][0].to(device), 'lengths':batch_train['input'][1].to(device), 'mask':batch_train['input'][2].to(device)}
       gt_dict_train = {'gt':batch_train['gt'][0].to(device), 'lengths':batch_train['gt'][1].to(device), 'mask':batch_train['gt'][2].to(device)}
-      cam_dict_train = {'I':batch_train['I'][0].to(device), 'E':batch_train['E'][0].to(device), 'E_inv':batch_train['E_inv'][0].to(device),
-                    'tracking':batch_train['tracking'][0], 'cpos':batch_train['cpos'][0].to(device)}
+      cam_dict_train = {'I':batch_train['I'][0].to(device), 'E':batch_train['E'][0].to(device), 'Einv':batch_train['Einv'][0].to(device),
+                    'tracking':batch_train['tracking'][0].to(device), 'cpos':batch_train['cpos'][0].to(device)}
 
 
       # Call function to train

@@ -1,6 +1,6 @@
 # Dataset
-# dataset_train_path: '../../Dataset/Single/train_set/'
-# dataset_val_path: '../../Dataset/Single/val_set/'
+dataset_train_path: '../../Dataset/Canonicalize/train_set/'
+dataset_val_path: '../../Dataset/Canonicalize/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -15,14 +15,14 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 10
+batch_size: 512
 n_epochs: 100000
 lr: 0.001
 clip: 10
 decay_gamma: 0.7
 decay_cycle: 10000
-canonicalize : False
-noise: True
+canonicalize : True 
+noise: False
 noise_sd: -1
 annealing: False
 annealing_cycle: 1000

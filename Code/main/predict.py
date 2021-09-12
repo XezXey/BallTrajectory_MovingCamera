@@ -304,27 +304,24 @@ def collate_fn_padd(batch):
   # Intrinsic/Extrinsic columns
   I = [pt.Tensor(utils_transform.IE_array(trajectory, col=intrinsic)) for trajectory in batch]
   E = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic)) for trajectory in batch]
-  E_inv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
+  Einv = [pt.Tensor(utils_transform.IE_array(trajectory, col=extrinsic_inv)) for trajectory in batch]
   cpos_batch = []
   # Manually pad with eye to prevent non-invertible matrix
   for i in range(len(lengths)):
     pad_len = max_len - lengths[i]
     if pad_len == 0:
-      cpos_batch.append(E_inv[i][:, :3, -1])
+      cpos_batch.append(Einv[i][:, :3, -1])
     else:
       pad_mat = pt.stack(pad_len * [pt.eye(4)])
       I[i] = pt.cat((I[i], pad_mat), dim=0)
       E[i] = pt.cat((E[i], pad_mat), dim=0)
-      E_inv[i] = pt.cat((E_inv[i], pad_mat), dim=0)
-      cpos_batch.append(E_inv[i][:, :3, -1])
+      Einv[i] = pt.cat((Einv[i], pad_mat), dim=0)
+      cpos_batch.append(Einv[i][:, :3, -1])
 
-  #if len(cpos_batch) == 0:
-  #  cpos_batch.append(E_inv[i][:, :3, -1])
-
-  cpos_batch = pt.stack(cpos_batch)
   I = pt.stack(I)
   E = pt.stack(E)
-  E_inv = pt.stack(E_inv)
+  Einv = pt.stack(Einv)
+  cpos_batch = pt.stack(cpos_batch)
 
   # Tracking
   tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
@@ -334,7 +331,7 @@ def collate_fn_padd(batch):
           'gt':[gt_batch, lengths, gt_mask],
           'cpos':[cpos_batch],
           'tracking':[tracking],
-          'I':[I], 'E':[E], 'E_inv':[E_inv]}
+          'I':[I], 'E':[E], 'Einv':[Einv]}
 
 def summary(evaluation_results_all):
   print("="*100)
@@ -410,7 +407,7 @@ if __name__ == '__main__':
       gt_dict_test = None
     else:
       gt_dict_test = {'gt':batch_test['gt'][0].to(device), 'lengths':batch_test['gt'][1].to(device), 'mask':batch_test['gt'][2].to(device)}
-    cam_dict_test = {'I':batch_test['I'][0].to(device), 'E':batch_test['E'][0].to(device), 'E_inv':batch_test['E_inv'][0].to(device),
+    cam_dict_test = {'I':batch_test['I'][0].to(device), 'E':batch_test['E'][0].to(device), 'Einv':batch_test['Einv'][0].to(device),
                     'tracking':batch_test['tracking'][0], 'cpos':batch_test['cpos'][0].to(device)}
 
     # Call function to test

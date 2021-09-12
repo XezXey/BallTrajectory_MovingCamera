@@ -15,21 +15,6 @@ def share_args(a):
   global args
   args = a
 
-def project_3d(uv, depth, cam_params_dict, device):
-  # print(uv.shape, depth.shape)
-  depth = depth.view(-1)
-  screen_width = cam_params_dict['main']['width']
-  screen_height = cam_params_dict['main']['height']
-  I_inv = cam_params_dict['main']['I_inv']
-  E_inv = cam_params_dict['main']['E_inv']
-  uv = pt.div(uv, pt.tensor([screen_width, screen_height]).to(device)) # Normalize : (width, height) -> (-1, 1)
-  uv = (uv * 2.0) - pt.ones(size=(uv.size()), dtype=pt.float32).to(device) # Normalize : (width, height) -> (-1, 1)
-  uv = (uv.t() * depth).t()   # Normalize : (-1, 1) -> (-depth, depth) : Camera space (x', y', d, 1)
-  uv = pt.stack((uv[:, 0], uv[:, 1], depth, pt.ones(depth.shape[0], dtype=pt.float32).to(device)), axis=1) # Stack the screen with depth and w ===> (x, y, depth, 1)
-  uv = ((E_inv @ I_inv) @ uv.t()).t() # Reprojected
-
-  return uv[:, :3]
-
 def centering(xyz, cam_params_dict, device, rev=False):
   x = cam_params_dict['center_offset']['x']
   y = cam_params_dict['center_offset']['y']
@@ -42,53 +27,6 @@ def centering(xyz, cam_params_dict, device, rev=False):
     xyz = xyz + center_offset
 
   return xyz
-
-def get_cam_params_dict(cam_params_file, device):
-  '''
-  Return the cameras parameters use in reconstruction
-  '''
-  cam_params_dict = {}
-  cam_use = ['main'] + args.multiview_loss
-  with open(cam_params_file) as cam_params_json:
-    cam_params_file = json.load(cam_params_json)
-    for each_cam_use in cam_use:
-      cam_unity_key = '{}PitchCameraParams'.format(each_cam_use)
-      cam_params_dict[each_cam_use] = {}
-      # Extract each camera parameters
-      cam_params = dict({'projectionMatrix':cam_params_file[cam_unity_key]['projectionMatrix'], 'worldToCameraMatrix':cam_params_file[cam_unity_key]['worldToCameraMatrix'], 'width':cam_params_file[cam_unity_key]['width'], 'height':cam_params_file[cam_unity_key]['height']})
-      projection_matrix = np.array(cam_params['projectionMatrix']).reshape(4, 4)
-      projection_matrix = pt.tensor([projection_matrix[0, :], projection_matrix[1, :], projection_matrix[3, :], [0, 0, 0, 1]], dtype=pt.float32)
-      cam_params_dict[each_cam_use]['I'] = projection_matrix.to(device)
-      cam_params_dict[each_cam_use]['I_inv'] = pt.inverse(projection_matrix).to(device)
-
-      cam_params_dict[each_cam_use]['E'] = pt.tensor(cam_params['worldToCameraMatrix']).view(4, 4).to(device)
-      cam_params_dict[each_cam_use]['E_inv'] = pt.inverse(pt.tensor(cam_params['worldToCameraMatrix']).view(4, 4)).to(device)
-      cam_params_dict[each_cam_use]['width'] = cam_params['width']
-      cam_params_dict[each_cam_use]['height'] = cam_params['height']
-
-    if 'center_offset' in cam_params_file.keys():
-      cam_params_dict['center_offset'] = cam_params_file['center_offset']
-    else:
-      cam_params_dict['center_offset'] = dict({'x':0.0, 'y':0.0, 'z':0.0})
-
-  return cam_params_dict
-
-def project_2d(world, cam_params_dict, normalize=False):
-  world = pt.cat((world, pt.ones(world.shape[0], world.shape[1], 1).to(device)), dim=-1)
-  I = cam_params_dict['I']
-  E = cam_params_dict['E']
-  width = cam_params_dict['width']
-  height = cam_params_dict['height']
-  transformation = (I @ E)
-  ndc = (world @ transformation.t())
-  if normalize:
-    u = (ndc[..., [0]]/ndc[..., [2]] + 1) * .5
-    v = (ndc[..., [1]]/ndc[..., [2]] + 1) * .5
-  else:
-    u = (((ndc[..., [0]]/ndc[..., [2]] + 1) * .5) * width)
-    v = (((ndc[..., [1]]/ndc[..., [2]] + 1) * .5) * height)
-  d = ndc[..., [2]]
-  return u, v, d
 
 def IE_array(trajectory, col):
   '''
@@ -126,7 +64,7 @@ def h_to_3d(intr, E, height, cam_pos=None):
   return xyz
 
 
-def cast_ray(uv, I, E):
+def cast_ray(uv, I, E, cpos):
   '''
   Casting a ray given UV-coordinates, intrinisc, extrinsic
   Input : 
@@ -137,33 +75,26 @@ def cast_ray(uv, I, E):
       - ray : Ray direction (batch, seq_len, 3)
       (Can check with ray.x, ray.y, ray.z for debugging)
   '''
-  #print("UV: : ", uv.shape)
-  #print("I : ", I.shape)
-  #print("E : ", E.shape)
-
   w = 1664.0
   h = 1088.0
-  #w = 1280.0
-  #h = 720.0
   
   transf = I @ E
-  transf_inv = np.linalg.inv(transf.cpu().numpy())
+  transf_inv = pt.inverse(transf)
 
   u = ((uv[..., [0]] / w) * 2) - 1
   v = ((uv[..., [1]] / h) * 2) - 1
 
-  ones = np.ones(u.shape)
+  ones = pt.ones(u.shape).to(device)
 
-  ndc = np.concatenate((u, v, ones, ones), axis=-1)
-  ndc = np.expand_dims(ndc, axis=-1)
+  ndc = pt.cat((u, v, ones, ones), axis=-1).to(device)
+  ndc = pt.unsqueeze(ndc, axis=-1)
 
   ndc = transf_inv @ ndc
 
-  cam_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-  ray = ndc[..., [0, 1, 2], -1] - cam_pos
+  ray = ndc[..., [0, 1, 2], -1] - cpos
   return ray
 
-def ray_to_plane(E, ray):
+def ray_to_plane(cpos, ray):
   '''
   [#] Find the intersection points on the plane given ray-vector and camera position
   Input :
@@ -172,15 +103,24 @@ def ray_to_plane(E, ray):
   Output : 
       - intr_pts : ray to plane intersection points from camera through the ball tracking
   '''
-  c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
   normal = np.array([0, 1, 0])
   p0 = np.array([0, 0, 0])
-  ray_norm = ray / np.linalg.norm(ray, axis=-1, keepdims=True)
+  ray_norm = ray.cpu().numpy() / np.linalg.norm(ray.cpu().numpy(), axis=-1, keepdims=True)
 
-  t = np.dot((p0-c_pos), normal) / np.dot(ray_norm, normal)
+  t = np.dot((p0-cpos.cpu().numpy()), normal) / np.dot(ray_norm, normal)
   t = np.expand_dims(t, axis=-1)
 
-  intr_pos = c_pos + (ray_norm * t)
+  intr_pos = cpos.cpu().numpy() + (ray_norm * t)
+  print(intr_pos)
+
+  intr = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
+  print(intr)
+  print(intr_pos-intr.cpu().numpy())
+  print(np.sum(intr_pos-intr.cpu().numpy()))
+  print(np.max(intr_pos-intr.cpu().numpy()))
+  print(np.min(intr_pos-intr.cpu().numpy()))
+  print(np.mean(intr_pos-intr.cpu().numpy()))
+  exit()
 
   return intr_pos
 
@@ -198,7 +138,7 @@ def compute_azimuth(ray):
   azimuth = (azimuth + 360.0) % 360.0
   return azimuth
 
-def compute_elevation(intr, E):
+def compute_elevation(intr, cpos):
   '''
   [#] Compute Elevation from camera position and it's ray(2d tracking)
   Input : 
@@ -206,13 +146,12 @@ def compute_elevation(intr, E):
   Output : 
       1. Elevation angle between ray-direction and xz-plane (1, 0) in shape = (batch, seq_len, 1)
   '''
-  c_pos = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
-  ray = c_pos - intr
-  elevation = np.arcsin(c_pos[..., [1]]/(np.sqrt(np.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
+  ray = cpos - intr
+  elevation = np.arcsin(cpos[..., [1]]/(np.sqrt(np.sum(ray**2, axis=-1, keepdims=True)) + 1e-16)) * 180.0 / np.pi
   return elevation
 
 
-def canonicalize(pts, E, deg=None):
+def canonicalize(pts, cpos, deg=None):
   '''
   ***Function has no detach() to prevent the grad_fn***
   Input : Ignore (Y dimension cuz we rotate over Y-axis)
@@ -228,7 +167,7 @@ def canonicalize(pts, E, deg=None):
   '''
   #print("pts: ", pts.shape)
 
-  cam = np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]
+  cpos = Einv[..., 0:3, -1]
   if deg is not None:
     # De-canonicalized the world coordinates
     deR = Ry(deg)

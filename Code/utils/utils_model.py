@@ -133,11 +133,11 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   # Add noise
   if args.noise:
-    in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
+    in_f, ray = utils_func.add_noise(cam_dict=cam_dict)
 
   else:
     # Generate Input directly from tracking
-    in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
+    in_f, ray = generate_input(cam_dict=cam_dict)
 
   # Canonicalize
   if args.canonicalize:

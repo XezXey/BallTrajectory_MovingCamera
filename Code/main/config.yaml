@@ -1,6 +1,6 @@
 # Dataset
-# dataset_train_path: '../../Dataset/Single/train_set/'
-# dataset_val_path: '../../Dataset/Single/val_set/'
+dataset_train_path: '../../Dataset/Canonicalize/train_set/'
+dataset_val_path: '../../Dataset/Canonicalize/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -22,7 +22,7 @@ clip: 10
 decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize : True 
-noise: True
+noise: False
 noise_sd: -1
 annealing: False
 annealing_cycle: 1000
