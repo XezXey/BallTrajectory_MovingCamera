@@ -49,6 +49,20 @@ pipeline:
     extra_in: []
     extra_out: []
 
+#  flag:
+#    arch: 'lstm'
+#    bidirectional: True
+#    trainable_init: True
+#    rnn_hidden: 64
+#    rnn_stack: 2
+#    mlp_hidden: 32
+#    mlp_stack: 2
+#    in_node: 5
+#    out_node: 1
+#    extra_in: []
+#    extra_out: []
+
+
 #  refinement:
 #    arch: 'lstm'
 #    bidirectional: True
@@ -67,7 +81,7 @@ pipeline:
 si_pred_ramp: False
 
 # Features
-selected_features: []
+selected_features: [eot]
 i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # azim(+1), elev(+1), both(+2)

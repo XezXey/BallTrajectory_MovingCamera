@@ -80,14 +80,13 @@ parser.add_argument('--pipeline', dest='pipeline', help='Pipeline', nargs='+', d
 parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multiview loss', nargs='+', default=[])
 
 # Features
-parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, og, ', nargs='+', default=[])
+parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, cd, ', nargs='+', default=[])
 parser.add_argument('--i_s', dest='i_s', help='input space', type=str, default='t')
 parser.add_argument('--o_s', dest='o_s', help='output space', type=str, default='t')
 parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, default='def')
 
 # Miscellaneous
 parser.add_argument('--cuda_device_num', dest='cuda_device_num', type=int, help='Provide cuda device number', default=0)
-parser.add_argument('--test')
 
 # YAML-Config
 parser.add_argument('--config_yaml', dest='config_yaml', type=str, help='Config parameters file', required=True)
@@ -124,9 +123,9 @@ wandb.init(project="ball-trajectory-estimation", name=args.wandb_name, tags=args
 
 # Get selected features to input into a network
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 'cam_x', 'cam_y', 'cam_z', 
-            'eot', 'og', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
+            'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
-x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, og, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, cpos_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
 
 def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, annealing_weight):
@@ -165,13 +164,12 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 1 == 0:
+  if args.visualize and epoch % 200 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                         pred_dict_val=pred_dict_val, cam_dict_val=cam_dict_val)
 
-  input()
   return train_loss.item(), val_loss.item(), model_dict
 
 def collate_fn_padd(batch):

@@ -59,6 +59,10 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     ####################################
     visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1)
     visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2)
+    ####################################
+    ############### Flag ###############
+    ####################################
+
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
 
@@ -302,17 +306,17 @@ def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
 
 def visualize_eot(pred, gt, startpos, lengths, mask, vis_idx, fig=None, flag='Train', n_vis=5):
   # pred : concat with startpos and stack back to (batch_size, sequence_length+1, 1)
+  
+  if 'flag' not in pred_dict.keys():
+    flag_loss = pt.tensor(0.).to(device)
+  else:
+    zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
+    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
+  eot_loss = pt.mean(-((pos_weight * gt * pt.log(pred + 1e-16)) + (neg_weight * (1-gt)*pt.log(1-pred + 1e-16))))
   pred = pt.stack([pt.cat([startpos[i], pred[i]]) for i in range(startpos.shape[0])])
-  gt = pt.stack([pt.cat([startpos[i], gt[i]]) for i in range(startpos.shape[0])])
   # Here we use output mask so we need to append the startpos to the pred before multiplied with mask(already included the startpos)
   pred *= mask
   gt *= mask
-  # Weight of positive/negative classes for imbalanced class
-  pos_weight = pt.sum(gt == 0)/pt.sum(gt==1)
-  neg_weight = 1
-  eps = 1e-10
-  # Calculate the EOT loss for each trajectory
-  eot_loss = pt.mean(-((pos_weight * gt * pt.log(pred+eps)) + (neg_weight * (1-gt)*pt.log(1-pred+eps))), dim=1).cpu().detach().numpy()
 
   # detach() for visualization
   pred = pred.cpu().detach().numpy()

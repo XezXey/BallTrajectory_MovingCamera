@@ -19,6 +19,7 @@ import utils.transformation as utils_transform
 # Models
 from models.height_module import Height_Module
 from models.refinement_module import Refinement_Module
+from models.flag_module import Flag_Module
 # Loss
 import utils.loss as loss
 
@@ -30,9 +31,9 @@ else:
 
 args=None
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 'cam_x', 'cam_y', 'cam_z', 
-            'eot', 'og', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
+            'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
-x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, og, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 
 def share_args(a):
   global args
@@ -55,8 +56,8 @@ def get_selected_cols(args, pred):
   features_cols = []
   if 'eot' in args.selected_features:
     features_cols.append(eot)
-  if 'og' in args.selected_features:
-    features_cols.append(og)
+  if 'cd' in args.selected_features:
+    features_cols.append(cd)
   if 'rad' in args.selected_features:
     features_cols.append(rad)
   if 'f_sin' in args.selected_features:
@@ -138,6 +139,16 @@ def get_model(args):
                     mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
                     rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],)
 
+      model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
+                      'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
+                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],}
+
+    elif module_name == 'flag': 
+      model = Flag_Module(in_node=in_node, out_node=out_node, 
+                    batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                    is_bidirectional=module['bidirectional'], 
+                    mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],)
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
                       'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],}

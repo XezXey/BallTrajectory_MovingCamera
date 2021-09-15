@@ -174,6 +174,12 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
       search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
       search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
   
+
+  if 'flag' in args.pipeline:
+    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    pred_dict['flag'] = pred_flag
+    in_f = pt.cat((in_f, pred_flag), dim=-1)
+
   if 'height' in args.pipeline:
     pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
     pred_dict['h'] = pred_h
@@ -315,10 +321,17 @@ def training_loss(input_dict, gt_dict, pred_dict):
   #gravity_loss = pt.tensor(0.).to(device)
   #below_ground_loss = pt.tensor(0.).to(device)
 
-  loss = trajectory_loss + gravity_loss + below_ground_loss
+  if 'flag' not in pred_dict.keys():
+    flag_loss = pt.tensor(0.).to(device)
+  else:
+    zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
+    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
+
+  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
-               "BelowGnd Loss":below_ground_loss.item()}
+               "BelowGnd Loss":below_ground_loss.item(),
+               "Flag Loss":flag_loss.item()}
 
   return loss_dict, loss
 

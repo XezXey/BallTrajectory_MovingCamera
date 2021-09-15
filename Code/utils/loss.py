@@ -92,26 +92,19 @@ def DepthLoss(pred, gt, mask, lengths):
   depth_loss = (pt.sum((((gt - pred))**2) * mask) / pt.sum(mask))
   return depth_loss
 
-def EndOfTrajectoryLoss(pred, gt, startpos, mask, lengths, flag='Train'):
+def EndOfTrajectoryLoss(pred, gt, mask, lengths):
   # Here we use output mask so we need to append the startpos to the pred before multiplied with mask(already included the startpos)
   pred = pred * mask
   gt = gt * mask
-  # Prevent of pt.log(-value)
-  eps = 1e-10
   # Implement from scratch
   # Flatten and concat all trajectory together
-  gt = pt.cat(([gt[i][:lengths[i]+1] for i in range(startpos.shape[0])]))
-  pred = pt.cat(([pred[i][:lengths[i]+1] for i in range(startpos.shape[0])]))
+  gt = pt.cat(([gt[i][:lengths[i]+1] for i in range(lengths.shape[0])]))
+  pred = pt.cat(([pred[i][:lengths[i]+1] for i in range(lengths.shape[0])]))
   # Class weight for imbalance class problem
-  pos_weight = pt.sum(gt == 0)/(pt.sum(gt==1) + eps)
+  pos_weight = pt.sum(gt == 0)/(pt.sum(gt==1) + 1e-16)
   neg_weight = 1
   # Calculate the BCE loss
-  eot_loss = pt.mean(-((pos_weight * gt * pt.log(pred + eps)) + (neg_weight * (1-gt)*pt.log(1-pred + eps))))
-
-  # Log the precision, recall, confusion_matrix and using wandb
-  # gt_log = gt.clone().cpu().detach().numpy()
-  # pred_log = pred.clone().cpu().detach().numpy()
-  # eot_metrics_log(gt=gt_log, pred=pred_log, lengths=lengths.cpu().detach().numpy(), flag=flag)
+  eot_loss = pt.mean(-((pos_weight * gt * pt.log(pred + 1e-16)) + (neg_weight * (1-gt)*pt.log(1-pred + 1e-16))))
 
   return eot_loss
 
