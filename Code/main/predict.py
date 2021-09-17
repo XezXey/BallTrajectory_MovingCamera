@@ -130,11 +130,11 @@ else:
   print('[%]GPU Disabled, CPU Enabled')
 
 # Get selected features to input into a network
-features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 'cam_x', 'cam_y', 'cam_z', 
-            'eot', 'og', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
+features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
+            'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
-x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, og, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
-input_col, gt_col, cpos_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+input_col, gt_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
 
 def get_each_batch_pred(latent_optimized, pred_flag, pred_xyz, lengths):
   if args.optimize is not None:
@@ -408,7 +408,7 @@ if __name__ == '__main__':
     else:
       gt_dict_test = {'gt':batch_test['gt'][0].to(device), 'lengths':batch_test['gt'][1].to(device), 'mask':batch_test['gt'][2].to(device)}
     cam_dict_test = {'I':batch_test['I'][0].to(device), 'E':batch_test['E'][0].to(device), 'Einv':batch_test['Einv'][0].to(device),
-                    'tracking':batch_test['tracking'][0], 'cpos':batch_test['cpos'][0].to(device)}
+                    'tracking':batch_test['tracking'][0].to(device), 'cpos':batch_test['cpos'][0].to(device)}
 
     # Call function to test
     start_time = time.time()
@@ -431,6 +431,6 @@ if __name__ == '__main__':
   # Save prediction file
   if args.save_cam_traj is not None:
     utils_func.initialize_folder(args.save_cam_traj)
-    utils_func.save_cam_traj(eval_metrics=summary_evaluation, trajectory=reconstructed_trajectory_all)
+    utils_func.save_cam_traj(trajectory=reconstructed_trajectory_all, cam_dict=cam_dict_test)
   print("[#] Done")
 

@@ -98,8 +98,8 @@ def EndOfTrajectoryLoss(pred, gt, mask, lengths):
   gt = gt * mask
   # Implement from scratch
   # Flatten and concat all trajectory together
-  gt = pt.cat(([gt[i][:lengths[i]+1] for i in range(lengths.shape[0])]))
-  pred = pt.cat(([pred[i][:lengths[i]+1] for i in range(lengths.shape[0])]))
+  gt = pt.cat(([gt[i][:lengths[i]] for i in range(lengths.shape[0])]))
+  pred = pt.cat(([pred[i][:lengths[i]] for i in range(lengths.shape[0])]))
   # Class weight for imbalance class problem
   pos_weight = pt.sum(gt == 0)/(pt.sum(gt==1) + 1e-16)
   neg_weight = 1

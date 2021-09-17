@@ -281,13 +281,12 @@ def output_space(pred_h, lengths, search_h=None):
     
   elif args.o_s == 'dt':
     if args.i_s == 't_dt':
-      assert False
+      raise NotImplemented
       
     elif args.i_s == 'dt':
       pred_h = pred_h
 
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
-    last_idx = lengths - 2  # from lengths : [-1 is idx in t-space] and [-2  is index in dt-space]
 
     if search_h is None:
       first_h = pt.zeros(size=(pred_h.shape[0], 1, 1)).to(device)
@@ -315,17 +314,18 @@ def training_loss(input_dict, gt_dict, pred_dict):
   ############# Trajectory #############
   ######################################
   trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  #gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
-  #gravity_loss = pt.tensor(0.).to(device)
+  gravity_loss = pt.tensor(0.).to(device)
   #below_ground_loss = pt.tensor(0.).to(device)
 
   if 'flag' not in pred_dict.keys():
     flag_loss = pt.tensor(0.).to(device)
   else:
     zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
-    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
+    flag_loss = pt.tensor(0.).to(device)
+    #flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
 
   loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),

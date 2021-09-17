@@ -75,8 +75,11 @@ def cast_ray(uv, I, E, cpos):
       - ray : Ray direction (batch, seq_len, 3)
       (Can check with ray.x, ray.y, ray.z for debugging)
   '''
-  w = 1664.0
-  h = 1088.0
+  w = 1280.0
+  h = 720.0
+
+  #w = 1664.0
+  #h = 1088.0
   
   transf = I @ E
   transf_inv = pt.inverse(transf)
@@ -105,7 +108,6 @@ def ray_to_plane(cpos, ray):
   '''
   intr_pos = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
   return intr_pos
-
 
 def compute_azimuth(ray):
   '''

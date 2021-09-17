@@ -30,10 +30,10 @@ else:
   device = pt.device('cpu')
 
 args=None
-features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 'cam_x', 'cam_y', 'cam_z', 
+features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
             'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
-x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, cam_x, cam_y, cam_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 
 def share_args(a):
   global args
@@ -80,7 +80,6 @@ def get_selected_cols(args, pred):
   if pred=='height' and args.env=='unity':
     input_col = [intr_x, intr_y, intr_z, elevation, azimuth] + features_cols
     gt_col = [x, y, z] + features_cols
-    cpos_col = [cam_x, cam_y, cam_z]
     #cam_params = [intrinsic, extrinsic, extrinsic_inv]
 
   print('='*47 + "Features" + '='*47)
@@ -90,7 +89,7 @@ def get_selected_cols(args, pred):
   print("1. input_col = ", input_col)
   print("2. gt_col = ", gt_col)
   print('='*100)
-  return input_col, gt_col, cpos_col, features_cols
+  return input_col, gt_col, features_cols
 
 def get_extra_fsize(module):
 
@@ -287,7 +286,8 @@ def load_ckpt_predict(model_dict, ckpt):
     print("[#] Found the ckpt ===> {}".format(ckpt))
     ckpt = pt.load(ckpt, map_location='cuda:0')
     # Load optimizer, learning rate, decay and scheduler parameters
-    for model in ckpt['model_cfg'].keys():
+    #for model in ckpt['model_cfg'].keys():
+    for model in model_dict.keys():
       print("Module ===> {}.....".format(model), end='')
       # Lastest version of dict keys
       model_dict[model].load_state_dict(ckpt[model])
@@ -519,30 +519,54 @@ def save_reconstructed(eval_metrics, trajectory):
 
   print("[#] Saving reconstruction to /{}/{}".format(args.savetofile, save_file_suffix))
 
-
-def save_cam_traj(eval_metrics, trajectory):
+def save_cam_traj(trajectory, cam_dict):
   save_path = '{}/tags_{}/{}'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name)
   initialize_folder(save_path)
 
   pred = []
   gt = []
   cpos = []
+  uv = []
+  E = []
+  I = []
+  
+  traj_json = {}
   for i in range(len(trajectory)):
     # Each batch
     gt_tmp =  trajectory[i]['gt']
     pred_tmp =  trajectory[i]['pred']
     seq_len = trajectory[i]['seq_len']
     cpos_tmp = trajectory[i]['cpos']
-    print(cpos_tmp.shape)
-    print(gt_tmp.shape)
-    print(pred_tmp.shape)
-    print(seq_len.shape)
+    E_tmp = cam_dict['E'].cpu().numpy()
+    I_tmp = cam_dict['I'].cpu().numpy()
+    uv_tmp = cam_dict['tracking'].cpu().numpy()
 
     for j in range(seq_len.shape[0]):
       # Each trajectory
-      gt.append(gt_tmp[j][:seq_len[j]])
       pred.append(pred_tmp[j][:seq_len[j]])
       cpos.append(cpos_tmp[j][:seq_len[j]])
+
+      if gt is None:
+        gt.append(gt_tmp[j][:seq_len[j]])
+        json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
+                    "pred" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "uv" : uv_tmp[j][:seq_len[j]].tolist(),
+                    "E" : E_tmp[j][:seq_len[j]].tolist(),
+                    "I" : I_tmp[j][:seq_len[j]].tolist(),
+        }
+      else:
+        json_dat = {"gt" : None,
+                    "pred" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "uv" : uv_tmp[j][:seq_len[j]].tolist(),
+                    "E" : E_tmp[j][:seq_len[j]].tolist(),
+                    "I" : I_tmp[j][:seq_len[j]].tolist(),
+        }
+
+      traj_json[j] = json_dat
+
+    with open("./ext2.json", "w") as file:
+      json.dump(traj_json, file)
+    input()
 
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)

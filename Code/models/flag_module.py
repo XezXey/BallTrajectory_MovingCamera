@@ -17,9 +17,11 @@ class Flag_Module(pt.nn.Module):
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.mlp = Vanilla_MLP(in_node=bidirectional*rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
+        self.sigmoid = pt.nn.Sigmoid()
         
     def forward(self, in_f, lengths, h=None, c=None):
         out1, (h, c) = self.rnn(in_f, lengths)
         out2 = self.mlp(out1)
-        return out2, (h, c)
+        out3 = self.sigmoid(out2)
+        return out3, (h, c)
 
