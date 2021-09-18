@@ -188,6 +188,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   pred_xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, R)
 
+
   if 'refinement' in args.pipeline:
     pred_refoff, _ = model_dict['refinement'](in_f=pred_xyz, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
