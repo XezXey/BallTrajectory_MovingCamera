@@ -80,7 +80,9 @@ def get_selected_cols(args, pred):
   if pred=='height' and args.env=='unity':
     input_col = [intr_x, intr_y, intr_z, elevation, azimuth] + features_cols
     gt_col = [x, y, z] + features_cols
-    #cam_params = [intrinsic, extrinsic, extrinsic_inv]
+  else :
+    input_col = "[u, v]"
+    gt_col = "[x, y, z] (if existed)"
 
   print('='*47 + "Features" + '='*47)
   print('Prediction = {}, Environment = {}'.format(pred, args.env))
@@ -317,17 +319,19 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  #print("[#] Before")
-  #print(args)
-  for k in config:
-    print(k, " ===> ", args_dict[k])
-    if args_dict[k] is not None and config[k] is None:
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_h']
+  for k in args_dict.keys():
+    if k in exception:
+      continue
+    if args_dict[k] is not None:
       # User specified the parameters via args
       continue
-    else:
+    elif config[k] is not None :
       # Load from config file
       args_dict[k] = config[k]
-
+    else:
+      print("[#] Config \"{}\" is missing...!".format(k))
+      exit()
   return args
 
 def show_dataset_info(dataloader, set):
@@ -390,7 +394,6 @@ def uv_noise(uv):
     noisy_uv = uv + noise_uv * noise_mask_uv
 
     return noisy_uv
-
 
 def add_noise(cam_dict):
   '''
@@ -564,9 +567,8 @@ def save_cam_traj(trajectory, cam_dict):
 
       traj_json[j] = json_dat
 
-    with open("./ext2.json", "w") as file:
+    with open("{}/ext3.json".format(args.save_cam_traj), "w") as file:
       json.dump(traj_json, file)
-    input()
 
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
@@ -575,34 +577,20 @@ def save_cam_traj(trajectory, cam_dict):
 def augment(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
 
-  if args.augment == 'perc':
-    # Split by percentage
-    perc = 25
-    perc = np.random.randint(low=perc, high=100, size=len(batch))[0]/100
-    len_aug = np.ceil(len_.copy() * perc).astype(int)
+  # Split by percentage
+  perc = 25
+  perc = np.random.randint(low=perc, high=100, size=len(batch))[0]/100
+  len_aug = np.ceil(len_.copy() * perc).astype(int)
 
-    for i in range(len(batch)):
-      #print("L : ", len_[i], "L_aug : ", len_aug[i], "P : ", perc[i])
-      h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
-      try :
-        start = np.random.randint(low=0, high=h, size=1)[0]
-      except ValueError:
-        print("TRY FAILED : ", len_[i], len_aug[i])
-        exit()
-      end = start + len_aug[i]
-      batch[i] = batch[i][start:end]
-  
-  elif args.augment == 'eot':
-    # Split by EOT
-    for i in range(len(batch)):
-      aug_pos = np.where(batch[i][:, eot] == 1)[0]
-      start = np.random.randint(low=0, high=aug_pos[0], size=1)[0]
-      end = np.random.randint(low=aug_pos[0] + (aug_pos[1] - aug_pos[0])//2, high=aug_pos[1], size=1)[0]
-      batch[i] = batch[i][start:end]
-
-  else:
-    print("[#] Augmentation method is incorrect!!!")
-    exit()
+  for i in range(len(batch)):
+    h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
+    try :
+      start = np.random.randint(low=0, high=h, size=1)[0]
+    except ValueError:
+      print("AUGMENT LENGTH FAILED : ", len_[i], len_aug[i])
+      exit()
+    end = start + len_aug[i]
+    batch[i] = batch[i][start:end]
 
   return batch 
     

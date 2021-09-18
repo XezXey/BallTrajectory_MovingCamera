@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path: '../../Dataset/Canonicalize/train_set/'
-dataset_val_path: '../../Dataset/Canonicalize/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -27,8 +27,8 @@ noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
-augment: null
-recon: 'noisy'
+augment: True
+recon: 'clean'
 
 # Visualization
 visualize: True
@@ -91,3 +91,5 @@ multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
+w: 1280
+h: 720

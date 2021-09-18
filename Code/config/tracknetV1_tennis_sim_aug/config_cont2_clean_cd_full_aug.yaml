@@ -4,6 +4,7 @@
 
 dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_cd/train_set/'
 dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_cd/val_set/'
+dataset_test_path : null
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -11,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_cont2_clean_cd_full'
+wandb_name: 'tennis_cont2_clean_cd_full_perc'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -30,8 +31,9 @@ noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
-augment: null
+augment: 'perc'
 recon: 'clean'
+optim_h: False
 
 # Visualization
 visualize: True
@@ -90,3 +92,5 @@ multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
+w: 1280
+h: 720

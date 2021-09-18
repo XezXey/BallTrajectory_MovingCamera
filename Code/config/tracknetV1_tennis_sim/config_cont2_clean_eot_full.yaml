@@ -2,7 +2,7 @@
 #dataset_train_path: '../../Dataset/Single/train_set/'
 #dataset_val_path: '../../Dataset/Single/val_set/'
 
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1/SimTennis/cont2_eot/train_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
 dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
@@ -35,7 +35,7 @@ recon: 'clean'
 
 # Visualization
 visualize: True
-visualization_path: '../../visualize_html/'
+vis_path: '../../visualize_html/'
 
 # Model
 pipeline:

@@ -35,68 +35,75 @@ parser = argparse.ArgumentParser(description='Predict the 3D Trajectory')
 # Datapath
 parser.add_argument('--dataset_train_path', dest='dataset_train_path', type=str, help='Path to training set', default=None)
 parser.add_argument('--dataset_val_path', dest='dataset_val_path', type=str, help='Path to validation set', default=None)
-parser.add_argument('--trajectory_type', dest='trajectory_type', type=str, help='Type of trajectory(Rolling, Projectile, MagnusProjectile)', default='Projectile')
-parser.add_argument('--env', dest='env', help='Environment', default='unity')
+parser.add_argument('--dataset_test_path', dest='dataset_test_path', type=str, help='Path to test set', default=None)
+parser.add_argument('--trajectory_type', dest='trajectory_type', type=str, help='Type of trajectory(Rolling, Projectile, MagnusProjectile)', default=None)
+parser.add_argument('--env', dest='env', help='Environment', default=None)
 
 # Wandb
-parser.add_argument('--wandb_dir', help='Path to WanDB directory', type=str, default='./')
+parser.add_argument('--wandb_dir', help='Path to WanDB directory', type=str, default=None)
 parser.add_argument('--wandb_name', dest='wandb_name', type=str, help='WanDB session name', default=None)
 parser.add_argument('--wandb_notes', dest='wandb_notes', type=str, help='WanDB notes', default='')
 parser.add_argument('--wandb_tags', dest='wandb_tags', type=str, help='WanDB tags name', default=None)
-parser.add_argument('--wandb_mode', dest='wandb_mode', type=str, help='WanDB mode (run/dryrun)', default='run')
+parser.add_argument('--wandb_mode', dest='wandb_mode', type=str, help='WanDB mode (run/dryrun)', default=None)
 
 # ckpt
 parser.add_argument('--save_ckpt', dest='save_ckpt', type=str, help='Path to save a model ckpt', default=None)
 parser.add_argument('--load_ckpt', dest='load_ckpt', type=str, help='Path to load a trained model ckpt', default=None)
 
 # Training parameters
-parser.add_argument('--batch_size', dest='batch_size', type=int, help='Samples in batch', default=512)
-parser.add_argument('--n_epochs', dest='n_epochs', type=int, help='Train for #n epoch', default=100000)
-parser.add_argument('--lr', help='Learning rate', type=float, default=0.001)
-parser.add_argument('--clip', dest='clip', type=float, help='Clipping gradients value', default=10)
-parser.add_argument('--decay_gamma', help='Gamma (Decay rate)', type=float, default=0.7)
-parser.add_argument('--decay_cycle', help='Decay cycle', type=int, default=50)
+parser.add_argument('--batch_size', dest='batch_size', type=int, help='Samples in batch', default=None)
+parser.add_argument('--n_epochs', dest='n_epochs', type=int, help='Train for #n epoch', default=None)
+parser.add_argument('--lr', help='Learning rate', type=float, default=None)
+parser.add_argument('--clip', dest='clip', type=float, help='Clipping gradients value', default=None)
+parser.add_argument('--decay_gamma', help='Gamma (Decay rate)', type=float, default=None)
+parser.add_argument('--decay_cycle', help='Decay cycle', type=int, default=None)
 parser.add_argument('--canonicalize', dest='canonicalize', default=None)
-parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true')
-parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false')
-parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=float, default=None)
-parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=False)
-parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=5)
-parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=0.95)
-parser.add_argument('--augment', dest='augment', type=str, help='Apply an augmented training', default=None)
+## Annealing
+parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=None)
+parser.add_argument('--no_annealing', dest='annealing', help='Apply annealing', action='store_false', default=None)
+parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=None)
+parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=None)
 parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction selection (noisy/clean)', default=None)
+## Noise
+parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true', default=None)
+parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false', default=None)
+parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=float, default=None)
+## Augment
+parser.add_argument('--augment', dest='augment', help='Apply an augmented training', action='store_true', default=None)
+parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
+
+# Optimization
+parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', action='store_true', default=None)
 
 # Visualization
-parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=False)
-parser.add_argument('--vis_path', dest='vis_path', type=str, help='Path to visualization directory', default='../../visualize_html/')
-
-# Weighted combining
-parser.add_argument('--si_pred_ramp', help='Directional prediction with ramp weight', action='store_true', default=False)
+parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)
+parser.add_argument('--vis_path', dest='vis_path', type=str, help='Path to visualization directory', default=None)
 
 # Model
 parser.add_argument('--pipeline', dest='pipeline', help='Pipeline', nargs='+', default=None)
 
 # Loss
-parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multiview loss', nargs='+', default=[])
+parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multiview loss', nargs='+', default=None)
 
 # Features
-parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, cd, ', nargs='+', default=[])
-parser.add_argument('--i_s', dest='i_s', help='input space', type=str, default='t')
-parser.add_argument('--o_s', dest='o_s', help='output space', type=str, default='t')
-parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, default='def')
+parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, og, ', nargs='+', default=None)
+parser.add_argument('--i_s', dest='i_s', help='input space', type=str, default=None)
+parser.add_argument('--o_s', dest='o_s', help='output space', type=str, default=None)
+parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, default=None)
 
 # Miscellaneous
 parser.add_argument('--cuda_device_num', dest='cuda_device_num', type=int, help='Provide cuda device number', default=0)
+parser.add_argument('--save_cam_traj', dest='save_cam_traj', type=str, help='Save a trajectory', default=None)
+parser.add_argument('--no_gt', dest='no_gt', help='Is ground-truth available?', action='store_true', default=False)
+parser.add_argument('--w', dest='w', type=float, help='width', default=None)
+parser.add_argument('--h', dest='h', type=float, help='height', default=None)
 
 # YAML-Config
 parser.add_argument('--config_yaml', dest='config_yaml', type=str, help='Config parameters file', required=True)
 
 args = parser.parse_args()
-
 args = utils_func.yaml_to_args(args=args)
-
 print("*"*100)
-print(vars(args))
 
 # Share args to every modules
 utils_func.share_args(args)
@@ -164,7 +171,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 150 == 0:
+  if args.visualize and epoch % 1 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
@@ -174,9 +181,8 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
 
 def collate_fn_padd(batch):
   # Padding batch of variable length
-  
-  if args.augment is not None:
-    batch = utils_func.augment(batch=batch, aug_col=eot)
+  if args.augment:
+    batch = utils_func.augment(batch=batch)
 
   padding_value = -1000.0
   ## Get sequence lengths

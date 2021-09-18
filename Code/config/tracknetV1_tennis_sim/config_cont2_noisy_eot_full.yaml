@@ -2,8 +2,8 @@
 #dataset_train_path: '../../Dataset/Single/train_set/'
 #dataset_val_path: '../../Dataset/Single/val_set/'
 
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_cd/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_cd/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -11,7 +11,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_cont2_clean_cd_full'
+wandb_name: 'tennis_cont2_noisy_eot_full'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -31,7 +31,7 @@ annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
 augment: null
-recon: 'clean'
+recon: 'noisy'
 
 # Visualization
 visualize: True
@@ -80,7 +80,7 @@ pipeline:
       extra_out: []
 
 # Features
-selected_features: [cd]
+selected_features: [eot]
 i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)

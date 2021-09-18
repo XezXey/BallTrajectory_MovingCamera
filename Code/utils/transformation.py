@@ -75,17 +75,11 @@ def cast_ray(uv, I, E, cpos):
       - ray : Ray direction (batch, seq_len, 3)
       (Can check with ray.x, ray.y, ray.z for debugging)
   '''
-  w = 1280.0
-  h = 720.0
-
-  #w = 1664.0
-  #h = 1088.0
-  
   transf = I @ E
   transf_inv = pt.inverse(transf)
 
-  u = ((uv[..., [0]] / w) * 2) - 1
-  v = ((uv[..., [1]] / h) * 2) - 1
+  u = ((uv[..., [0]] / args.w) * 2) - 1
+  v = ((uv[..., [1]] / args.h) * 2) - 1
 
   ones = pt.ones(u.shape).to(device)
 
