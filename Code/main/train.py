@@ -135,7 +135,7 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
 
-def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, annealing_weight):
+def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, anneal_w):
   ####################################
   ############# Training #############
   ####################################
@@ -144,7 +144,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
-  train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train) # Calculate the loss
+  train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, anneal_w=anneal_w) # Calculate the loss
 
   #train_loss.requires_grad_(True)
   train_loss.backward()
@@ -165,7 +165,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
-  val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val) # Calculate the loss
+  val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, anneal_w=anneal_w) # Calculate the loss
 
   utils_func.print_loss(loss_list=[train_loss_dict, train_loss], name='Training')
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
@@ -255,9 +255,9 @@ if __name__ == '__main__':
 
   # Model definition
   min_val_loss = 2e10
-  annealing_step = 0
-  annealing_weight = 1.0
-  annealing_weight_list = np.linspace(start=0, stop=1, num=15)
+  anneal_step = 0
+  anneal_w_list = np.linspace(start=0, stop=1, num=10)
+  anneal_w = anneal_w_list[0]
   model_dict, model_cfg = utils_func.get_model(args=args)
 
   model_dict = {model:model_dict[model].to(device) for model in model_dict.keys()}
@@ -282,8 +282,8 @@ if __name__ == '__main__':
     print('===>Load ckpt with Optimizer state, Decay and Scheduler state')
     print('[#] Loading ... {}'.format(args.load_ckpt))
     model_dict, optimizer, start_epoch, lr_scheduler, min_val_loss, annealing_scheduler = utils_func.load_ckpt_train(model_dict, optimizer, lr_scheduler)
-    annealing_step = annealing_scheduler['step']
-    annealing_weight = annealing_scheduler['weight']
+    anneal_step = annealing_scheduler['step']
+    anneal_w = annealing_scheduler['weight']
 
   print('[#]Model Architecture')
   for model in model_cfg.keys():
@@ -335,7 +335,7 @@ if __name__ == '__main__':
       # Call function to train
       train_loss, val_loss, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
                                               input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
-                                              annealing_weight=annealing_weight, model_dict=model_dict, optimizer=optimizer,
+                                              anneal_w=anneal_w, model_dict=model_dict, optimizer=optimizer,
                                               epoch=epoch)
 
       accumulate_val_loss.append(val_loss)
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     val_loss_per_epoch = np.mean(accumulate_val_loss)
     train_loss_per_epoch = np.mean(accumulate_train_loss)
     # Log the each epoch loss
-    wandb.log({'Epoch Train Loss':train_loss_per_epoch, 'Epoch Validation Loss':val_loss_per_epoch})
+    wandb.log({"n_epochs":epoch, 'Epoch Train Loss':train_loss_per_epoch, 'Epoch Validation Loss':val_loss_per_epoch})
 
     # Decrease learning rate every n_epochs % decay_cycle batch
     if epoch % args.decay_cycle == 0:
@@ -355,13 +355,12 @@ if __name__ == '__main__':
 
     # Decrease learning rate every n_epochs % annealing_cycle batch
     if epoch % args.annealing_cycle == 0:
-      # annealing_weight = annealing_weight * args.annealing_gamma ** annealing_step
-      if annealing_step < len(annealing_weight_list):
-        annealing_weight = annealing_weight_list[annealing_step]
+      if anneal_step < len(anneal_w_list):
+        anneal_w = anneal_w_list[anneal_step]
       else:
-        annealing_weight = annealing_weight_list[-1]
-      annealing_step += 1
-      print("[#]Stepping annealing weight to ", annealing_weight)
+        anneal_w = anneal_w_list[-1]
+      anneal_step += 1
+      print("[#]Stepping annealing weight to ", anneal_w)
 
     print('[#]Finish Epoch : {}/{}.........Train loss : {:.3f}, Val loss : {:.3f}'.format(epoch, args.n_epochs, train_loss_per_epoch, val_loss_per_epoch))
 
@@ -372,7 +371,7 @@ if __name__ == '__main__':
       print('[+++]Saving the best model ckpt : Prev loss {:.3f} > Curr loss {:.3f}'.format(min_val_loss, val_loss_per_epoch))
       print('[+++]Saving the best model ckpt to : ', save_ckpt_best)
       min_val_loss = val_loss_per_epoch
-      annealing_scheduler = {'step':annealing_step, 'weight':annealing_weight}
+      annealing_scheduler = {'step':anneal_step, 'weight':anneal_w}
       # Save to directory
       ckpt = {'epoch':epoch+1, 'optimizer':optimizer.state_dict(), 'lr_scheduler':lr_scheduler.state_dict(), 'min_val_loss':min_val_loss, 'model_cfg':model_cfg, 'annealing_scheduler':annealing_scheduler}
       for model in model_cfg:

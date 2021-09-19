@@ -186,20 +186,24 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
 
-  pred_xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, R)
-
+  xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, R)
 
   if 'refinement' in args.pipeline:
-    pred_refoff, _ = model_dict['refinement'](in_f=pred_xyz, lengths=input_dict['lengths'])
+    pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
-    pred_xyz = pred_xyz + pred_refoff
+    xyz_refined = xyz + pred_refoff
+  else:
+    xyz_refined = None
     
 
   # Decoanonicalize
   if args.canonicalize:
-    pred_xyz = utils_transform.canonicalize(pts=pred_xyz, R=R, inv=True)
+    xyz = utils_transform.canonicalize(pts=xyz, R=R, inv=True)
+    if xyz_refined is not None:
+      xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=R, inv=True)
 
-  pred_dict['xyz'] = pred_xyz
+  pred_dict['xyz'] = xyz
+  pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f
 
@@ -309,14 +313,20 @@ def output_space(pred_h, lengths, search_h=None):
       
     return height
 
-def training_loss(input_dict, gt_dict, pred_dict):
+def training_loss(input_dict, gt_dict, pred_dict, anneal_w):
   # Calculate loss term
   ######################################
   ############# Trajectory #############
   ######################################
   trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  if (args.annealing) and ('refinement' in args.pipeline):
+    trajectory_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    trajectory_loss = trajectory_loss + trajectory_loss_refined * anneal_w
+  elif ('refinement' in args.pipeline):
+    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+
   below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  #gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
   gravity_loss = pt.tensor(0.).to(device)
   #below_ground_loss = pt.tensor(0.).to(device)

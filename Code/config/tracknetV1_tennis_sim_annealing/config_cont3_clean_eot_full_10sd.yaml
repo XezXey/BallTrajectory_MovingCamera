@@ -1,6 +1,10 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_eot/val_set/'
+dataset_test_path : null
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -8,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_cont2_clean_cd_full_perc'
+wandb_name: 'tennis_cont3_clean_eot_full_10sd'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -24,8 +28,8 @@ decay_cycle: 10000
 canonicalize: False
 noise: True
 noise_sd: 10
-annealing: True
-annealing_cycle: 1
+annealing: False
+annealing_cycle: 10000
 annealing_gamma:  0.7
 augment: True
 recon: 'clean'
@@ -78,7 +82,7 @@ pipeline:
       extra_out: []
 
 # Features
-selected_features: [cd]
+selected_features: [eot]
 i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
