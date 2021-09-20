@@ -78,7 +78,7 @@ pipeline:
       extra_out: []
 
 # Features
-selected_features: [cd]
+selected_features: [eot]
 i_s: 'dt'  # Input space
 o_s: 'dt'  # Output space
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)

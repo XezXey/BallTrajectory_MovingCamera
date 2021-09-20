@@ -144,7 +144,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
-  train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, anneal_w=anneal_w) # Calculate the loss
+  train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, cam_dict=cam_dict_train, anneal_w=anneal_w) # Calculate the loss
 
   #train_loss.requires_grad_(True)
   train_loss.backward()
@@ -165,17 +165,18 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
-  val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, anneal_w=anneal_w) # Calculate the loss
+  val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, cam_dict=cam_dict_val, anneal_w=anneal_w) # Calculate the loss
 
   utils_func.print_loss(loss_list=[train_loss_dict, train_loss], name='Training')
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 150 == 0:
+  if args.visualize and epoch % 1 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                         pred_dict_val=pred_dict_val, cam_dict_val=cam_dict_val)
+    input()
 
   return train_loss.item(), val_loss.item(), model_dict
 

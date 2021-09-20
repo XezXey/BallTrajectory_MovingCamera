@@ -106,11 +106,11 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
     ####################################
     ############### Flag ###############
     ####################################
-    #if ('flag' in pred_dict.keys()):
-    #  fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
-    #  visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
-    #  visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=1)
-    #  plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
+    if ('flag' in pred_dict.keys()):
+      fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
+      visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
+      visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=1)
+      plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
 
 
 

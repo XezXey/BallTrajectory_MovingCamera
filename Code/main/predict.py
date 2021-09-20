@@ -228,7 +228,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test)
-  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test) # Calculate the loss
+  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, anneal_w=None) # Calculate the loss
 
   ###################################
   ############ Evaluation ###########

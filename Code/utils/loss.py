@@ -6,7 +6,7 @@ sys.path.append(os.path.realpath('../..'))
 from sklearn.metrics import confusion_matrix
 import plotly
 import wandb
-import utils.transformation as transformation
+import utils.transformation as utils_transform
 import matplotlib.pyplot as plt
 
 # GPU initialization
@@ -20,13 +20,13 @@ def share_args(a):
   global args
   args = a
 
-def ReprojectionLoss(pred, gt, mask, lengths, cam_params_dict, normalize):
-  u_pred, v_pred, _ = transformation.projectToScreenSpace(pred, cam_params_dict, normalize)
-  u_gt, v_gt, _ = transformation.projectToScreenSpace(gt, cam_params_dict, normalize)
-  u_reprojection_loss = (pt.sum((((u_gt[..., 0] - u_pred[..., 0]))**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-  v_reprojection_loss = (pt.sum((((v_gt[..., 0] - v_pred[..., 0]))**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-  return (u_reprojection_loss + v_reprojection_loss)/2
-
+def ReprojectionLoss(pred, gt, mask, lengths, cam_dict):
+  u_pred, v_pred, _ = utils_transform.projection_2d(pts=pred, cam_dict=cam_dict)
+  u_gt, v_gt = cam_dict['tracking'][..., [0]], cam_dict['tracking'][..., [1]]
+  u_reprojection_loss = (pt.sum((((u_gt[..., [0]] - u_pred[..., [0]]))**2) * mask[..., [0]]) / pt.sum(mask[..., [0]]))
+  v_reprojection_loss = (pt.sum((((v_gt[..., [0]] - v_pred[..., [0]]))**2) * mask[..., [0]]) / pt.sum(mask[..., [0]]))
+  reprojection_loss = (u_reprojection_loss + v_reprojection_loss)/2
+  return reprojection_loss
 
 def GravityLoss(pred, gt, mask, lengths):
   # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step
@@ -61,7 +61,7 @@ def GravityLoss(pred, gt, mask, lengths):
 
   return pt.mean(gravity_constraint_penalize)
 
-def BelowGroundPenalize(pred, mask, lengths):
+def BelowGroundLoss(pred, mask, lengths):
   # Penalize when the y-axis is below on the ground
   pred = pred * mask
   below_ground_mask = pred[..., [1]] < 0

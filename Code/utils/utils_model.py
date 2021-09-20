@@ -1,13 +1,10 @@
-from re import search
-from numpy.lib import utils
 from Code.utils.utils_func import generate_input
 import torch as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
-import math
-from tqdm import tqdm
+import time
 sys.path.append(os.path.realpath('../..'))
 # Utils
 import utils.transformation as utils_transform
@@ -112,6 +109,51 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   return pred_dict, in_f
 '''
 
+def uv_to_inf(cam_dict):
+  '''
+  Create the input features from uv-tracking
+  Input : 
+    1. cam_dict : contains [I, E, Einv, tracking]
+  Output :
+    1. recon_dict : contains 
+      - 'clean' : for clean reconstruction
+      - 'noisy' : for noisy reconstruction
+  '''
+  # Add noise & generate input
+  in_f_noisy, ray_noisy = utils_func.add_noise(cam_dict=cam_dict)
+  # Generate input
+  in_f_raw, ray_raw = utils_func.generate_input(cam_dict=cam_dict)
+
+  if args.noise:
+    in_f, ray = in_f_noisy, ray_noisy
+  else:
+    in_f, ray = in_f_raw, ray_raw
+
+  recon_dict = {'clean' : in_f_raw[..., [0, 1, 2]], 'noisy': in_f_noisy[..., [0, 1, 2]]}
+  return in_f, ray, recon_dict
+
+def canonicalize_features(Einv, intr, ray, in_f):
+  '''
+  Canonicalize all features
+  Input : 
+    1. Einv : To compute a rotation matrix in shape (batch_size, seq_len, 4, 4)
+    2. intr : intersection points in shape(batch_size, seq_len, 3)
+    3. ray : ray direction in shape(batch_size, seq_len, 3)
+    4. in_f : input features from uv in shape(batch_size, seq_len, 5) - (intr, elev, azim)
+  Output :
+    1. canon_dict : contains ['cam_cl', 'R'] to be used in reconstruction and canonicalize
+    2. in_f : the new input features after canonicalized
+  '''
+  R = utils_transform.find_R(Einv=Einv)
+  intr_cl = utils_transform.canonicalize(pts=intr, R=R)
+  cam_cl = utils_transform.canonicalize(pts=Einv[..., 0:3, -1], R=R)
+  ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
+  azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
+  in_f = pt.cat((intr_cl, azim_cl, in_f[..., [3]]), dim=2)
+  canon_dict = {'cam_cl' : cam_cl, 'R' : R}
+
+  return canon_dict, in_f
+
 def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   '''
   Forward Pass to the whole pipeline
@@ -131,27 +173,13 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   # Prediction dict
   pred_dict = {}
 
-  # Add noise
-  if args.noise:
-    in_f, ray = utils_func.add_noise(cam_dict=cam_dict)
-
-  else:
-    # Generate Input directly from tracking
-    in_f, ray = utils_func.generate_input(cam_dict=cam_dict)
+  in_f, ray, recon_dict = uv_to_inf(cam_dict)
 
   # Canonicalize
   if args.canonicalize:
-    R = utils_transform.find_R(Einv=cam_dict['Einv'])
-    in_f_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
-    cam_cl = utils_transform.canonicalize(pts=cam_dict['Einv'][..., 0:3, -1], R=R)
-    ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
-    azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
-    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
+    canon_dict, in_f = canonicalize_features(Einv=cam_dict['Einv'], intr=in_f[..., [0, 1, 2]], ray=ray, in_f=in_f)
   else:
-    cam_cl = None
-    R = None
-
-  intr_noise = in_f[..., [0, 1, 2]]
+    canon_dict = {'cam_cl' : None, 'R' : None}
 
   in_f = input_manipulate(in_f=in_f)
 
@@ -186,7 +214,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
 
-  xyz = reconstruct(height, cam_dict, intr_noise, cam_cl, R)
+  xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
 
   if 'refinement' in args.pipeline:
     pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
@@ -195,37 +223,44 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   else:
     xyz_refined = None
     
-
   # Decoanonicalize
   if args.canonicalize:
-    xyz = utils_transform.canonicalize(pts=xyz, R=R, inv=True)
+    xyz = utils_transform.canonicalize(pts=xyz, R=canon_dict['R'], inv=True)
     if xyz_refined is not None:
-      xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=R, inv=True)
+      xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=canon_dict['R'], inv=True)
 
   pred_dict['xyz'] = xyz
   pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f
 
-def reconstruct(height, cam_dict, intr_noise, cam_cl, R):
+def reconstruct(height, cam_dict, recon_dict, canon_dict):
+  '''
+  Reconstruct the 3d points from predicted height
+  Input : 
+    1. height : predicted height in shape(batch_size, seq_len, 1)
+    2. cam_dict : contains ['I', 'E', 'Einv', 'tracking']
+    3. recon_dict : contains 
+      - 'clean' : for clean reconstruction
+      - 'noisy' : for noisy reconstruction
+    4. canon_dict : contains ['cam_cl', 'R'] to be used in reconstruction and canonicalize
+  Output : 
+    1. xyz : reconstructed xyz in shape(batch_size, seq_len, 3)
+  '''
 
-  # Recreate clean samples
-  in_f, ray = generate_input(cam_dict=cam_dict)
   if args.canonicalize:
-    in_f_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
-    cam_cl = utils_transform.canonicalize(pts=cam_dict['Einv'][..., 0:3, -1], R=R)
-    ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
-    azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
-    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
-
-  intr_clean = in_f[..., [0, 1, 2]]
+    intr_clean = utils_transform.canonicalize(pts=recon_dict['clean'], R=canon_dict['R'])
+    intr_noisy = utils_transform.canonicalize(pts=recon_dict['noisy'], R=canon_dict['R'])
+  else:
+    intr_clean = recon_dict['clean']
+    intr_noisy = recon_dict['noisy']
 
   if args.recon == 'clean':
-    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+    xyz = utils_transform.h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
   elif args.recon == 'noisy':
-    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_noise, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+    xyz = utils_transform.h_to_3d(height=height, intr=intr_noisy, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
   
-  return pred_xyz
+  return xyz
       
 def input_manipulate(in_f):
   '''
@@ -313,35 +348,63 @@ def output_space(pred_h, lengths, search_h=None):
       
     return height
 
-def training_loss(input_dict, gt_dict, pred_dict, anneal_w):
-  # Calculate loss term
+def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
+  '''
+  Calculate loss
+  '''
   ######################################
   ############# Trajectory #############
   ######################################
-  trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   if (args.annealing) and ('refinement' in args.pipeline):
+    # Annealing
+    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
     trajectory_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
     trajectory_loss = trajectory_loss + trajectory_loss_refined * anneal_w
   elif ('refinement' in args.pipeline):
+    # No annealing
     trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  else:
+    # No refinement
+    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
-  below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-
-  gravity_loss = pt.tensor(0.).to(device)
+  ######################################
+  ############# Below GND ##############
+  ######################################
+  below_ground_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   #below_ground_loss = pt.tensor(0.).to(device)
 
+  ######################################
+  ############## Gravity ###############
+  ######################################
+  #gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  gravity_loss = pt.tensor(0.).to(device)
+
+  ######################################
+  ############### Flag #################
+  ######################################
   if 'flag' not in pred_dict.keys() or args.env != 'unity':
     flag_loss = pt.tensor(0.).to(device)
   else:
     zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
 
-  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss
+  ######################################
+  ########### Reprojection #############
+  ######################################
+  if ('refinement' in args.pipeline):
+    reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
+  else:
+    #reproj_loss = pt.tensor(0.).to(device)
+    reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
+
+  # Combined all losses term
+  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item(),
-               "Flag Loss":flag_loss.item()}
+               "Flag Loss":flag_loss.item(),
+               "Reprojection Loss":reprojection_loss.item()
+               }
 
   return loss_dict, loss
 
