@@ -173,7 +173,6 @@ def projection_2d(pts, cam_dict, normalize=False):
   pts = pt.unsqueeze(pt.cat((pts, ones), dim=-1), dim=-1)
   I = cam_dict['I']
   E = cam_dict['E']
-  print(I.shape, E.shape, pts.shape)
   scr = I @ E @ pts
   scr = pt.squeeze(scr, dim=-1)
   if normalize:

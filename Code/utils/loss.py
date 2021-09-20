@@ -20,12 +20,63 @@ def share_args(a):
   global args
   args = a
 
-def ReprojectionLoss(pred, gt, mask, lengths, cam_dict):
+def ReprojectionLoss(pred, mask, lengths, cam_dict):
   u_pred, v_pred, _ = utils_transform.projection_2d(pts=pred, cam_dict=cam_dict)
   u_gt, v_gt = cam_dict['tracking'][..., [0]], cam_dict['tracking'][..., [1]]
-  u_reprojection_loss = (pt.sum((((u_gt[..., [0]] - u_pred[..., [0]]))**2) * mask[..., [0]]) / pt.sum(mask[..., [0]]))
-  v_reprojection_loss = (pt.sum((((v_gt[..., [0]] - v_pred[..., [0]]))**2) * mask[..., [0]]) / pt.sum(mask[..., [0]]))
+  u_gt = u_gt * mask[..., [0]]
+  v_gt = v_gt * mask[..., [0]]
+  u_pred = u_pred * mask[..., [0]]
+  v_pred = v_pred * mask[..., [0]]
+  
+  if u_gt.shape[-1] != 1:
+    print("SDSA")
+  else:
+      input("SS")
+  #gt = pt.cat((u_gt, v_gt), dim=-1)
+  #pred = pt.cat((u_pred, v_pred), dim=-1)
+
+  #print(u[0][lengths[0]-10:lengths[0]+3])
+  #print(v[0][lengths[0]-10:lengths[0]+3])
+  #print(u[0][lengths[0]-10:lengths[0]])
+  #print(v[0][lengths[0]-10:lengths[0]])
+  #print((u[0] * mask[0][..., [0]])[lengths[0]-10:lengths[0]+3])
+  #print((v[0] * mask[0][..., [0]])[lengths[0]-10:lengths[0]+3])
+  #input()
+  #print(u_gt[..., [0]].shape, v_gt[..., [0]].shape)
+  #print(u_pred[..., [0]].shape, v_pred[..., [0]].shape)
+  #print(np.argwhere(np.isnan(u_pred.detach().cpu().numpy())))
+  #print(np.argwhere(np.isnan(v_pred.detach().cpu().numpy())))
+  #print(np.argwhere(np.isnan(u_gt.detach().cpu().numpy())))
+  #print(np.argwhere(np.isnan(v_gt.detach().cpu().numpy())))
+
+  #input("DONE nan")
+  #print(u_gt[..., [0]] - u_pred[..., [0]])
+  #print(v_gt[..., [0]] - v_pred[..., [0]])
+
+  #x = (u_gt[..., [0]] - u_pred[..., [0]]).detach().cpu().numpy()
+  #y = (v_gt[..., [0]] - v_pred[..., [0]]).detach().cpu().numpy()
+  #print(np.argwhere(np.isnan(x)))
+  #print(np.argwhere(np.isnan(y)))
+
+  #input()
+  #for i in range(gt.shape[0]):
+  #  print(gt[i][lengths[i]-3:lengths[i]+3])
+  #  print(pred[i][lengths[i]-3:lengths[i]+3])
+  #input() 
+
+  #gt_ = gt * mask[..., [0, 1]]
+  #pred_ = pred * mask[..., [0, 1]]
+  #for i in range(gt_.shape[0]):
+  #  print(gt_[i][lengths[i]-3:lengths[i]+3])
+  #  print(pred_[i][lengths[i]-3:lengths[i]+3])
+  #input() 
+
+  u_reprojection_loss = pt.sum((u_gt - u_pred)**2) / (pt.sum(mask[..., [0]]) + 1e-16)
+  v_reprojection_loss = pt.sum((v_gt - v_pred)**2) / (pt.sum(mask[..., [0]]) + 1e-16)
+
   reprojection_loss = (u_reprojection_loss + v_reprojection_loss)/2
+  print(reprojection_loss)
+  input()
   return reprojection_loss
 
 def GravityLoss(pred, gt, mask, lengths):
