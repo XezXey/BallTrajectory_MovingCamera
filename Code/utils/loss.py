@@ -147,3 +147,51 @@ def LatentLoss(pred, gt, lengths, mask):
     latent_loss = latent_loss / pred.shape[0]
 
   return latent_loss
+
+def CosineSimLoss(pred, gt, input_dict, cam_dict, mask, lengths):
+  '''
+  Calculate the loss between reconstructed trajectory and the input latent
+  input : 1) gt - col 3 contians eot flag, col 4: contains latent (depends on --features_cols)
+          2) pred - trajectory xyz
+  '''
+  
+  latent_loss = 0.0
+  flag = input_dict['aux'][..., [0]]
+
+  for i in range(pred.shape[0]):
+    flag_ = flag[i][:, 0]
+    flag_loc = pt.cat((pt.tensor([0]).to(device), pt.where(flag_ == 1)[0]))    # +1 for exclusive indexing
+    for j in range(flag_loc.shape[0]-1):
+      #dir_pred_j = pred[i][flag_loc[j]:flag_loc[j+2]+5, [1, 2]]
+      #dir_gt_j = gt[i][flag_loc[j]:flag_loc[j+2]+5, [1, 2]]
+
+      fig, axs = plt.subplots(3, sharex=True)
+      dir_gt_j = gt[i][flag_loc[j]:flag_loc[j+1]+5, [1, 2]]
+      axs[2].plot(dir_gt_j[:, 0].detach().cpu().numpy(), '-v', c='y')
+      axs[2].plot(dir_gt_j[:, 1].detach().cpu().numpy(), '-v', c='y')
+
+      dir_gt_j = gt[i][flag_loc[j]:flag_loc[j+1], [1, 2]]
+      axs[2].plot(dir_gt_j[:, 0].detach().cpu().numpy(), '-v', c='g')
+      axs[2].plot(dir_gt_j[:, 1].detach().cpu().numpy(), '-v', c='g')
+
+      dir_pred_j = pred[i][flag_loc[j]:lengths[i], [1, 2]]
+      dir_gt_j = gt[i][flag_loc[j]:lengths[i], [1, 2]]
+      axs[0].plot(dir_pred_j[:, 0].detach().cpu().numpy(), '-x', c='r')
+      axs[0].plot(dir_pred_j[:, 1].detach().cpu().numpy(), '-x', c='r')
+      axs[1].plot(dir_gt_j[:, 0].detach().cpu().numpy(), '-o', c='b')
+      axs[1].plot(dir_gt_j[:, 1].detach().cpu().numpy(), '-o', c='b')
+
+      plt.savefig("{}/cosineSim.png".format(args.vis_path))
+      plt.clf()
+      input()
+      # Normalized
+      dir_pred = dir_pred_j[1:, :] - dir_pred_j[:-1, :]
+      dir_pred = dir_pred / (pt.sqrt(pt.sum(dir_pred**2, dim=-1, keepdims=True)) + 1e-16)
+      print(dir_pred.shape)
+      print(dir_pred)
+      latent_loss_j = pt.sum((pt.mean(dir_gt_j, dim=0, keepdims=True) - dir_pred) ** 2)
+
+      latent_loss = latent_loss + latent_loss_j
+    latent_loss = latent_loss / pred.shape[0]
+
+  return latent_loss
