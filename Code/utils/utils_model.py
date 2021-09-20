@@ -394,7 +394,6 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   if ('refinement' in args.pipeline):
     reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
   else:
-    #reproj_loss = pt.tensor(0.).to(device)
     reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
   # Combined all losses term

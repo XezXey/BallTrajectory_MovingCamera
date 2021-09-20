@@ -21,6 +21,7 @@ def share_args(a):
   args = a
 
 def ReprojectionLoss(pred, mask, lengths, cam_dict):
+  # Reprojection loss
   u_pred, v_pred, _ = utils_transform.projection_2d(pts=pred, cam_dict=cam_dict)
   u_gt, v_gt = cam_dict['tracking'][..., [0]], cam_dict['tracking'][..., [1]]
   u_gt = u_gt * mask[..., [0]]
@@ -28,55 +29,10 @@ def ReprojectionLoss(pred, mask, lengths, cam_dict):
   u_pred = u_pred * mask[..., [0]]
   v_pred = v_pred * mask[..., [0]]
   
-  if u_gt.shape[-1] != 1:
-    print("SDSA")
-  else:
-      input("SS")
-  #gt = pt.cat((u_gt, v_gt), dim=-1)
-  #pred = pt.cat((u_pred, v_pred), dim=-1)
-
-  #print(u[0][lengths[0]-10:lengths[0]+3])
-  #print(v[0][lengths[0]-10:lengths[0]+3])
-  #print(u[0][lengths[0]-10:lengths[0]])
-  #print(v[0][lengths[0]-10:lengths[0]])
-  #print((u[0] * mask[0][..., [0]])[lengths[0]-10:lengths[0]+3])
-  #print((v[0] * mask[0][..., [0]])[lengths[0]-10:lengths[0]+3])
-  #input()
-  #print(u_gt[..., [0]].shape, v_gt[..., [0]].shape)
-  #print(u_pred[..., [0]].shape, v_pred[..., [0]].shape)
-  #print(np.argwhere(np.isnan(u_pred.detach().cpu().numpy())))
-  #print(np.argwhere(np.isnan(v_pred.detach().cpu().numpy())))
-  #print(np.argwhere(np.isnan(u_gt.detach().cpu().numpy())))
-  #print(np.argwhere(np.isnan(v_gt.detach().cpu().numpy())))
-
-  #input("DONE nan")
-  #print(u_gt[..., [0]] - u_pred[..., [0]])
-  #print(v_gt[..., [0]] - v_pred[..., [0]])
-
-  #x = (u_gt[..., [0]] - u_pred[..., [0]]).detach().cpu().numpy()
-  #y = (v_gt[..., [0]] - v_pred[..., [0]]).detach().cpu().numpy()
-  #print(np.argwhere(np.isnan(x)))
-  #print(np.argwhere(np.isnan(y)))
-
-  #input()
-  #for i in range(gt.shape[0]):
-  #  print(gt[i][lengths[i]-3:lengths[i]+3])
-  #  print(pred[i][lengths[i]-3:lengths[i]+3])
-  #input() 
-
-  #gt_ = gt * mask[..., [0, 1]]
-  #pred_ = pred * mask[..., [0, 1]]
-  #for i in range(gt_.shape[0]):
-  #  print(gt_[i][lengths[i]-3:lengths[i]+3])
-  #  print(pred_[i][lengths[i]-3:lengths[i]+3])
-  #input() 
-
   u_reprojection_loss = pt.sum((u_gt - u_pred)**2) / (pt.sum(mask[..., [0]]) + 1e-16)
   v_reprojection_loss = pt.sum((v_gt - v_pred)**2) / (pt.sum(mask[..., [0]]) + 1e-16)
 
-  reprojection_loss = (u_reprojection_loss + v_reprojection_loss)/2
-  print(reprojection_loss)
-  input()
+  reprojection_loss = u_reprojection_loss + v_reprojection_loss
   return reprojection_loss
 
 def GravityLoss(pred, gt, mask, lengths):
@@ -127,22 +83,6 @@ def TrajectoryLoss(pred, gt, mask, lengths=None, delmask=True):
 
   return x_trajectory_loss + y_trajectory_loss + z_trajectory_loss
 
-def create_weight_loss(mask):
-  if len(mask.shape)==2:
-    # Handle the visualization that have shape (seq_len, 3) but this function accept (batch_size, seq_len, 3)
-    mask = pt.unsqueeze(mask, dim=0)
-
-  weight_loss = pt.zeros(mask.shape).to(device)
-  for idx, length in enumerate(pt.sum(mask, dim=1)[..., [0]]):
-    weight_loss[idx][:length[0], [0, 1, 2]] = pt.linspace(10, 1, length[0]).view(-1, 1).to(device)
-  # print(weight_loss[0][:pt.sum(mask, dim=1)[..., [0]][0]+2, [0]])
-  # print(mask[0][:pt.sum(mask, dim=1)[..., [0]][0]+2, [0]])
-  return weight_loss
-
-def DepthLoss(pred, gt, mask, lengths):
-  depth_loss = (pt.sum((((gt - pred))**2) * mask) / pt.sum(mask))
-  return depth_loss
-
 def EndOfTrajectoryLoss(pred, gt, mask, lengths):
   # Here we use output mask so we need to append the startpos to the pred before multiplied with mask(already included the startpos)
   pred = pred * mask
@@ -170,40 +110,6 @@ def eot_metrics_log(gt, pred, lengths, flag):
   recall = tp/(tp+fn)
   f1_score = 2 * (precision * recall) / (precision + recall)
   wandb.log({'{} Precision'.format(flag):precision, '{} Recall'.format(flag):recall, '{} F1-score'.format(flag):f1_score, '{}-#N accepted trajectory(Perfect EOT without FN, FP)'.format(flag):n_accepted_trajectory})
-
-def MultiviewReprojectionLoss(pred, gt, mask, lengths, cam_params_dict):
-  all_multiview_loss = 0
-
-  # De-centering
-  pred = transformation.centering(xyz=pred, cam_params_dict=cam_params_dict, device=device, rev=True)
-  gt = transformation.centering(xyz=gt, cam_params_dict=cam_params_dict, device=device, rev=True)
-
-  pred = pred * mask
-  gt = gt * mask
-  # print(pred[0][:lengths[0]+2])
-  # print(gt[0][:lengths[0]+2])
-  # print(mask[0][:lengths[0]+2])
-  # exit()
-
-  for cam_use in args.multiview_loss:
-    u_gt, v_gt, d_gt = transformation.projectToScreenSpace(world=gt, cam_params_dict=cam_params_dict[cam_use], normalize=False)
-    u_pred, v_pred, d_pred = transformation.projectToScreenSpace(world=pred, cam_params_dict=cam_params_dict[cam_use], normalize=False)
-    # print(u_pred[..., 0])
-    # print(u_pred[..., 0] * mask[..., 1])
-    # print(u_pred[..., 0] * mask[..., 1] * mask[..., 1])
-    # exit()
-    u_reprojection_loss = (pt.sum((((u_gt[..., 0] - u_pred[..., 0]) * d_gt[..., 0])**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-    v_reprojection_loss = (pt.sum((((v_gt[..., 0] - v_pred[..., 0]) * d_gt[..., 0])**2) * mask[..., 1]) / pt.sum(mask[..., 1]))
-    multiview_loss = (u_reprojection_loss + v_reprojection_loss)/2
-    all_multiview_loss += multiview_loss
-
-  return all_multiview_loss
-
-def InterpolationLoss(uv_gt, uv_pred, mask, lengths):
-  u_interpolation_loss = (pt.sum((((uv_gt[..., 0] - uv_pred[..., 0]))**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-  v_interpolation_loss = (pt.sum((((uv_gt[..., 1] - uv_pred[..., 1]))**2) * mask[..., 0]) / pt.sum(mask[..., 0]))
-  interpolation_loss = u_interpolation_loss + v_interpolation_loss
-  return interpolation_loss
 
 def LatentLoss(pred, gt, lengths, mask):
   '''

@@ -150,6 +150,7 @@ def find_R(Einv):
 
 def canonicalize(pts, R, inv=False):
   '''
+  Canonicalize any points given R matrix
   Input : Ignore (Y dimension cuz we rotate over Y-axis)
     1. pts : 3d points in shape=(batch, seq_len, 3)
     2. R : Rotation matrix from find_R function in shape(batch, seq_len, 3, 3)
@@ -167,8 +168,19 @@ def canonicalize(pts, R, inv=False):
   pts = R @ pts
   return pt.squeeze(pts, dim=-1)
 
-
 def projection_2d(pts, cam_dict, normalize=False):
+  '''
+  Projection from 3d to 2d
+  Input :
+    1. pts : 3d points in shape=(batch, seq_len, 3)
+    2. cam_dict : contains I, E, E_inv and cpos => {I, E, E_inv, tracking, cpos}
+    3. normalize : True = ndc, False = screen
+  Output : 
+    1. u : u-coordinates in shape=(batch, seq_len, 1)
+    2. v : v-coordinates in shape=(batch, seq_len, 1)
+    3. d : depth in shape=(batch, seq_len, 1)
+  '''
+
   ones = pt.ones(size=(pts.shape[0], pts.shape[1], 1)).to(device)
   pts = pt.unsqueeze(pt.cat((pts, ones), dim=-1), dim=-1)
   I = cam_dict['I']
