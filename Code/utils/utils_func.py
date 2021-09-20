@@ -53,45 +53,47 @@ def random_seed():
 
 def get_selected_cols(args, pred):
   # Flag/Extra features columns
-  features_cols = []
+  features_col = []
   if 'eot' in args.selected_features:
-    features_cols.append(eot)
+    features_col.append(eot)
   if 'cd' in args.selected_features:
-    features_cols.append(cd)
+    features_col.append(cd)
   if 'rad' in args.selected_features:
-    features_cols.append(rad)
+    features_col.append(rad)
   if 'f_sin' in args.selected_features:
-    features_cols.append(f_sin)
+    features_col.append(f_sin)
   if 'f_cos' in args.selected_features:
-    features_cols.append(f_cos)
+    features_col.append(f_cos)
   if 'fx' in args.selected_features:
-    features_cols.append(fx)
+    features_col.append(fx)
   if 'fy' in args.selected_features:
-    features_cols.append(fy)
+    features_col.append(fy)
   if 'fz' in args.selected_features:
-    features_cols.append(fz)
+    features_col.append(fz)
   if 'fx_norm' in args.selected_features:
-    features_cols.append(fx_norm)
+    features_col.append(fx_norm)
   if 'fy_norm' in args.selected_features:
-    features_cols.append(fy_norm)
+    features_col.append(fy_norm)
   if 'fz_norm' in args.selected_features:
-    features_cols.append(fz_norm)
+    features_col.append(fz_norm)
 
   if pred=='height' and args.env=='unity':
-    input_col = [intr_x, intr_y, intr_z, elevation, azimuth] + features_cols
-    gt_col = [x, y, z] + features_cols
+    input_col = [intr_x, intr_y, intr_z, elevation, azimuth]
+    gt_col = [x, y, z]
+    features_col = features_col
   else :
     input_col = "[u, v]"
     gt_col = "[x, y, z] (if existed)"
+    features_col = "No features cols from real data"
 
   print('='*47 + "Features" + '='*47)
   print('Prediction = {}, Environment = {}'.format(pred, args.env))
   print("Available features : ", ['{}-{}'.format(features[idx], idx) for idx in range(len(features))])
-  print("Selected features : ", features_cols)
+  print("Selected features : ", features_col)
   print("1. input_col = ", input_col)
   print("2. gt_col = ", gt_col)
   print('='*100)
-  return input_col, gt_col, features_cols
+  return input_col, gt_col, features_col
 
 def get_extra_fsize(module):
 

@@ -63,7 +63,6 @@ def h_to_3d(intr, E, height, cam_pos=None):
   xyz = intr + (norm_R * magnitude)
   return xyz
 
-
 def cast_ray(uv, I, E, cpos):
   '''
   Casting a ray given UV-coordinates, intrinisc, extrinsic

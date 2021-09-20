@@ -133,7 +133,7 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
             'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
-input_col, gt_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
+input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
 def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, anneal_w):
   ####################################
@@ -195,6 +195,13 @@ def collate_fn_padd(batch):
   ## Compute mask
   input_mask = (input_batch != padding_value)
 
+  # Auxiliary features : e.g. eot, cd, rad, f_sin, f_cos, ..., etc.
+  ## Padding
+  features_batch = [pt.Tensor(trajectory[:, features_col].astype(np.float64)) for trajectory in batch]
+  features_batch = pad_sequence(features_batch, batch_first=True, padding_value=padding_value)
+  ## Compute mask
+  features_mask = (features_batch != padding_value)
+
   # Output features : x, y, z
   ## Padding
   gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
@@ -230,7 +237,7 @@ def collate_fn_padd(batch):
   tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
   tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
 
-  return {'input':[input_batch, lengths, input_mask],
+  return {'input':[input_batch, features_batch, lengths, input_mask],
           'gt':[gt_batch, lengths, gt_mask],
           'cpos':[cpos_batch],
           'tracking':[tracking],
@@ -311,7 +318,7 @@ if __name__ == '__main__':
       trajectory_val_iterloader = iter(dataloader_val)
       batch_val = next(trajectory_val_iterloader)
 
-    input_dict_val = {'input':batch_val['input'][0].to(device), 'lengths':batch_val['input'][1].to(device), 'mask':batch_val['input'][2].to(device)}
+    input_dict_val = {'input':batch_val['input'][0].to(device), 'aux':batch_val['input'][1].to(device), 'lengths':batch_val['input'][2].to(device), 'mask':batch_val['input'][3].to(device)}
     gt_dict_val = {'gt':batch_val['gt'][0].to(device), 'lengths':batch_val['gt'][1].to(device), 'mask':batch_val['gt'][2].to(device)}
     cam_dict_val = {'I':batch_val['I'][0].to(device), 'E':batch_val['E'][0].to(device), 'Einv':batch_val['Einv'][0].to(device),
                     'tracking':batch_val['tracking'][0].to(device), 'cpos':batch_val['cpos'][0].to(device)}
@@ -327,7 +334,7 @@ if __name__ == '__main__':
     for batch_idx, batch_train in enumerate(dataloader_train):
       print('===> [Minibatch {}/{}].........'.format(batch_idx+1, len(dataloader_train)), end='\n')
       # Training set (Each index in batch_train came from the collate_fn_padd)
-      input_dict_train = {'input':batch_train['input'][0].to(device), 'lengths':batch_train['input'][1].to(device), 'mask':batch_train['input'][2].to(device)}
+      input_dict_train = {'input':batch_train['input'][0].to(device), 'aux':batch_train['input'][1].to(device), 'lengths':batch_train['input'][2].to(device), 'mask':batch_train['input'][3].to(device)}
       gt_dict_train = {'gt':batch_train['gt'][0].to(device), 'lengths':batch_train['gt'][1].to(device), 'mask':batch_train['gt'][2].to(device)}
       cam_dict_train = {'I':batch_train['I'][0].to(device), 'E':batch_train['E'][0].to(device), 'Einv':batch_train['Einv'][0].to(device),
                     'tracking':batch_train['tracking'][0].to(device), 'cpos':batch_train['cpos'][0].to(device)}

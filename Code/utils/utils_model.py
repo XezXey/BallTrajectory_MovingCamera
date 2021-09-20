@@ -32,84 +32,7 @@ def eval_mode(model_dict):
   for model in model_dict.keys():
     model_dict[model].eval()
 
-'''
-def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
-  Forward Pass to the whole pipeline
-  Input :
-      1. model_dict : contains modules in the pipeline
-      2. input_dict : input to the model => {input, lengths, mask}
-      3. cam_dict : contains I, E, E_inv and cpos => {I, E, E_inv, tracking, cpos}
-      4. gt_dict : contains ground truth trajectories => {gt, lengths, mask}
-  Output : 
-      1. pred_dict : prediction of each moduel and reconstructed xyz
-      2. in_f : in case of we used noisy (u, v) 
-
-  # Input
-  in_f = input_dict['input']
-
-  # Prediction dict
-  pred_dict = {}
-
-  # Add noise
-  if args.noise:
-    in_f, ray = utils_func.add_noise(cam_dict=cam_dict, in_f=in_f)
-
-  # Generate Input directly from tracking
-  in_f, ray = generate_input(in_f=in_f, cam_dict=cam_dict)
-
-  # Canonicalize
-  if args.canonicalize:
-    in_f_cl, cam_cl, angle = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], E=cam_dict['E'])
-    ray_cl, _, _ = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], E=cam_dict['E'])
-    azim_cl = utils_transform.compute_azimuth(ray=ray_cl.cpu().numpy())
-    azim_cl = pt.tensor(azim_cl).float().to(device)
-    in_f = pt.cat((in_f_cl, azim_cl, in_f[..., [3]]), dim=2)
-
-  intr_recon = in_f[..., [0, 1, 2]]
-  in_f = input_manipulate(in_f=in_f)
-
-  search_h = None
-  # Aug
-  if args.augment:
-    if args.optim_h:
-      search_h = {}
-      optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
-      optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
-      train_mode(model_dict=model_dict)
-      optim_first_h.train()
-      optim_last_h.train()
-      search_h['first_h'] = optim_first_h.get_params()
-      search_h['last_h'] = optim_last_h.get_params()
-    else:
-      search_h = {}
-      search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
-      search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
-      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
-      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
-  
-  for i in range(10):
-    if 'height' in args.pipeline:
-      pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
-      pred_dict['h'] = pred_h
-
-    height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
-
-    pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
-
-    # Decoanonicalize
-    if args.canonicalize:
-      pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
-
-    pred_dict['xyz'] = pred_xyz
-
-    _, loss = optimization_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
-    optim_first_h(loss)
-    optim_last_h(loss)
-
-  return pred_dict, in_f
-'''
-
-def uv_to_inf(cam_dict):
+def uv_to_input_features(cam_dict):
   '''
   Create the input features from uv-tracking
   Input : 
@@ -173,7 +96,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   # Prediction dict
   pred_dict = {}
 
-  in_f, ray, recon_dict = uv_to_inf(cam_dict)
+  in_f, ray, recon_dict = uv_to_input_features(cam_dict)
 
   # Canonicalize
   if args.canonicalize:
@@ -202,7 +125,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     search_h['first_h'] = optim_first_h.get_params()
     search_h['last_h'] = optim_last_h.get_params()
   
-
   if 'flag' in args.pipeline:
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
@@ -231,6 +153,27 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   pred_dict['xyz'] = xyz
   pred_dict['xyz_refined'] = xyz_refined
+
+  '''
+  for i in range(10):
+      if 'height' in args.pipeline:
+        pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+        pred_dict['h'] = pred_h
+
+      height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
+
+      pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
+
+      # Decoanonicalize
+      if args.canonicalize:
+        pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
+
+      pred_dict['xyz'] = pred_xyz
+
+      _, loss = optimization_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
+      optim_first_h(loss)
+      optim_last_h(loss)
+  '''
 
   return pred_dict, in_f
 
@@ -386,7 +329,7 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     flag_loss = pt.tensor(0.).to(device)
   else:
     zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
-    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=gt_dict['gt'][..., [3]], mask=gt_dict['mask'][..., [3]], lengths=gt_dict['lengths'])
+    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=input_dict['aux'][..., [0]], mask=gt_dict['mask'][..., [0]], lengths=gt_dict['lengths'])
 
   ######################################
   ########### Reprojection #############
@@ -396,13 +339,22 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   else:
     reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
+  ######################################
+  ########### Consine Sim ##############
+  ######################################
+  if ('refinement' in args.pipeline):
+    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
+  else:                           
+    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
+
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss
+  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss + cosinesim_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item(),
                "Flag Loss":flag_loss.item(),
-               "Reprojection Loss":reprojection_loss.item()
+               "Reprojection Loss":reprojection_loss.item(),
+               "ConsineSim Loss":cosinesim_loss.item(),
                }
 
   return loss_dict, loss
