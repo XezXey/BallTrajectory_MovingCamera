@@ -146,6 +146,14 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, cam_dict=cam_dict_train, anneal_w=anneal_w) # Calculate the loss
 
+  sum_l = 0
+  for k, v in train_loss_dict.items():
+    sum_l += v
+    
+  print(sum_l)
+  print(train_loss.item())
+  input()
+
   #train_loss.requires_grad_(True)
   train_loss.backward()
 
@@ -341,10 +349,10 @@ if __name__ == '__main__':
 
 
       # Call function to train
-      train_loss, val_loss, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
-                                              input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
-                                              anneal_w=anneal_w, model_dict=model_dict, optimizer=optimizer,
-                                              epoch=epoch)
+      train_loss, val_loss, ckpt_loss, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
+                                                          input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
+                                                          anneal_w=anneal_w, model_dict=model_dict, optimizer=optimizer,
+                                                          epoch=epoch)
 
       accumulate_val_loss.append(val_loss)
       accumulate_train_loss.append(train_loss)

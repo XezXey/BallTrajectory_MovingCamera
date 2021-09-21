@@ -64,11 +64,10 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     ####################################
     if ('flag' in pred_dict_train.keys()) and ('flag' in pred_dict_val.keys()):
       fig_flag = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
-      visualize_flag(pred=pred_dict_train['flag'][..., [0]], gt=gt_dict_train['gt'][..., [3]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [3]], fig=fig_flag, set='Train', vis_idx=train_vis_idx, col=1)
-      visualize_flag(pred=pred_dict_val['flag'][..., [0]], gt=gt_dict_val['gt'][..., [3]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [3]], fig=fig_flag, set='Validation', vis_idx=val_vis_idx, col=2)
+      visualize_flag(pred=pred_dict_train['flag'][..., [0]], gt=input_dict_train['aux'][..., [0]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0]], fig=fig_flag, set='Train', vis_idx=train_vis_idx, col=1)
+      visualize_flag(pred=pred_dict_val['flag'][..., [0]], gt=input_dict_val['aux'][..., [0]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0]], fig=fig_flag, set='Validation', vis_idx=val_vis_idx, col=2)
       plotly.offline.plot(fig_flag, filename='{}/wandb_vis_flag.html'.format(args.vis_path), auto_open=False)
       wandb.log({"Flag(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_flag.html'.format(args.vis_path)))})
-
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
     plotly.offline.plot(fig_traj, filename='{}/wandb_vis_traj.html'.format(args.vis_path), auto_open=False)

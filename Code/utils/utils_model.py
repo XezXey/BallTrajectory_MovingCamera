@@ -126,11 +126,13 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     search_h['last_h'] = optim_last_h.get_params()
   
   if 'flag' in args.pipeline:
+    print("FLAG : ", in_f.shape)
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   if 'height' in args.pipeline:
+    print("HEIGHT : ", in_f.shape)
     pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
     pred_dict['h'] = pred_h
 
@@ -139,11 +141,14 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
 
   if 'refinement' in args.pipeline:
+    print("REFINEMENT : ", xyz.shape)
     pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
     xyz_refined = xyz + pred_refoff
   else:
     xyz_refined = None
+
+  input()
     
   # Decoanonicalize
   if args.canonicalize:
@@ -342,20 +347,20 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   ######################################
   ########### Consine Sim ##############
   ######################################
-  if ('refinement' in args.pipeline):
-    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
-  else:                           
-    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
+  #if ('refinement' in args.pipeline):
+  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
+  #else:                           
+  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss + cosinesim_loss
+  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item(),
                "Flag Loss":flag_loss.item(),
-               "Reprojection Loss":reprojection_loss.item(),
-               "ConsineSim Loss":cosinesim_loss.item(),
-               }
+               "Reprojection Loss":reprojection_loss.item(),}
+               #"ConsineSim Loss":cosinesim_loss.item(),
+               #}
 
   return loss_dict, loss
 
