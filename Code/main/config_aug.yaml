@@ -50,6 +50,10 @@ pipeline:
     out_node: 1
     extra_in: []
     extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 'dt'
+    o_s: 'dt'
 
   height:
     arch: 'lstm'
@@ -63,24 +67,32 @@ pipeline:
     out_node: 1
     extra_in: [1]
     extra_out: []
+    latent_in: [2]
+    latent_out: []
+    i_s: 'dt'
+    o_s: 'dt'
 
-  #refinement:
-  #    arch: 'lstm'
-  #    bidirectional: True
-  #    trainable_init: True
-  #    rnn_hidden: 64
-  #    rnn_stack: 2
-  #    mlp_hidden: 32
-  #    mlp_stack: 2
-  #    in_node: 3
-  #    out_node: 3
-  #    extra_in: []
-  #    extra_out: []
+
+  refinement:
+    arch: 'lstm'
+    bidirectional: True
+    trainable_init: True
+    rnn_hidden: 64
+    rnn_stack: 2
+    mlp_hidden: 32
+    mlp_stack: 2
+    in_node: 3
+    out_node: 3
+    extra_in: []
+    extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 't'
+    o_s: 't'
+
 
 # Features
 selected_features: [eot, f_sin, f_cos]
-i_s: 'dt'  # Input space
-o_s: 'dt'  # Output space
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss

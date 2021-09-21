@@ -87,8 +87,6 @@ parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multivi
 
 # Features
 parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, og, ', nargs='+', default=None)
-parser.add_argument('--i_s', dest='i_s', help='input space', type=str, default=None)
-parser.add_argument('--o_s', dest='o_s', help='output space', type=str, default=None)
 parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, default=None)
 
 # Miscellaneous
@@ -141,7 +139,8 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   ####################################
   utils_model.train_mode(model_dict=model_dict)
 
-  pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train)
+  latent_dict_train = {module:None for module in args.pipeline}
+  pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train, latent_dict=latent_dict_train)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, cam_dict=cam_dict_train, anneal_w=anneal_w) # Calculate the loss
@@ -153,6 +152,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   print(sum_l)
   print(train_loss.item())
   input()
+
 
   #train_loss.requires_grad_(True)
   train_loss.backward()
@@ -170,7 +170,8 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   # Evaluating mode
   utils_model.eval_mode(model_dict=model_dict)
 
-  pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val)
+  latent_dict_val = {module:None for module in args.pipeline}
+  pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val, latent_dict=latent_dict_val)
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, cam_dict=cam_dict_val, anneal_w=anneal_w) # Calculate the loss

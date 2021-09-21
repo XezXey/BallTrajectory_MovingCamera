@@ -1,4 +1,3 @@
-from Code.utils.utils_func import generate_input
 import torch as pt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -77,7 +76,7 @@ def canonicalize_features(Einv, intr, ray, in_f):
 
   return canon_dict, in_f
 
-def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
+def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   '''
   Forward Pass to the whole pipeline
   Input :
@@ -104,7 +103,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
   else:
     canon_dict = {'cam_cl' : None, 'R' : None}
 
-  in_f = input_manipulate(in_f=in_f)
+  in_f = input_manipulate(in_f=in_f, module='height')
 
   search_h = None
   # Augmentation
@@ -114,42 +113,35 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
     search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
     search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
-  # Optimizae for initial height
-  if args.optim_h:
-    search_h = {}
-    optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
-    optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
-    train_mode(model_dict=model_dict)
-    optim_first_h.train()
-    optim_last_h.train()
-    search_h['first_h'] = optim_first_h.get_params()
-    search_h['last_h'] = optim_last_h.get_params()
   
   if 'flag' in args.pipeline:
     print("FLAG : ", in_f.shape)
-    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    i_s = args.pipeline['flag']['i_s']
+    in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
+    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   if 'height' in args.pipeline:
     print("HEIGHT : ", in_f.shape)
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
+    i_s = args.pipeline['height']['i_s']
+    in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
     pred_dict['h'] = pred_h
 
-  height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
+  height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
   xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
 
   if 'refinement' in args.pipeline:
     print("REFINEMENT : ", xyz.shape)
+    xyz = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
     pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
     xyz_refined = xyz + pred_refoff
   else:
     xyz_refined = None
 
-  input()
-    
   # Decoanonicalize
   if args.canonicalize:
     xyz = utils_transform.canonicalize(pts=xyz, R=canon_dict['R'], inv=True)
@@ -182,6 +174,41 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict):
 
   return pred_dict, in_f
 
+def add_latent(in_f, module, input_dict, latent_dict):
+  sel_f = 0 if 'flag' in args.pipeline else 1   # selected_features -1 since first is eot/cd
+  latent_idx = 1 - sel_f  # Latent index in selected_features
+  aux = input_dict['aux'][..., latent_idx:]
+  latent_dim = sum(args.pipeline[module]['latent_in'])
+  print("Latent dim : ", latent_dim)
+  print("in_f shape : ", in_f.shape)
+  print("aux shape : ", aux.shape)
+
+  if latent_dim > 0:
+    # Auxialiary features have been used.
+    if latent_dict[module] is not None:
+      raise NotImplementedError
+    else:
+      aux = aux_space(aux, lengths=input_dict['lengths'], i_s=args.pipeline[module]['i_s'])
+      in_f = pt.cat((in_f, aux), dim=-1)
+  else:
+    in_f = in_f
+  
+  print("in_f shape : ", in_f.shape)
+  input()
+  return in_f
+
+def latent():
+  # Optimizae for initial height
+  if args.optim_h:
+    search_h = {}
+    optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+    optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+    train_mode(model_dict=model_dict)
+    optim_first_h.train()
+    optim_last_h.train()
+    search_h['first_h'] = optim_first_h.get_params()
+    search_h['last_h'] = optim_last_h.get_params()
+
 def reconstruct(height, cam_dict, recon_dict, canon_dict):
   '''
   Reconstruct the 3d points from predicted height
@@ -210,7 +237,7 @@ def reconstruct(height, cam_dict, recon_dict, canon_dict):
   
   return xyz
       
-def input_manipulate(in_f):
+def input_manipulate(in_f, module):
   '''
   Prepare input to have correct space(t, dt, tdt), sin-cos
   Input : 
@@ -219,6 +246,7 @@ def input_manipulate(in_f):
     1. in_f : input features after change into specified space(t, dt, tdt) and sin-cos
   '''
 
+  i_s = args.pipeline[module]['i_s']
   if args.sc == 'azim':
     azim_sc = pt.cat((pt.sin(in_f[..., 4]), pt.cos(in_f[..., 4])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3], azim_sc]), axis=2)
@@ -230,22 +258,22 @@ def input_manipulate(in_f):
     elev_sc = pt.cat((pt.sin(in_f[..., 3]), pt.cos(in_f[..., 3])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
 
-  in_f = input_space(in_f)
+  in_f = input_space(in_f, i_s)
 
   return in_f
     
-def input_space(in_f):
+def input_space(in_f, i_s):
   '''
   Input : 
     1. in_f : input features(t-space) in shape (batch, seq_len, 5) -> (x, y, z, elev, azim)
   Output :
     1. in_f : input features in t/dt/t_dt-space in shape(batch, seq_len, _)
   '''
-  if args.i_s == 'dt':
+  if i_s == 'dt':
     in_f = in_f[:, 1:, :] - in_f[:, :-1, :]
-  elif args.i_s == 't':
+  elif i_s == 't':
     in_f = in_f
-  elif args.i_s == 't_dt':
+  elif i_s == 't_dt':
     dt = in_f[:, 1:, :] - in_f[:, :-1, :]
     t0_pad = np.zeros(shape=(in_f.shape[0], 1, in_f.shape[2]))
     dt = np.concatenate((t0_pad, dt), axis=1)
@@ -253,7 +281,7 @@ def input_space(in_f):
 
   return in_f
 
-def output_space(pred_h, lengths, search_h=None):
+def output_space(pred_h, lengths, module, search_h=None):
   '''
   Aggregate the height-prediction into (t, dt)
   Input : 
@@ -264,14 +292,17 @@ def output_space(pred_h, lengths, search_h=None):
   Output : 
     1. height :height after aggregation into t-space
   '''
-  if args.o_s == 't':
+  i_s = args.pipeline[module]['i_s']
+  o_s = args.pipeline[module]['o_s']
+
+  if o_s == 't':
     return pred_h 
     
-  elif args.o_s == 'dt':
-    if args.i_s == 't_dt':
+  elif o_s == 'dt':
+    if i_s == 't_dt':
       raise NotImplemented
       
-    elif args.i_s == 'dt':
+    elif i_s == 'dt':
       pred_h = pred_h
 
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
@@ -295,6 +326,19 @@ def output_space(pred_h, lengths, search_h=None):
     height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
       
     return height
+
+def aux_space(aux, i_s, lengths):
+  if i_s == 'dt':
+    tmp = []
+    for i in range(aux.shape[0]):
+      s = aux[i][0:lengths[i]-1, :]
+      e = aux[i][lengths[i]:, :]
+      tmp.append(pt.cat((s, e), dim=0))
+    aux = pt.stack(tmp)
+  else:
+      raise NotImplementedError
+
+  return aux
 
 def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   '''

@@ -100,14 +100,16 @@ def get_extra_fsize(module):
     #############################################
     ############ EXTRA INPUT FEATURES ###########
     #############################################
-    extra_in = sum(module['extra_in'])           # Extra input to module (e.g. force, acc)
+    extra_in = sum(module['extra_in'])                  # Extra input to module (e.g. eot)
+    latent_in = sum(module['latent_in'] )               # Extra latent(aux) input to module (e.g. force, acc)
 
     #############################################
     ########### EXTRA OUTPUT FEATURES ###########
     #############################################
-    extra_out = sum(module['extra_out'])
+    extra_out = sum(module['extra_out'])                # Extra output to module (e.g. force, acc)
+    latent_out = sum(module['latent_out'] )             # Extra latent(aux) from module (e.g. force, acc)
 
-    return extra_in, extra_out
+    return extra_in, extra_out, latent_in, latent_out
     
 def get_model(args):
 
@@ -119,11 +121,11 @@ def get_model(args):
   model_cfg = {}
   for module_name in args.pipeline:
     model = None
-    module = args.pipeline[module_name]                 # Module
-    extra_in, extra_out = get_extra_fsize(module)       # Extra input/output features
-    in_node = module['in_node'] + extra_in              # Input node
-    out_node = module['out_node'] + extra_out           # Output node
-    arch = module['arch']                               # Architecture
+    module = args.pipeline[module_name]                                         # Module
+    extra_in, extra_out, latent_in, latent_out = get_extra_fsize(module)        # Extra input/output features
+    in_node = module['in_node'] + extra_in + latent_in                          # Input node
+    out_node = module['out_node'] + extra_out + latent_out                      # Output node
+    arch = module['arch']                                                       # Architecture
 
     if module_name == 'height': 
       model = Height_Module(in_node=in_node, out_node=out_node, 
