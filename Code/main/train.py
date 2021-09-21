@@ -10,6 +10,7 @@ import argparse
 import time
 import yaml
 import shutil
+import collections
 sys.path.append(os.path.realpath('../'))
 from tqdm import tqdm
 from torchvision.transforms import ToTensor
@@ -145,16 +146,6 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, cam_dict=cam_dict_train, anneal_w=anneal_w) # Calculate the loss
 
-  sum_l = 0
-  for k, v in train_loss_dict.items():
-    sum_l += v
-    
-  print(sum_l)
-  print(train_loss.item())
-  input()
-
-
-  #train_loss.requires_grad_(True)
   train_loss.backward()
 
   # Gradient Clipping
@@ -180,14 +171,15 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 1 == 0:
+  if args.visualize and epoch % 250 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
                         pred_dict_val=pred_dict_val, cam_dict_val=cam_dict_val)
-    input()
 
-  return train_loss.item(), val_loss.item(), model_dict
+  train_loss_dict['all'] = train_loss.item()
+  val_loss_dict['all'] = val_loss.item()
+  return train_loss_dict, val_loss_dict, model_dict
 
 def collate_fn_padd(batch):
   # Padding batch of variable length
@@ -272,6 +264,7 @@ if __name__ == '__main__':
 
   # Model definition
   min_val_loss = 2e10
+  min_ckpt_loss = 2e10
   anneal_step = 0
   anneal_w_list = np.linspace(start=0, stop=1, num=10)
   anneal_w = anneal_w_list[0]
@@ -311,13 +304,19 @@ if __name__ == '__main__':
     # Log metrics with wandb
     wandb.watch(model_dict[model])
 
+
+  save_ckpt_loss = collections.deque(maxlen=10)
   # Training Loop
   trajectory_val_iterloader = iter(dataloader_val)
   for epoch in range(start_epoch, args.n_epochs+1):
     # Data loader is refreshed every epoch(in case of augment)
     dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
-    accumulate_train_loss = []
-    accumulate_val_loss = []
+    # Train/Val Loss
+    accu_train_loss = []
+    accu_val_loss = []
+    # Train/Val Trajectory Loss
+    accu_train_traj_loss = []
+    accu_val_traj_loss = []
     # Fetch the Validation set (Get each batch for each training epochs)
     utils_func.random_seed()
     try:
@@ -350,19 +349,28 @@ if __name__ == '__main__':
 
 
       # Call function to train
-      train_loss, val_loss, ckpt_loss, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
-                                                          input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
-                                                          anneal_w=anneal_w, model_dict=model_dict, optimizer=optimizer,
-                                                          epoch=epoch)
+      train_loss_dict, val_loss_dict, model_dict = train(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, cam_dict_train=cam_dict_train,
+                                                        input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, cam_dict_val=cam_dict_val, 
+                                                        anneal_w=anneal_w, model_dict=model_dict, optimizer=optimizer,
+                                                        epoch=epoch)
 
-      accumulate_val_loss.append(val_loss)
-      accumulate_train_loss.append(train_loss)
+      accu_val_loss.append(val_loss_dict['all'])
+      accu_train_loss.append(train_loss_dict['all'])
+
+      accu_val_traj_loss.append(val_loss_dict['Trajectory Loss'])
+      accu_train_traj_loss.append(train_loss_dict['Trajectory Loss'])
 
     # Get the average loss for each epoch over entire dataset
-    val_loss_per_epoch = np.mean(accumulate_val_loss)
-    train_loss_per_epoch = np.mean(accumulate_train_loss)
+    val_loss_per_epoch = np.mean(accu_val_loss)
+    train_loss_per_epoch = np.mean(accu_train_loss)
+
+    val_traj_loss_per_epoch = np.mean(accu_val_traj_loss)
+    train_traj_loss_per_epoch = np.mean(accu_train_traj_loss)
+
+    save_ckpt_loss.append(val_traj_loss_per_epoch)
     # Log the each epoch loss
-    wandb.log({"n_epochs":epoch, 'Epoch Train Loss':train_loss_per_epoch, 'Epoch Validation Loss':val_loss_per_epoch})
+    wandb.log({"n_epochs":epoch, 'Epoch Train Loss':train_loss_per_epoch, 'Epoch Validation Loss':val_loss_per_epoch, 
+              "TRAIN : Trajectory Loss":train_traj_loss_per_epoch, "VAL : Trajectory Loss":val_traj_loss_per_epoch})
 
     # Decrease learning rate every n_epochs % decay_cycle batch
     if epoch % args.decay_cycle == 0:
@@ -379,12 +387,14 @@ if __name__ == '__main__':
       anneal_step += 1
       print("[#]Stepping annealing weight to ", anneal_w)
 
+    print("#"* 150)
     print('[#]Finish Epoch : {}/{}.........Train loss : {:.3f}, Val loss : {:.3f}'.format(epoch, args.n_epochs, train_loss_per_epoch, val_loss_per_epoch))
 
     # Save the model ckpt every finished the epochs
-    if min_val_loss > val_loss_per_epoch:
+    if min_val_loss > val_traj_loss_per_epoch:
       # Save model ckpt
       save_ckpt_best = '{}/{}_best.pth'.format(save_ckpt, args.wandb_name)
+      print("[===>] Best Validation Loss [<===]")
       print('[+++]Saving the best model ckpt : Prev loss {:.3f} > Curr loss {:.3f}'.format(min_val_loss, val_loss_per_epoch))
       print('[+++]Saving the best model ckpt to : ', save_ckpt_best)
       min_val_loss = val_loss_per_epoch
@@ -395,20 +405,40 @@ if __name__ == '__main__':
         ckpt[model] = model_dict[model].state_dict()
       pt.save(ckpt, save_ckpt_best)
       pt.save(ckpt, os.path.join(wandb.run.dir, 'ckpt_best.pth'))
-      
 
     else:
       print('[#]Not saving the best model ckpt : Val loss {:.3f} not improved from {:.3f}'.format(val_loss_per_epoch, min_val_loss))
 
+    # Save the model ckpt every finished the epochs
+    if min_ckpt_loss > np.mean(save_ckpt_loss):
+      # Save model ckpt
+      save_ckpt_best_ma = '{}/{}_best_traj_ma.pth'.format(save_ckpt, args.wandb_name)
+      print("[===>] Best Trajectory Loss [<===]")
+      print('[+++]Saving the best model ckpt : Prev loss {:.3f} > Curr loss {:.3f}'.format(min_ckpt_loss, np.mean(save_ckpt_loss)))
+      print('[+++]Saving the best model ckpt to : ', save_ckpt_best)
+      min_ckpt_loss = np.mean(save_ckpt_loss)
+      annealing_scheduler = {'step':anneal_step, 'weight':anneal_w}
+      # Save to directory
+      ckpt = {'epoch':epoch+1, 'optimizer':optimizer.state_dict(), 'lr_scheduler':lr_scheduler.state_dict(), 'min_val_loss':min_ckpt_loss, 'model_cfg':model_cfg, 'annealing_scheduler':annealing_scheduler}
+      for model in model_cfg:
+        ckpt[model] = model_dict[model].state_dict()
+      pt.save(ckpt, save_ckpt_best_ma)
+      pt.save(ckpt, os.path.join(wandb.run.dir, 'ckpt_best_traj_ma.pth'))
 
-    if epoch % 20 == 0:
+    else:
+      print('[#]Not saving the best model ckpt : Val Trajectory loss {:.3f} not improved from {:.3f}'.format(np.mean(save_ckpt_loss), min_ckpt_loss))
+
+
+    if epoch % 25 == 0:
       # Save the lastest ckpt for continue training every 10 epoch
       save_ckpt_lastest = '{}/{}_lastest.pth'.format(save_ckpt, args.wandb_name)
+      print("[===>] Lastest checkpoint(n=25) [<===]")
       print('[#]Saving the lastest ckpt to : ', save_ckpt_lastest)
       ckpt = {'epoch':epoch+1, 'optimizer':optimizer.state_dict(), 'lr_scheduler':lr_scheduler.state_dict(), 'min_val_loss':min_val_loss, 'model_cfg':model_cfg, 'annealing_scheduler':annealing_scheduler}
       for model in model_cfg:
         ckpt[model] = model_dict[model].state_dict()
       pt.save(ckpt, save_ckpt_lastest)
       pt.save(ckpt, os.path.join(wandb.run.dir, 'ckpt_lastest.pth'))
+    print("#"* 150)
 
   print("[#] Done")

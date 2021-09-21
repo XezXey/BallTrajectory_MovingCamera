@@ -115,7 +115,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
   
   if 'flag' in args.pipeline:
-    print("FLAG : ", in_f.shape)
+    #print("FLAG : ", in_f.shape)
     i_s = args.pipeline['flag']['i_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
@@ -123,7 +123,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   if 'height' in args.pipeline:
-    print("HEIGHT : ", in_f.shape)
+    #print("HEIGHT : ", in_f.shape)
     i_s = args.pipeline['height']['i_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
     pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
@@ -134,7 +134,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
 
   if 'refinement' in args.pipeline:
-    print("REFINEMENT : ", xyz.shape)
+    #print("REFINEMENT : ", xyz.shape)
     xyz = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
     pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
@@ -179,9 +179,9 @@ def add_latent(in_f, module, input_dict, latent_dict):
   latent_idx = 1 - sel_f  # Latent index in selected_features
   aux = input_dict['aux'][..., latent_idx:]
   latent_dim = sum(args.pipeline[module]['latent_in'])
-  print("Latent dim : ", latent_dim)
-  print("in_f shape : ", in_f.shape)
-  print("aux shape : ", aux.shape)
+  #print("Latent dim : ", latent_dim)
+  #print("in_f shape : ", in_f.shape)
+  #print("aux shape : ", aux.shape)
 
   if latent_dim > 0:
     # Auxialiary features have been used.
@@ -193,8 +193,8 @@ def add_latent(in_f, module, input_dict, latent_dict):
   else:
     in_f = in_f
   
-  print("in_f shape : ", in_f.shape)
-  input()
+  #print("in_f shape : ", in_f.shape)
+  #input()
   return in_f
 
 def latent():
