@@ -135,8 +135,8 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   if 'refinement' in args.pipeline:
     #print("REFINEMENT : ", xyz.shape)
-    xyz = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
-    pred_refoff, _ = model_dict['refinement'](in_f=xyz, lengths=input_dict['lengths'])
+    xyz_ = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+    pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
     xyz_refined = xyz + pred_refoff
   else:
@@ -335,8 +335,10 @@ def aux_space(aux, i_s, lengths):
       e = aux[i][lengths[i]:, :]
       tmp.append(pt.cat((s, e), dim=0))
     aux = pt.stack(tmp)
+  elif i_s == 't':
+    aux = aux
   else:
-      raise NotImplementedError
+    raise NotImplementedError
 
   return aux
 

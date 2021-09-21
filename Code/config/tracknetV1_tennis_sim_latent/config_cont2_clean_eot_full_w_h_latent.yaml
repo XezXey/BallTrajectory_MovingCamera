@@ -1,6 +1,10 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
+dataset_test_path : null
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -8,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_cont2_clean_cd_full_perc'
+wandb_name: 'tennis_cont2_clean_eot_full_w_h_latent'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -23,9 +27,9 @@ decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize: False
 noise: True
-noise_sd: 10
+noise_sd: 5
 annealing: True
-annealing_cycle: 1
+annealing_cycle: 300
 annealing_gamma:  0.7
 augment: True
 recon: 'clean'
@@ -72,24 +76,22 @@ pipeline:
     i_s: 'dt'
     o_s: 'dt'
 
-
   refinement:
-    arch: 'lstm'
-    bidirectional: True
-    trainable_init: True
-    rnn_hidden: 64
-    rnn_stack: 2
-    mlp_hidden: 32
-    mlp_stack: 2
-    in_node: 3
-    out_node: 3
-    extra_in: []
-    extra_out: []
-    latent_in: [2]
-    latent_out: []
-    i_s: 't'
-    o_s: 't'
-
+      arch: 'lstm'
+      bidirectional: True
+      trainable_init: True
+      rnn_hidden: 64
+      rnn_stack: 2
+      mlp_hidden: 32
+      mlp_stack: 2
+      in_node: 3
+      out_node: 3
+      extra_in: []
+      extra_out: []
+      latent_in: []
+      latent_out: []
+      i_s: 't'
+      o_s: 't'
 
 # Features
 selected_features: [eot, f_sin, f_cos]
