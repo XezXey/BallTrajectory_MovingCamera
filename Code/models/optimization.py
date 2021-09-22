@@ -20,8 +20,8 @@ class Optimization(pt.nn.Module):
         loss.backward(retain_graph=True)
         self.optimizer.step()
         self.lr_scheduler.step(loss)
-        for param_group in self.optimizer.param_groups:
-            print("LR : ", param_group['lr'], "Loss : ", loss)
+        #for param_group in self.optimizer.param_groups:
+        #    print("LR : ", param_group['lr'], "Loss : ", loss)
 
     def get_params(self):
         return self.params

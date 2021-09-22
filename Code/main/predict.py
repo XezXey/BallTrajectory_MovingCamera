@@ -259,7 +259,7 @@ def collate_fn_padd(batch):
   if args.env != 'unity':
     global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
     u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
-    global input_col, gt_col
+    global input_col, gt_col, features_col
     input_col = [u, v]
     gt_col = [x, y, z]
     features_col = []

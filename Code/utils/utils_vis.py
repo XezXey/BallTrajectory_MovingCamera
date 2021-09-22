@@ -115,7 +115,7 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
         gt = None
       fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*math.ceil(n_vis/2), horizontal_spacing=0.05, vertical_spacing=0.01)
       visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
-      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=1)
+      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
       plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
 
 
