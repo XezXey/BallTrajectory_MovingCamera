@@ -3,17 +3,16 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import torch as pt
-from torch.autograd import Variable
 
 class Optimization(pt.nn.Module):
-    def __init__(self, shape, n_optim):
+    def __init__(self, shape, name):
         super(Optimization, self).__init__()
         self.params = pt.nn.Parameter(data=pt.randn(size=shape).cuda(), requires_grad=True)
         self.params_ = pt.nn.ParameterList()
         self.params_.append(self.params)
         self.optimizer = pt.optim.Adam(self.parameters(), lr=1)
         self.lr_scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, patience=10)
-        self.n_optim = n_optim
+        self.name = name
         
     def forward(self, loss):
         self.optimizer.zero_grad()
@@ -25,3 +24,6 @@ class Optimization(pt.nn.Module):
 
     def get_params(self):
         return self.params
+
+    def get_name(self):
+        return self.name
