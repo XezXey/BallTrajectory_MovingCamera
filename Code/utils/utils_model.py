@@ -498,7 +498,8 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict):
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
   loss = reprojection_loss + below_ground_loss + trajectory_loss
-  loss_dict = {"BelowGnd Loss":below_ground_loss.item(), 
+  loss_dict = {"Trajectory Loss":trajectory_loss.item(),
+               "BelowGnd Loss":below_ground_loss.item(), 
                "Reprojection Loss":reprojection_loss.item(),}
 
   return loss_dict, loss
