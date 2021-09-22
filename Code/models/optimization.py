@@ -11,7 +11,7 @@ class Optimization(pt.nn.Module):
         self.params = pt.nn.Parameter(data=pt.randn(size=shape).cuda(), requires_grad=True)
         self.params_ = pt.nn.ParameterList()
         self.params_.append(self.params)
-        self.optimizer = pt.optim.Adam(self.parameters(), lr=1)
+        self.optimizer = pt.optim.Adam(self.parameters(), lr=0.1)
         self.lr_scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, patience=10)
         self.name = name
         
@@ -24,7 +24,15 @@ class Optimization(pt.nn.Module):
         #    print("LR : ", param_group['lr'], "Loss : ", loss)
 
     def get_params(self):
-        return self.params
+        if self.name != 'init_h':
+            # Constraint/Normalize the latent
+            #print(self.params)
+            params_constrainted = self.params / (pt.sqrt(pt.sum(self.params**2, dim=-1, keepdims=True)) + 1e-16)
+            #print(params_constrainted)
+            return params_constrainted
+
+        else:
+            return self.params
 
     def get_name(self):
         return self.name

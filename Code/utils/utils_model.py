@@ -163,14 +163,23 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   '''
   Forward Pass with an optimization.
   '''
-
-  #utils_func.random_seed() # Seeding the initial latent
+  
+  utils_func.random_seed() # Seeding the initial latent
   # Training mode to peserve the gradient
   train_mode(model_dict=model_dict)
   # Construct latent
   latent_dict = create_latent(latent_dict, input_dict, model_dict)
-  t = tqdm.trange(100, leave=True)
+  t = tqdm.trange(500, leave=True)
+
+  patience = 10
+  count = 0
+  prev_loss = 2e16
   for _ in t:
+    #t0 = {}
+    #for name, param in model_dict['refinement'].named_parameters():
+    #for name, param in latent_dict['height'].named_parameters():
+    #  if param.requires_grad:
+    #    t0[name] = param.data.clone()
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict)
     loss_dict, loss = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict)
     t.set_description("Optimizing... (Loss = {})".format(loss.item()))
@@ -182,6 +191,24 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
           optim['last_h'](loss)
         else:
           optim(loss)
+
+    # Early Stopping mechanism
+    if prev_loss <= loss.item():
+      count+=1
+    else:
+      count=0
+    prev_loss = loss.item()
+    if count >= patience:
+      break
+
+    #t1 = {}
+    #for name, param in latent_dict['height'].named_parameters():
+    #for name, param in model_dict['refinement'].named_parameters():
+    #  if param.requires_grad:
+    #    t1[name] = param.data
+    #for name in t1.keys():
+    #  print(t1[name] - t0[name])
+
   return pred_dict, in_test
 
 def add_latent(in_f, module, input_dict, latent_dict):
@@ -469,7 +496,6 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict):
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
   #else:                           
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
-
 
   loss = reprojection_loss + below_ground_loss + trajectory_loss
   loss_dict = {"BelowGnd Loss":below_ground_loss.item(), 

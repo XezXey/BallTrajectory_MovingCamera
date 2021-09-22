@@ -200,8 +200,6 @@ def collate_fn_padd(batch):
   ## Padding
   features_batch = [pt.Tensor(trajectory[:, features_col].astype(np.float64)) for trajectory in batch]
   features_batch = pad_sequence(features_batch, batch_first=True, padding_value=padding_value)
-  ## Compute mask
-  features_mask = (features_batch != padding_value)
 
   # Output features : x, y, z
   ## Padding
