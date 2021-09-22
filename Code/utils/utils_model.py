@@ -174,10 +174,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   return pred_dict, in_f
 
+def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
+  '''
+  Forward Pass with an optimization.
+  '''
+  # Construct latent
+  latent_dict = create_latent(latent_dict, input_dict, model_dict)
+  assert False 
+
 def add_latent(in_f, module, input_dict, latent_dict):
-  sel_f = 0 if 'flag' in args.pipeline else 1   # selected_features -1 since first is eot/cd
-  latent_idx = 1 - sel_f  # Latent index in selected_features
-  aux = input_dict['aux'][..., latent_idx:]
   latent_dim = sum(args.pipeline[module]['latent_in'])
   #print("Latent dim : ", latent_dim)
   #print("in_f shape : ", in_f.shape)
@@ -187,7 +192,12 @@ def add_latent(in_f, module, input_dict, latent_dict):
     # Auxialiary features have been used.
     if latent_dict[module] is not None:
       raise NotImplementedError
+    elif 'aux' not in input_dict.keys():
+      raise ValueError('[#] Aux features are not provided. Please check --optim_<module>, --env <unity/tennis>')
     else:
+      sel_f = 0 if 'flag' in args.pipeline else 1   # selected_features -1 since first is eot/cd
+      latent_idx = 1 - sel_f  # Latent index in selected_features
+      aux = input_dict['aux'][..., latent_idx:]
       aux = aux_space(aux, lengths=input_dict['lengths'], i_s=args.pipeline[module]['i_s'])
       in_f = pt.cat((in_f, aux), dim=-1)
   else:
@@ -197,17 +207,32 @@ def add_latent(in_f, module, input_dict, latent_dict):
   #input()
   return in_f
 
-def latent():
+def create_latent(latent_dict, input_dict, model_dict):
   # Optimizae for initial height
-  if args.optim_h:
+  print(latent_dict)
+  batch_size = input_dict['input'].shape[0]
+  if args.optim_init_h:
     search_h = {}
-    optim_first_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
-    optim_last_h = Optimization(shape=(in_f.shape[0], 1, 1), n_optim=50)
+    optim_first_h = Optimization(shape=(batch_size, 1, 1), name='init_first_h')
+    optim_last_h = Optimization(shape=(batch_size, 1, 1), name='init_last_h')
     train_mode(model_dict=model_dict)
     optim_first_h.train()
     optim_last_h.train()
-    search_h['first_h'] = optim_first_h.get_params()
-    search_h['last_h'] = optim_last_h.get_params()
+    search_h['first_h'] = optim_first_h
+    search_h['last_h'] = optim_last_h
+    latent_dict['init_h'] = search_h
+
+  if args.optim_latent:
+    for module in args.pipeline:
+      latent_dim = sum(args.pipeline[module]['latent_in'])
+      if latent_dim > 0:
+        print("[#] Module : {} have latent to be optimized.".format(module))
+        optim_latent = Optimization(shape=(batch_size, 1, latent_dim), name=module)
+        optim_latent.train()
+        latent_dict[module] = optim_latent
+        #print(latent_dict[module])
+        #print(latent_dict[module].get_name())
+  
 
 def reconstruct(height, cam_dict, recon_dict, canon_dict):
   '''

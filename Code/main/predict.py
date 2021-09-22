@@ -75,7 +75,8 @@ parser.add_argument('--augment', dest='augment', help='Apply an augmented traini
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
 
 # Optimization
-parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', action='store_true', default=None)
+parser.add_argument('--optim_init_h', dest='optim_init_h', help='Optimize for initial height', action='store_true', default=None)
+parser.add_argument('--optim_latent', dest='optim_latent', help='Optimize for latent', action='store_true', default=None)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)
@@ -89,8 +90,6 @@ parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multivi
 
 # Features
 parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, og, ', nargs='+', default=None)
-parser.add_argument('--i_s', dest='i_s', help='input space', type=str, default=None)
-parser.add_argument('--o_s', dest='o_s', help='output space', type=str, default=None)
 parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, default=None)
 
 # Miscellaneous
@@ -227,7 +226,11 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   # Evaluating mode
   utils_model.eval_mode(model_dict=model_dict)
 
-  pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test)
+  latent_dict_test = {module:None for module in args.pipeline}
+  if args.optim_init_h or args.optim_latent:
+    pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test)
+  else:
+    pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test)
   test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, anneal_w=None) # Calculate the loss
 
   ###################################
@@ -354,9 +357,8 @@ if __name__ == '__main__':
   model_dict = {model:model_dict[model].to(device) for model in model_dict.keys()}
 
   # Load the ckpt if it's available.
-  print(args.load_ckpt != 'best')
-  print(args.load_ckpt)
-  if args.load_ckpt is None or (args.load_ckpt != 'best' and args.load_ckpt != 'lastest'):
+  ckpt = ['best', 'lastest', 'best_traj_ma']
+  if (args.load_ckpt is None) or (args.load_ckpt not in ckpt):
     # Create a model
     print('===>No model ckpt')
     exit()

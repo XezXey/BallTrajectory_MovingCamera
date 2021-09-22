@@ -241,19 +241,6 @@ def add_flag_noise(flag, lengths):
   flag = flag * 0
   return flag
 
-def select_uv_recon(input_dict, pred_dict, in_f_noisy):
-  if args.recon == 'ideal_uv':
-    return input_dict['input'][..., [0, 1]]
-  elif args.recon == 'noisy_uv' and 'uv' not in args.pipeline:
-    return in_f_noisy
-  elif 'uv' in args.pipeline :
-    if args.recon == 'noisy_uv':
-      return in_f_noisy
-    elif args.recon =='pred_uv':
-      return pred_dict['model_uv']
-  else:
-    return input_dict['input_dict'][..., [0, 1]]
-
 def load_ckpt_train(model_dict, optimizer, lr_scheduler):
   if args.load_ckpt == 'best':
     load_ckpt = '{}/{}/{}_best.pth'.format(args.save_ckpt + args.wandb_tags.replace('/', '_'), args.wandb_name, args.wandb_name)
@@ -323,7 +310,7 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_h']
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent']
   for k in args_dict.keys():
     if k in exception:
       continue
