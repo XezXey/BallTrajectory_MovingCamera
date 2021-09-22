@@ -7,6 +7,7 @@ import torch as pt
 class Optimization(pt.nn.Module):
     def __init__(self, shape, name):
         super(Optimization, self).__init__()
+        
         self.params = pt.nn.Parameter(data=pt.randn(size=shape).cuda(), requires_grad=True)
         self.params_ = pt.nn.ParameterList()
         self.params_.append(self.params)

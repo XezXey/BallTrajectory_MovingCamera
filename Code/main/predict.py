@@ -127,7 +127,7 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
             'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
-input_col, gt_col, features_cols = utils_func.get_selected_cols(args=args, pred='height')
+input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
 def get_each_batch_pred(latent_optimized, pred_flag, pred_xyz, lengths):
   if args.optimize is not None:
@@ -231,7 +231,8 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
     pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test)
   else:
     pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test)
-  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, anneal_w=None) # Calculate the loss
+
+  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, cam_dict=cam_dict_test, anneal_w=None) # Calculate the loss
 
   ###################################
   ############ Evaluation ###########
@@ -261,6 +262,7 @@ def collate_fn_padd(batch):
     global input_col, gt_col
     input_col = [u, v]
     gt_col = [x, y, z]
+    features_col = []
 
   # Padding batch of variable length
   if args.augment:
@@ -275,6 +277,11 @@ def collate_fn_padd(batch):
   ## Compute mask
   input_mask = (input_batch != padding_value)
   input_mask = input_mask[..., [0]].repeat(1, 1, 3)
+
+  # Auxiliary features : e.g. eot, cd, rad, f_sin, f_cos, ..., etc.
+  ## Padding
+  features_batch = [pt.Tensor(trajectory[:, features_col].astype(np.float64)) for trajectory in batch]
+  features_batch = pad_sequence(features_batch, batch_first=True, padding_value=padding_value)
 
   # Output features : (x, y, z)
   if args.no_gt:
@@ -313,7 +320,7 @@ def collate_fn_padd(batch):
   tracking = [pt.Tensor(trajectory[:, [u, v]].astype(np.float64)) for trajectory in batch]
   tracking = pad_sequence(tracking, batch_first=True, padding_value=1)
 
-  return {'input':[input_batch, lengths, input_mask],
+  return {'input':[input_batch, features_batch, lengths, input_mask],
           'gt':[gt_batch, lengths, gt_mask],
           'cpos':[cpos_batch],
           'tracking':[tracking],
@@ -383,7 +390,7 @@ if __name__ == '__main__':
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test)):
     print("[#]Batch-{}".format(batch_idx))
-    input_dict_test = {'input':batch_test['input'][0].to(device), 'lengths':batch_test['input'][1].to(device), 'mask':batch_test['input'][2].to(device)}
+    input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:
       gt_dict_test = None
     else:

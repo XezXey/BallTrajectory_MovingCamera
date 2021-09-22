@@ -1,9 +1,11 @@
+from re import search
 import torch as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
 import time
+import tqdm
 sys.path.append(os.path.realpath('../..'))
 # Utils
 import utils.transformation as utils_transform
@@ -105,14 +107,18 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   in_f = input_manipulate(in_f=in_f, module='height')
 
-  search_h = None
   # Augmentation
-  if args.augment:
+  if args.augment and not args.optim_init_h:
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
     search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
     search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+  elif args.optim_init_h:
+    search_h = {}
+    search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
+    search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
+  else: search_h = None
   
   if 'flag' in args.pipeline:
     #print("FLAG : ", in_f.shape)
@@ -151,53 +157,48 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   pred_dict['xyz'] = xyz
   pred_dict['xyz_refined'] = xyz_refined
 
-  '''
-  for i in range(10):
-      if 'height' in args.pipeline:
-        pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if args.i_s == 'dt' else input_dict['lengths'])
-        pred_dict['h'] = pred_h
-
-      height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h)
-
-      pred_xyz = utils_transform.h_to_3d(height=height, intr=intr_recon, E=cam_dict['E'], cam_pos=cam_cl if args.canonicalize else None)
-
-      # Decoanonicalize
-      if args.canonicalize:
-        pred_xyz, _, _ = utils_transform.canonicalize(pts=pred_xyz, E=cam_dict['E'], deg=angle)
-
-      pred_dict['xyz'] = pred_xyz
-
-      _, loss = optimization_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
-      optim_first_h(loss)
-      optim_last_h(loss)
-  '''
-
   return pred_dict, in_f
 
 def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   '''
   Forward Pass with an optimization.
   '''
+
+  #utils_func.random_seed() # Seeding the initial latent
   # Construct latent
   latent_dict = create_latent(latent_dict, input_dict, model_dict)
-  assert False 
+  for i in tqdm.tqdm(range(100), desc='Optimizaing...'):
+    #_, loss = optimization_loss(input_dict=input_dict, gt_dict=gt_dict, pred_dict=pred_dict)
+    #optim_first_h(loss)
+    #optim_last_h(loss)
+    pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict)
+    loss_dict, loss = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, cam_dict=cam_dict)
+    for name, optim in latent_dict.items():
+      if optim is not None:
+        print(name)
+      optim(loss)
+  return pred_dict, in_test
+
 
 def add_latent(in_f, module, input_dict, latent_dict):
+  #print("[#] Module : ", module)
   latent_dim = sum(args.pipeline[module]['latent_in'])
   #print("Latent dim : ", latent_dim)
   #print("in_f shape : ", in_f.shape)
-  #print("aux shape : ", aux.shape)
 
   if latent_dim > 0:
     # Auxialiary features have been used.
     if latent_dict[module] is not None:
-      raise NotImplementedError
+      latent = latent_dict[module].get_params()
+      #print(in_f.shape, latent.shape)
+      in_f = pt.cat((in_f, latent), dim=-1)
     elif 'aux' not in input_dict.keys():
       raise ValueError('[#] Aux features are not provided. Please check --optim_<module>, --env <unity/tennis>')
     else:
       sel_f = 0 if 'flag' in args.pipeline else 1   # selected_features -1 since first is eot/cd
       latent_idx = 1 - sel_f  # Latent index in selected_features
       aux = input_dict['aux'][..., latent_idx:]
+      #print("aux shape : ", aux.shape)
       aux = aux_space(aux, lengths=input_dict['lengths'], i_s=args.pipeline[module]['i_s'])
       in_f = pt.cat((in_f, aux), dim=-1)
   else:
@@ -209,7 +210,6 @@ def add_latent(in_f, module, input_dict, latent_dict):
 
 def create_latent(latent_dict, input_dict, model_dict):
   # Optimizae for initial height
-  print(latent_dict)
   batch_size = input_dict['input'].shape[0]
   if args.optim_init_h:
     search_h = {}
@@ -222,17 +222,18 @@ def create_latent(latent_dict, input_dict, model_dict):
     search_h['last_h'] = optim_last_h
     latent_dict['init_h'] = search_h
 
+  # Optimize for latent variables
   if args.optim_latent:
     for module in args.pipeline:
       latent_dim = sum(args.pipeline[module]['latent_in'])
       if latent_dim > 0:
         print("[#] Module : {} have latent to be optimized.".format(module))
-        optim_latent = Optimization(shape=(batch_size, 1, latent_dim), name=module)
+        seq_len = input_dict['input'].shape[1] - 1 if args.pipeline[module]['i_s'] == 'dt' else input_dict['input'].shape[1]
+        optim_latent = Optimization(shape=(batch_size, seq_len, latent_dim), name=module)
         optim_latent.train()
         latent_dict[module] = optim_latent
-        #print(latent_dict[module])
-        #print(latent_dict[module].get_name())
   
+    return latent_dict
 
 def reconstruct(height, cam_dict, recon_dict, canon_dict):
   '''
@@ -435,19 +436,18 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
 
   return loss_dict, loss
 
-def optimization_loss(input_dict, gt_dict, pred_dict):
+def optimization_loss(input_dict, pred_dict, cam_dict):
   # Optimization loss term
   ######################################
   ############# Trajectory #############
   ######################################
-  trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  #trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   below_ground_loss = utils_loss.BelowGroundPenalize(pred=pred_dict['xyz'], mask=input_dict['mask'], lengths=input_dict['lengths'])
 
   #gravity_loss = pt.tensor(0.).to(device)
   #below_ground_loss = pt.tensor(0.).to(device)
 
-  loss = below_ground_loss + trajectory_loss
-  loss_dict = {"Trajectory Loss":trajectory_loss.item(),
-              "BelowGnd Loss":below_ground_loss.item()}
+  loss = below_ground_loss
+  loss_dict = {"BelowGnd Loss":below_ground_loss.item()}
 
   return loss_dict, loss

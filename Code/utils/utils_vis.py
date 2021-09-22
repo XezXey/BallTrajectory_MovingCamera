@@ -79,17 +79,17 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
 def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
     n_vis = 10 if input_dict['input'].shape[0] > 10 else input_dict['input'].shape[0]
     vis_idx = np.random.choice(np.arange(input_dict['input'].shape[0]), size=(n_vis), replace=False)
-    # Variables
-    pred = pred_dict['xyz'][..., [0, 1, 2]]
-    len_ = input_dict['lengths']
-    mask = input_dict['mask'][..., [0, 1, 2]]
-    if not args.no_gt:
-      gt = gt_dict['gt'][..., [0, 1, 2]]
-    else:
-      gt = None
     ####################################
     ############ Trajectory ############
     ####################################
+    # Variables
+    len_ = input_dict['lengths']
+    pred = pred_dict['xyz'][..., [0, 1, 2]]
+    mask = input_dict['mask'][..., [0, 1, 2]]
+    if args.env == 'unity':
+      gt = gt_dict['gt'][..., [0, 1, 2]]
+    else:
+      gt = None
     fig_traj = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*math.ceil(n_vis/2), horizontal_spacing=0.05, vertical_spacing=0.01)
     visualize_trajectory(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
     visualize_trajectory(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
@@ -106,9 +106,16 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
     ############### Flag ###############
     ####################################
     if ('flag' in pred_dict.keys()):
-      fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
-      visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
-      visualize_flag(pred=pred_dict['flag'][..., [0]], gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=1)
+      # Variables
+      len_ = input_dict['lengths']
+      pred = pred_dict['flag'][..., [0]]
+      if args.env == 'unity':
+        gt = input_dict['aux'][..., [0]]
+      else:
+        gt = None
+      fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*math.ceil(n_vis/2), horizontal_spacing=0.05, vertical_spacing=0.01)
+      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
+      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=1)
       plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
 
 
