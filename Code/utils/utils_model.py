@@ -169,7 +169,7 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   train_mode(model_dict=model_dict)
   # Construct latent
   latent_dict = create_latent(latent_dict, input_dict, model_dict)
-  t = tqdm.trange(10, leave=True)
+  t = tqdm.trange(500, leave=True)
 
   patience = 10
   count = 0
@@ -500,7 +500,7 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   else:                           
     cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
-  loss = reprojection_loss + below_ground_loss + trajectory_loss + cosinesim_loss
+  loss = reprojection_loss + below_ground_loss + trajectory_loss #+ cosinesim_loss
   loss_dict = {"Traj Loss":trajectory_loss.item(),
                "BGnd Loss":below_ground_loss.item(), 
                "Reproj Loss":reprojection_loss.item(),

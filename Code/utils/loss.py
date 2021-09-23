@@ -213,5 +213,8 @@ def CosineSimLoss(pred, gt, mask, lengths, cam_dict, input_dict, latent_dict):
       output = 1-cos(pred_dt[..., [2, 0]], latent_dict[k].get_params())
       output = pt.mean(output * mask_latent)
 
-  output = pt.mean(output)
+  try:
+    output = pt.mean(output)
+  except UnboundLocalError:
+    return pt.tensor([0.]).to(device)
   return output

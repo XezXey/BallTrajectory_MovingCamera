@@ -558,7 +558,7 @@ def save_cam_traj(trajectory, cam_dict):
 
       traj_json[j] = json_dat
 
-    with open("{}/ext3.json".format(args.save_cam_traj), "w") as file:
+    with open("{}/{}.json".format(args.save_cam_traj, args.wandb_name), "w") as file:
       json.dump(traj_json, file)
 
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
