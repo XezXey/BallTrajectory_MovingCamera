@@ -74,7 +74,7 @@ parser.add_argument('--augment', dest='augment', help='Apply an augmented traini
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
 
 # Optimization
-parser.add_argument('--optim_h', dest='optim_h', help='Optimize for initial height', action='store_true', default=None)
+parser.add_argument('--optim_init_h', dest='optim_init_h', help='Optimize for initial height', action='store_true', default=None)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)

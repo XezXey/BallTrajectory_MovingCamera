@@ -148,7 +148,7 @@ def LatentLoss(pred, gt, lengths, mask):
 
   return latent_loss
 
-def CosineSimLoss(pred, gt, input_dict, cam_dict, mask, lengths):
+def Latent_LOSS(pred, gt, input_dict, cam_dict, mask, lengths):
   '''
   Calculate the loss between reconstructed trajectory and the input latent
   input : 1) gt - col 3 contians eot flag, col 4: contains latent (depends on --features_cols)
@@ -195,3 +195,23 @@ def CosineSimLoss(pred, gt, input_dict, cam_dict, mask, lengths):
     latent_loss = latent_loss / pred.shape[0]
 
   return latent_loss
+
+def CosineSimLoss(pred, gt, mask, lengths, cam_dict, input_dict, latent_dict):
+  cos = pt.nn.CosineSimilarity(dim=2, eps=1e-16)
+  pred_dt = pred[:, 1:, :] - pred[:, :-1, :]
+  excpt = ['init_h', 'refinement']
+
+  mask_latent = []
+  for i in range(mask.shape[0]):
+    s = mask[i][0:lengths[i]-1, 0]
+    e = mask[i][lengths[i]:, 0]
+    mask_latent.append(pt.cat((s, e), dim=0))
+  mask_latent = pt.stack(mask_latent)
+
+  for k in latent_dict.keys():
+    if k not in excpt and latent_dict[k] is not None:
+      output = 1-cos(pred_dt[..., [2, 0]], latent_dict[k].get_params())
+      output = pt.mean(output * mask_latent)
+
+  output = pt.mean(output)
+  return output
