@@ -42,42 +42,19 @@ def GravityLoss(pred, gt, mask, lengths):
   time_scale = (1/args.fps)**2
   g = pt.tensor([[[0.0, -9.81*time_scale, 0.0]]]).to(device)
 
-  start = time.time()
-  for i in range(pred.shape[0]):
-    if pred[i][:lengths[i], 1].shape[0] < 3:
-      print("The trajectory is too shorter to perform a convolution")
-      continue
-    pred_ = pt.unsqueeze(pred[i][:lengths[i], [0, 1, 2]], dim=0)
-    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
-    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
-
-    #gt_ = pt.unsqueeze(gt[i][:lengths[i], [0, 1, 2]], dim=0)
-    #gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
-    #gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
-
-    gravity_loss += pt.sum(pt.abs(pred_ - g))
-
-  print("GRV : ", gravity_loss/pt.sum(lengths))
-  print("loop:", time.time() - start)
-
-  start = time.time()
+  # Finite diff 2 times : ds/dt -> dv/dt -> a
   pred_ = pred[:, 1:, :] - pred[:, :-1, :]
   pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
   mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
   mask_ = pt.transpose(mask_, 1, 2)
+
+  for i in range(mask_.shape[0]):
+    print(pt.cat((pred[i][..., [1]], mask[i][..., [1]].float()), dim=-1), lengths[0], pt.sum(mask[i][..., [0]]))
+    print(pt.cat((pred_[i], mask_[i].float().to(device)), dim=-1), lengths[i]-2, pt.sum(mask_[i]))
+    input()
   mask_ = pt.cat((mask_, mask_, mask_), dim=2).to(device)
-  gravity_loss = pt.mean(pt.abs(pred_ - g) * mask_)
-
-
-  gt_ = gt[:, 1:, :] - gt[:, :-1, :]
-  gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
-  print(gt_[0])
-  gt_ = gt_ * mask_
-  print(gt_[0])
-
-  print("GRV : ", gravity_loss)
-  print("tensor:", time.time() - start)
-  input()
+  mask_ = ~mask_[..., [0]]
+  gravity_loss = pt.sum(pt.abs(pred_[..., [1]] - g[..., [1]]) * mask_) / pt.sum(mask_)
 
   return gravity_loss/pt.sum(lengths)
 
