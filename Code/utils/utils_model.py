@@ -53,6 +53,7 @@ def uv_to_input_features(cam_dict):
   else:
     in_f, ray = in_f_raw, ray_raw
 
+  # Recon dict for a reconstruction stuff
   recon_dict = {'clean' : in_f_raw[..., [0, 1, 2]], 'noisy': in_f_noisy[..., [0, 1, 2]]}
   return in_f, ray, recon_dict
 
@@ -106,6 +107,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     canon_dict = {'cam_cl' : None, 'R' : None}
 
   in_f = input_manipulate(in_f=in_f, module='height')
+  in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
 
   # Augmentation
   if args.augment and not args.optim_init_h:
@@ -307,14 +309,14 @@ def input_manipulate(in_f, module):
 
   i_s = args.pipeline[module]['i_s']
   if args.sc == 'azim':
-    azim_sc = pt.cat((pt.sin(in_f[..., 4]), pt.cos(in_f[..., 4])), axis=2)
-    in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3], azim_sc]), axis=2)
+    azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
+    in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3]], azim_sc), axis=2)
   elif args.sc == 'elev':
-    elev_sc = pt.cat((pt.sin(in_f[..., 3]), pt.cos(in_f[..., 3])), axis=2)
+    elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, in_f[..., [4]]), axis=2)
   elif args.sc == 'both':
-    azim_sc = pt.cat((pt.sin(in_f[..., 4]), pt.cos(in_f[..., 4])), axis=2)
-    elev_sc = pt.cat((pt.sin(in_f[..., 3]), pt.cos(in_f[..., 3])), axis=2)
+    azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
+    elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
 
   in_f = input_space(in_f, i_s)
@@ -355,7 +357,7 @@ def output_space(pred_h, lengths, module, search_h=None):
   o_s = args.pipeline[module]['o_s']
 
   if o_s == 't':
-    return pred_h 
+    height = pred_h
     
   elif o_s == 'dt':
     if i_s == 't_dt':
@@ -384,7 +386,18 @@ def output_space(pred_h, lengths, module, search_h=None):
     #print(pt.cat((h_fw[1], h_bw[1], w_ramp[1]), dim=1))
     height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
       
-    return height
+
+  # Hard constraint on Height (y > 0)
+  if args.pipeline['height']['constraint_y'] == 'relu':
+    relu = pt.nn.ReLU()
+    height = relu(height)
+  elif args.pipeline['height']['constraint_y'] == 'softplus':
+    softplus = pt.nn.softplus()
+    height = softplus(height)
+  else:
+    pass
+
+  return height
 
 def aux_space(aux, i_s, lengths):
   if i_s == 'dt':

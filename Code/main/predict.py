@@ -252,6 +252,8 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   if args.visualize:
     utils_vis.inference_vis(input_dict=input_dict_test, pred_dict=pred_dict_test, gt_dict=gt_dict_test, 
                             cam_dict=cam_dict_test)
+  
+
 
   return evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred
 
@@ -353,7 +355,7 @@ if __name__ == '__main__':
 
   # Create Datasetloader for test and testidation
   dataset_test = TrajectoryDataset(dataset_path=args.dataset_test_path, trajectory_type=args.trajectory_type)
-  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=False)
+  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
   # Cast it to iterable object
   trajectory_test_iterloader = iter(dataloader_test)
 

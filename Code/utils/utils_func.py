@@ -541,15 +541,15 @@ def save_cam_traj(trajectory, cam_dict):
       cpos.append(cpos_tmp[j][:seq_len[j]])
 
       if gt is None:
-        gt.append(gt_tmp[j][:seq_len[j]])
-        json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
+        json_dat = {"gt" : None,
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
       else:
-        json_dat = {"gt" : None,
+        gt.append(gt_tmp[j][:seq_len[j]])
+        json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
@@ -560,6 +560,7 @@ def save_cam_traj(trajectory, cam_dict):
 
     with open("{}/{}.json".format(args.save_cam_traj, args.wandb_name), "w") as file:
       json.dump(traj_json, file)
+    break
 
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
