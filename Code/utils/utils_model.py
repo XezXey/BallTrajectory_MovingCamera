@@ -326,7 +326,7 @@ def input_manipulate(in_f, module):
 def input_space(in_f, i_s):
   '''
   Input : 
-    1. in_f : input features(t-space) in shape (batch, seq_len, 5) -> (x, y, z, elev, azim)
+    1. in_f : input features(t-space) in shape (batch, seq_len, f_dim) -> e.g. f_dim = (x, y, z, elev, azim)
   Output :
     1. in_f : input features in t/dt/t_dt-space in shape(batch, seq_len, _)
   '''
@@ -357,15 +357,28 @@ def output_space(pred_h, lengths, module, search_h=None):
   o_s = args.pipeline[module]['o_s']
 
   if o_s == 't':
-    height = pred_h
+    if i_s == 't':
+      # t -> t
+      height = pred_h
+    elif i_s == 'dt':
+      # dt -> t
+      raise NotImplemented
+    elif i_s == 't_dt':
+      # t_dt -> t
+      raise NotImplemented
     
   elif o_s == 'dt':
     if i_s == 't_dt':
+      # dt -> t_dt
       raise NotImplemented
-      
     elif i_s == 'dt':
+      # dt -> dt
       pred_h = pred_h
+    elif i_s == 't':
+      # t -> dt
+      raise NotImplemented
 
+    # Aggregate the dt output with ramp_weight
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
 
     if search_h is None:
@@ -470,7 +483,7 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss*1000 + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
+  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item(),

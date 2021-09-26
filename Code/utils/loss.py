@@ -36,27 +36,24 @@ def ReprojectionLoss(pred, mask, lengths, cam_dict):
   reprojection_loss = u_reprojection_loss + v_reprojection_loss
   return reprojection_loss
 
-def GravityLoss(pred, gt, mask, lengths):
-  # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step
+def GravityLoss(pred, mask, lengths, gt=None):
+  '''
+  Gravity constraint
+  '''
   gravity_loss = pt.tensor([0.]).to(device)
   time_scale = (1/args.fps)**2
   g = pt.tensor([[[0.0, -9.81*time_scale, 0.0]]]).to(device)
 
   # Finite diff 2 times : ds/dt -> dv/dt -> a
-  pred_ = pred[:, 1:, :] - pred[:, :-1, :]
-  pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+  pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
+  accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
+  # Create mask from a given list of lengths
   mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
-  mask_ = pt.transpose(mask_, 1, 2)
-
-  for i in range(mask_.shape[0]):
-    print(pt.cat((pred[i][..., [1]], mask[i][..., [1]].float()), dim=-1), lengths[0], pt.sum(mask[i][..., [0]]))
-    print(pt.cat((pred_[i], mask_[i].float().to(device)), dim=-1), lengths[i]-2, pt.sum(mask_[i]))
-    input()
+  mask_ = pt.transpose(mask_, 1, 2) # Reshape to (batch_size, seq_len, 1)
   mask_ = pt.cat((mask_, mask_, mask_), dim=2).to(device)
-  mask_ = ~mask_[..., [0]]
-  gravity_loss = pt.sum(pt.abs(pred_[..., [1]] - g[..., [1]]) * mask_) / pt.sum(mask_)
 
-  return gravity_loss/pt.sum(lengths)
+  gravity_loss = pt.sum(pt.abs(accel - g) * mask_) / pt.sum(mask_)
+  return gravity_loss
 
 def GravityLoss_TEMP(pred, gt, mask, lengths):
   # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step

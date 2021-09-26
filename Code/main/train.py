@@ -172,7 +172,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 150 == 0:
+  if args.visualize and epoch % 1 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 
@@ -389,8 +389,8 @@ if __name__ == '__main__':
     print("#"* 150)
     print('[#]Finish Epoch : {}/{}.........Train loss : {:.3f}, Val loss : {:.3f}'.format(epoch, args.n_epochs, train_loss_per_epoch, val_loss_per_epoch))
 
-    # Save the model ckpt every finished the epochs
-    if min_val_loss > val_traj_loss_per_epoch:
+    # Save the model ckpt (Val loss) 
+    if min_val_loss > val_loss_per_epoch:
       # Save model ckpt
       save_ckpt_best = '{}/{}_best.pth'.format(save_ckpt, args.wandb_name)
       print("[===>] Best Validation Loss [<===]")
@@ -408,7 +408,7 @@ if __name__ == '__main__':
     else:
       print('[#]Not saving the best model ckpt : Val loss {:.3f} not improved from {:.3f}'.format(val_loss_per_epoch, min_val_loss))
 
-    # Save the model ckpt every finished the epochs
+    # Save the model ckpt (Traj loss)
     if min_ckpt_loss > np.mean(save_ckpt_loss):
       # Save model ckpt
       save_ckpt_best_ma = '{}/{}_best_traj_ma.pth'.format(save_ckpt, args.wandb_name)
@@ -429,7 +429,7 @@ if __name__ == '__main__':
 
 
     if epoch % 25 == 0:
-      # Save the lastest ckpt for continue training every 10 epoch
+      # Save the lastest ckpt every 25 epoch
       save_ckpt_lastest = '{}/{}_lastest.pth'.format(save_ckpt, args.wandb_name)
       print("[===>] Lastest checkpoint(n=25) [<===]")
       print('[#]Saving the lastest ckpt to : ', save_ckpt_lastest)
