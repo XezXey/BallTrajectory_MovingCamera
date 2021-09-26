@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_cont2_clean_cd_full_perc'
+wandb_name: 'tennis_test'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -70,8 +70,9 @@ pipeline:
     latent_in: []
     latent_out: []
     i_s: 'dt'
-    o_s: 'dt'
-    constraint_y: 'softplus' # 'relu', 'softplus' or null
+    o_s: 't'
+    constraint_y: 'relu' # 'relu', 'softplus' or null
+    #constraint_y: 'softplus' # 'relu', 'softplus' or null
 
 
   refinement:
@@ -94,7 +95,7 @@ pipeline:
 
 # Features
 selected_features: [eot]
-sc: 'azim'  # ''(+0), azim(+1), elev(+1), both(+2)
+sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []

@@ -5,10 +5,11 @@ import os
 import time
 sys.path.append(os.path.realpath('../..'))
 from sklearn.metrics import confusion_matrix
-import plotly
-import wandb
-import utils.transformation as utils_transform
 import matplotlib.pyplot as plt
+import wandb
+# Utils
+import utils.transformation as utils_transform
+import utils.utils_func as utils_func
 
 # GPU initialization
 if pt.cuda.is_available():
@@ -48,9 +49,7 @@ def GravityLoss(pred, mask, lengths, gt=None):
   pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
   accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
   # Create mask from a given list of lengths
-  mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
-  mask_ = pt.transpose(mask_, 1, 2) # Reshape to (batch_size, seq_len, 1)
-  mask_ = pt.cat((mask_, mask_, mask_), dim=2).to(device)
+  mask_ = utils_func.mask_from_lengths(lengths=lengths, n_dim=3)
 
   gravity_loss = pt.sum(pt.abs(accel - g) * mask_) / pt.sum(mask_)
   return gravity_loss

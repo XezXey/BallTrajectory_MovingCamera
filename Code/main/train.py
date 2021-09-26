@@ -414,7 +414,7 @@ if __name__ == '__main__':
       save_ckpt_best_ma = '{}/{}_best_traj_ma.pth'.format(save_ckpt, args.wandb_name)
       print("[===>] Best Trajectory Loss [<===]")
       print('[+++]Saving the best model ckpt : Prev loss {:.3f} > Curr loss {:.3f}'.format(min_ckpt_loss, np.mean(save_ckpt_loss)))
-      print('[+++]Saving the best model ckpt to : ', save_ckpt_best)
+      print('[+++]Saving the best model ckpt to : ', save_ckpt_best_ma)
       min_ckpt_loss = np.mean(save_ckpt_loss)
       annealing_scheduler = {'step':anneal_step, 'weight':anneal_w}
       # Save to directory

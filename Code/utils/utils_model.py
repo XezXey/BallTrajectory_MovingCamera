@@ -362,10 +362,10 @@ def output_space(pred_h, lengths, module, search_h=None):
       height = pred_h
     elif i_s == 'dt':
       # dt -> t
-      raise NotImplemented
+      height = pred_h
     elif i_s == 't_dt':
       # t_dt -> t
-      raise NotImplemented
+      height = pred_h
     
   elif o_s == 'dt':
     if i_s == 't_dt':
@@ -404,7 +404,7 @@ def output_space(pred_h, lengths, module, search_h=None):
     relu = pt.nn.ReLU()
     height = relu(height)
   elif args.pipeline['height']['constraint_y'] == 'softplus':
-    softplus = pt.nn.Softplus()
+    softplus = pt.nn.Softplus(threshold=0)
     height = softplus(height)
   else:
     pass

@@ -1,6 +1,5 @@
 # Libs
 import os, sys, time
-
 from numpy.lib.npyio import save
 sys.path.append(os.path.realpath('../'))
 import numpy as np
@@ -20,8 +19,6 @@ import utils.transformation as utils_transform
 from models.height_module import Height_Module
 from models.refinement_module import Refinement_Module
 from models.flag_module import Flag_Module
-# Loss
-import utils.loss as loss
 
 # GPU initialization
 if pt.cuda.is_available():
@@ -565,6 +562,11 @@ def save_cam_traj(trajectory, cam_dict):
   data = {'gt':gt, 'pred':pred, 'cpos':cpos}
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
   print("[#] Saving reconstruction to {}".format(save_path))
+
+def mask_from_lengths(lengths, n_dim=1):
+  mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
+  mask_ = pt.transpose(mask_, 1, 2) # Reshape to (batch_size, seq_len, 1)
+  mask_ = pt.cat([mask_]*n_dim, dim=2).to(device)
 
 def augment(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
