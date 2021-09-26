@@ -137,7 +137,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths'])
     pred_dict['h'] = pred_h
 
-  print(pred_h.shape, in_f.shape)
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
   xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
@@ -339,7 +338,7 @@ def input_space(in_f, i_s):
     in_f = in_f
   elif i_s == 't_dt':
     dt = in_f[:, 1:, :] - in_f[:, :-1, :]
-    dt = pt.cat((dt, t0_pad, ), dim=1)
+    dt = pt.cat((dt, t0_pad), dim=1)
     in_f = pt.cat((in_f, dt), dim=2)
 
   return in_f
@@ -370,6 +369,7 @@ def output_space(pred_h, lengths, module, search_h=None):
       height = pred_h
     
   elif o_s == 'dt':
+    
     if i_s == 't_dt':
       # dt -> t_dt
       pred_h = pred_h[:, :-1, :]
@@ -411,6 +411,8 @@ def output_space(pred_h, lengths, module, search_h=None):
   else:
     pass
 
+  print(height)
+  input()
   return height
 
 def aux_space(aux, i_s, lengths):
