@@ -96,6 +96,7 @@ parser.add_argument('--save_cam_traj', dest='save_cam_traj', type=str, help='Sav
 parser.add_argument('--no_gt', dest='no_gt', help='Is ground-truth available?', action='store_true', default=False)
 parser.add_argument('--w', dest='w', type=float, help='width', default=None)
 parser.add_argument('--h', dest='h', type=float, help='height', default=None)
+parser.add_argument('--fps', dest='fps', type=float, help='fps', default=None)
 
 # YAML-Config
 parser.add_argument('--config_yaml', dest='config_yaml', type=str, help='Config parameters file', required=True)
@@ -171,7 +172,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and epoch % 250 == 0:
+  if args.visualize and epoch % 1 == 0:
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 

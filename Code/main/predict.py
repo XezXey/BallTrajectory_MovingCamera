@@ -98,6 +98,7 @@ parser.add_argument('--save_cam_traj', dest='save_cam_traj', type=str, help='Sav
 parser.add_argument('--no_gt', dest='no_gt', help='Is ground-truth available?', action='store_true', default=False)
 parser.add_argument('--w', dest='w', type=float, help='width', default=None)
 parser.add_argument('--h', dest='h', type=float, help='height', default=None)
+parser.add_argument('--fps', dest='fps', type=float, help='fps', default=None)
 
 # YAML-Config
 parser.add_argument('--config_yaml', dest='config_yaml', type=str, help='Config parameters file', required=True)
@@ -355,7 +356,7 @@ if __name__ == '__main__':
 
   # Create Datasetloader for test and testidation
   dataset_test = TrajectoryDataset(dataset_path=args.dataset_test_path, trajectory_type=args.trajectory_type)
-  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=True)
+  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=False)
   # Cast it to iterable object
   trajectory_test_iterloader = iter(dataloader_test)
 

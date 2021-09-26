@@ -37,8 +37,27 @@ def ReprojectionLoss(pred, mask, lengths, cam_dict):
 
 def GravityLoss(pred, gt, mask, lengths):
   # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step
+  gravity_loss = pt.tensor([0.]).to(device)
+  time_scale = (1/args.fps)**2
+  g = pt.tensor([[[0.0, -9.81/time_scale, 0.0]]]).to(device)
+
+  for i in range(pred.shape[0]):
+    if pred[i][:lengths[i], 1].shape[0] < 3:
+      print("The trajectory is too shorter to perform a convolution")
+      continue
+    pred_ = pt.unsqueeze(pred[i][:lengths[i], [0, 1, 2]], dim=0)
+    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+    
+    gravity_loss += pt.sum(pred_ - g)
+
+  return pt.mean(gravity_loss)
+
+def GravityLoss_TEMP(pred, gt, mask, lengths):
+  # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step
   gravity_constraint_penalize = pt.tensor([0.])
   count = 0
+  sum_g = 0
   # Gaussian blur kernel for not get rid of the input information
   gaussian_blur = pt.tensor([0.25, 0.5, 0.25], dtype=pt.float32).view(1, 1, -1).to(device)
   # Kernel weight for performing a finite difference
@@ -50,10 +69,26 @@ def GravityLoss(pred, gt, mask, lengths):
     if gt[i][:lengths[i], 1].shape[0] < 6:
       print("The trajectory is too shorter to perform a convolution")
       continue
-    gt_yaxis_1st_gaussian_blur = pt.nn.functional.conv1d(gt[i][:lengths[i], 1].view(1, 1, -1), gaussian_blur)
-    gt_yaxis_1st_finite_difference = pt.nn.functional.conv1d(gt_yaxis_1st_gaussian_blur, kernel_weight)
-    gt_yaxis_2nd_gaussian_blur = pt.nn.functional.conv1d(gt_yaxis_1st_finite_difference, gaussian_blur)
-    gt_yaxis_2nd_finite_difference = pt.nn.functional.conv1d(gt_yaxis_2nd_gaussian_blur, kernel_weight)
+    #gt_yaxis_1st_gaussian_blur = pt.nn.functional.conv1d(gt[i][:lengths[i], 1].view(1, 1, -1), gaussian_blur)
+    #gt_yaxis_1st_finite_difference = pt.nn.functional.conv1d(gt_yaxis_1st_gaussian_blur, kernel_weight)
+    #gt_yaxis_2nd_gaussian_blur = pt.nn.functional.conv1d(gt_yaxis_1st_finite_difference, gaussian_blur)
+    #gt_yaxis_2nd_finite_difference = pt.nn.functional.conv1d(gt_yaxis_2nd_gaussian_blur, kernel_weight)
+
+    gt_yaxis_1st_finite_difference = pt.nn.functional.conv1d(gt[i][:lengths[i], 1].view(1, 1, -1), kernel_weight)
+    gt_yaxis_2nd_finite_difference = pt.nn.functional.conv1d(gt_yaxis_1st_finite_difference, kernel_weight)
+
+    gt_ = pt.unsqueeze(gt[i][:lengths[i], [0, 1, 2]], dim=0)
+    gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
+    gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
+
+
+    pred_ = pt.unsqueeze(pred[i][:lengths[i], [0, 1, 2]], dim=0)
+    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+    pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+
+    print(gt_, pred_)
+    input()
+
     # Apply Gaussian blur and finite difference to gt
     pred_yaxis_1st_gaussian_blur = pt.nn.functional.conv1d(pred[i][:lengths[i], 1].view(1, 1, -1), gaussian_blur)
     pred_yaxis_1st_finite_difference = pt.nn.functional.conv1d(pred_yaxis_1st_gaussian_blur, kernel_weight)
@@ -61,10 +96,19 @@ def GravityLoss(pred, gt, mask, lengths):
     pred_yaxis_2nd_finite_difference = pt.nn.functional.conv1d(pred_yaxis_2nd_gaussian_blur, kernel_weight)
     # Compute the penalize term
     # print(gt_yaxis_2nd_finite_difference, pred_yaxis_2nd_finite_difference)
-    if gravity_constraint_penalize.shape[0] == 1:
-      gravity_constraint_penalize = ((gt_yaxis_2nd_finite_difference - pred_yaxis_2nd_finite_difference)**2).reshape(-1, 1)
-    else:
-      gravity_constraint_penalize = pt.cat((gravity_constraint_penalize, ((gt_yaxis_2nd_finite_difference - pred_yaxis_2nd_finite_difference)**2).reshape(-1, 1)))
+    #if gravity_constraint_penalize.shape[0] == 1:
+    #  gravity_constraint_penalize = ((gt_yaxis_2nd_finite_difference - pred_yaxis_2nd_finite_difference)**2).reshape(-1, 1)
+    #else:
+    #  gravity_constraint_penalize = pt.cat((gravity_constraint_penalize, ((gt_yaxis_2nd_finite_difference - pred_yaxis_2nd_finite_difference)**2).reshape(-1, 1)))
+    print(pt.sum(pt.isclose(gt_yaxis_2nd_finite_difference, pt.tensor([-0.0436]).to(device))))
+    sum_g += pt.sum(pt.isclose(gt_yaxis_2nd_finite_difference, pt.tensor([-0.0436]).to(device)))
+
+  #pt.set_printoptions(precision=10)
+
+  g = pt.tensor([0.0, -9.81/900, 0.0]).to(device)
+  print((gt_ - g))
+  print(pt.sum(pt.abs(gt_ - g)))
+  input()
 
   return pt.mean(gravity_constraint_penalize)
 

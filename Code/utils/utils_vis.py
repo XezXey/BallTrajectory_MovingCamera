@@ -43,7 +43,7 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     '''
 
     # Visualize by make a subplots of trajectory
-    n_vis = 5
+    n_vis = 5 if input_dict_train['input'].shape[0] >= 5 else input_dict_train['input'].shape[0]
     # Random the index the be visualize
     train_vis_idx = np.random.choice(np.arange(input_dict_train['input'].shape[0]), size=(n_vis), replace=False)
     val_vis_idx = np.random.choice(np.arange(input_dict_val['input'].shape[0]), size=(n_vis), replace=False)
