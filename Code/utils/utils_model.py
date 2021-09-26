@@ -358,27 +358,9 @@ def output_space(pred_h, lengths, module, search_h=None):
   o_s = args.pipeline[module]['o_s']
 
   if o_s == 't':
-    if i_s == 't':
-      # t -> t
-      height = pred_h
-    elif i_s == 'dt':
-      # dt -> t
-      height = pred_h
-    elif i_s == 't_dt':
-      # t_dt -> t
-      height = pred_h
-    
+    height = pred_h
   elif o_s == 'dt':
-    
-    if i_s == 't_dt':
-      # dt -> t_dt
-      pred_h = pred_h[:, :-1, :]
-    elif i_s == 'dt':
-      # dt -> dt
-      pred_h = pred_h[:, :-1, :]
-    elif i_s == 't':
-      # t -> dt
-      pred_h = pred_h[:, :-1, :]
+    pred_h = pred_h[:, :-1, :]
 
     # Aggregate the dt output with ramp_weight
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
@@ -411,11 +393,10 @@ def output_space(pred_h, lengths, module, search_h=None):
   else:
     pass
 
-  print(height)
-  input()
   return height
 
 def aux_space(aux, i_s, lengths):
+  return aux
   if i_s == 'dt':
     tmp = []
     for i in range(aux.shape[0]):
