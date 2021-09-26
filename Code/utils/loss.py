@@ -2,6 +2,7 @@ import torch as pt
 import numpy as np
 import sys
 import os
+import time
 sys.path.append(os.path.realpath('../..'))
 from sklearn.metrics import confusion_matrix
 import plotly
@@ -39,8 +40,9 @@ def GravityLoss(pred, gt, mask, lengths):
   # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step
   gravity_loss = pt.tensor([0.]).to(device)
   time_scale = (1/args.fps)**2
-  g = pt.tensor([[[0.0, -9.81/time_scale, 0.0]]]).to(device)
+  g = pt.tensor([[[0.0, -9.81*time_scale, 0.0]]]).to(device)
 
+  start = time.time()
   for i in range(pred.shape[0]):
     if pred[i][:lengths[i], 1].shape[0] < 3:
       print("The trajectory is too shorter to perform a convolution")
@@ -48,10 +50,36 @@ def GravityLoss(pred, gt, mask, lengths):
     pred_ = pt.unsqueeze(pred[i][:lengths[i], [0, 1, 2]], dim=0)
     pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
     pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
-    
-    gravity_loss += pt.sum(pred_ - g)
 
-  return pt.mean(gravity_loss)
+    #gt_ = pt.unsqueeze(gt[i][:lengths[i], [0, 1, 2]], dim=0)
+    #gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
+    #gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
+
+    gravity_loss += pt.sum(pt.abs(pred_ - g))
+
+  print("GRV : ", gravity_loss/pt.sum(lengths))
+  print("loop:", time.time() - start)
+
+  start = time.time()
+  pred_ = pred[:, 1:, :] - pred[:, :-1, :]
+  pred_ = pred_[:, 1:, :] - pred_[:, :-1, :]
+  mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
+  mask_ = pt.transpose(mask_, 1, 2)
+  mask_ = pt.cat((mask_, mask_, mask_), dim=2).to(device)
+  gravity_loss = pt.mean(pt.abs(pred_ - g) * mask_)
+
+
+  gt_ = gt[:, 1:, :] - gt[:, :-1, :]
+  gt_ = gt_[:, 1:, :] - gt_[:, :-1, :]
+  print(gt_[0])
+  gt_ = gt_ * mask_
+  print(gt_[0])
+
+  print("GRV : ", gravity_loss)
+  print("tensor:", time.time() - start)
+  input()
+
+  return gravity_loss/pt.sum(lengths)
 
 def GravityLoss_TEMP(pred, gt, mask, lengths):
   # Compute the 2nd finite difference of the y-axis to get the gravity should be equal in every time step

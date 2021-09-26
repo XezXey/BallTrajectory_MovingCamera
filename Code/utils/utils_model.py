@@ -107,7 +107,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     canon_dict = {'cam_cl' : None, 'R' : None}
 
   in_f = input_manipulate(in_f=in_f, module='height')
-  #in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
+  in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
 
   # Augmentation
   if args.augment and not args.optim_init_h:
@@ -387,14 +387,14 @@ def output_space(pred_h, lengths, module, search_h=None):
     height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
 
   # Hard constraint on Height (y > 0)
-  #if args.pipeline['height']['constraint_y'] == 'relu':
-  #  relu = pt.nn.ReLU()
-  #  height = relu(height)
-  #elif args.pipeline['height']['constraint_y'] == 'softplus':
-  #  softplus = pt.nn.softplus()
-  #  height = softplus(height)
-  #else:
-  #  pass
+  if args.pipeline['height']['constraint_y'] == 'relu':
+    relu = pt.nn.ReLU()
+    height = relu(height)
+  elif args.pipeline['height']['constraint_y'] == 'softplus':
+    softplus = pt.nn.Softplus()
+    height = softplus(height)
+  else:
+    pass
 
   return height
 
@@ -470,7 +470,7 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
+  loss = trajectory_loss + gravity_loss*1000 + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
                "BelowGnd Loss":below_ground_loss.item(),
@@ -497,6 +497,14 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   below_ground_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=input_dict['mask'], lengths=input_dict['lengths'])
 
   ######################################
+  ############ Gravity Loss ############
+  ######################################
+  if ('refinement' in args.pipeline):
+    gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  else:
+    gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+
+  ######################################
   ########### Reprojection #############
   ######################################
   if ('refinement' in args.pipeline):
@@ -512,9 +520,10 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   else:                           
     cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
-  loss = reprojection_loss + below_ground_loss + trajectory_loss #+ cosinesim_loss
+  loss = reprojection_loss + below_ground_loss + trajectory_loss + gravity_loss #+ cosinesim_loss
   loss_dict = {"Traj Loss":trajectory_loss.item(),
                "BGnd Loss":below_ground_loss.item(), 
+               "Grav Loss":gravity_loss.item(), 
                "Reproj Loss":reprojection_loss.item(),
                "CosSim Loss":cosinesim_loss.item()}
 
