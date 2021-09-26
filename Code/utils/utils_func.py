@@ -563,10 +563,30 @@ def save_cam_traj(trajectory, cam_dict):
   np.save(file='{}/reconstructed.npy'.format(save_path), arr=data)
   print("[#] Saving reconstruction to {}".format(save_path))
 
-def mask_from_lengths(lengths, n_dim=1):
-  mask_ = pt.arange(pt.max(lengths-2))[None, None, :].cpu() < lengths[:, None, None].cpu()-2
+def mask_from_lengths(lengths, n_rmv, n_dim=1, retain_L=False):
+  '''
+  Create a mask from list of seq_len
+  Input : 
+    1. lengths : contains length of each seq in shape(512)
+    2. n_rmv : number of points to remove from lengths (helps in creating a dt mask)
+    3. n_dim : expands the final dims to (batch_size, seq_len, 1*n_dim)
+    4. retain_L : keep the same seq_len by append False at the end
+  Output : 
+    1. mask in shape (batch_size, seq_len, n_dim)
+      - seq_len = lengths - n_rmv  <===> retain_L = False
+      - seq_len = lengths          <===> retain_L = True
+  '''
+
+  lengths = lengths - n_rmv
+  mask_ = pt.arange(pt.max(lengths))[None, None, :].cpu() < lengths[:, None, None].cpu()
   mask_ = pt.transpose(mask_, 1, 2) # Reshape to (batch_size, seq_len, 1)
   mask_ = pt.cat([mask_]*n_dim, dim=2).to(device)
+
+  if retain_L:
+    f_pad = pt.tensor([[[False] * n_dim]]*lengths.shape[0]).to(device)
+    mask_ = pt.cat((mask_, f_pad), dim=1)
+
+  return mask_
 
 def augment(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])

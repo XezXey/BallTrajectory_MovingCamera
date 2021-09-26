@@ -126,7 +126,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     #print("FLAG : ", in_f.shape)
     i_s = args.pipeline['flag']['i_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
-    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
+    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths'])
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
@@ -134,9 +134,10 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     #print("HEIGHT : ", in_f.shape)
     i_s = args.pipeline['height']['i_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if i_s == 'dt' else input_dict['lengths'])
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths'])
     pred_dict['h'] = pred_h
 
+  print(pred_h.shape, in_f.shape)
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
   xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
@@ -330,15 +331,16 @@ def input_space(in_f, i_s):
   Output :
     1. in_f : input features in t/dt/t_dt-space in shape(batch, seq_len, _)
   '''
+  t0_pad = pt.zeros(size=(in_f.shape[0], 1, in_f.shape[2])).to(device)
   if i_s == 'dt':
-    in_f = in_f[:, 1:, :] - in_f[:, :-1, :]
+    dt = in_f[:, 1:, :] - in_f[:, :-1, :]
+    in_f = pt.cat((dt, t0_pad), dim=1)
   elif i_s == 't':
     in_f = in_f
   elif i_s == 't_dt':
     dt = in_f[:, 1:, :] - in_f[:, :-1, :]
-    t0_pad = np.zeros(shape=(in_f.shape[0], 1, in_f.shape[2]))
-    dt = np.concatenate((t0_pad, dt), axis=1)
-    in_f = np.concatenate((in_f, dt), axis=2)
+    dt = pt.cat((dt, t0_pad, ), dim=1)
+    in_f = pt.cat((in_f, dt), dim=2)
 
   return in_f
 
@@ -370,13 +372,13 @@ def output_space(pred_h, lengths, module, search_h=None):
   elif o_s == 'dt':
     if i_s == 't_dt':
       # dt -> t_dt
-      raise NotImplemented
+      pred_h = pred_h[:, :-1, :]
     elif i_s == 'dt':
       # dt -> dt
-      pred_h = pred_h
+      pred_h = pred_h[:, :-1, :]
     elif i_s == 't':
       # t -> dt
-      raise NotImplemented
+      pred_h = pred_h[:, :-1, :]
 
     # Aggregate the dt output with ramp_weight
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
@@ -463,8 +465,8 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   if 'flag' not in pred_dict.keys() or args.env != 'unity':
     flag_loss = pt.tensor(0.).to(device)
   else:
-    zeros = pt.zeros((pred_dict['flag'].shape[0], 1, 1)).to(device)
-    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pt.cat((zeros, pred_dict['flag']), dim=1), gt=input_dict['aux'][..., [0]], mask=gt_dict['mask'][..., [0]], lengths=gt_dict['lengths'])
+    m = utils_func.mask_from_lengths(lengths=gt_dict['lengths'], n_rmv=1, n_dim=1, retain_L=True)
+    flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])
 
   ######################################
   ########### Reprojection #############

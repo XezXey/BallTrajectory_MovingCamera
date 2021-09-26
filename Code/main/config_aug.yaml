@@ -69,8 +69,8 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt'
-    o_s: 't'
+    i_s: 't_dt'
+    o_s: 'dt'
     constraint_y: 'relu' # 'relu', 'softplus' or null
     #constraint_y: 'softplus' # 'relu', 'softplus' or null
 

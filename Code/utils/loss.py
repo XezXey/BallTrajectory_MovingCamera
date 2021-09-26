@@ -49,7 +49,7 @@ def GravityLoss(pred, mask, lengths, gt=None):
   pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
   accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
   # Create mask from a given list of lengths
-  mask_ = utils_func.mask_from_lengths(lengths=lengths, n_dim=3)
+  mask_ = utils_func.mask_from_lengths(lengths=lengths, n_rmv=2, n_dim=3)
 
   gravity_loss = pt.sum(pt.abs(accel - g) * mask_) / pt.sum(mask_)
   return gravity_loss
