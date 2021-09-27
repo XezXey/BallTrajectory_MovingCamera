@@ -124,7 +124,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     h0 = gt_dict['gt'][:, [0], [1]]
 
   in_f = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
-  in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
   
   if 'flag' in args.pipeline:
     #print("FLAG : ", in_f.shape)
@@ -246,7 +245,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
       aux = input_dict['aux'][..., latent_idx:]
       #print("aux shape : ", aux.shape)
       aux = aux_space(aux, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'], i_s=i_s)
-      in_f = pt.cat((in_f, aux), dim=-1)
+      in_f = pt.cat((in_f, aunx), dim=-1)
   else:
     in_f = in_f
   
@@ -332,6 +331,13 @@ def input_manipulate(in_f, module, input_dict, h0=None):
 
   in_f = input_space(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
+  if args.input_variation == 'intr_azim_elev':
+    in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
+  elif args.input_variation == 'intr_hori_vert':
+    in_f = in_f[..., [0, 2, 3, 4]]  # Remove intr_y = 0 and intr_z = 0
+  else :
+    raise ValueError("Input variation is wrong.")
+
   return in_f
     
 def input_space(in_f, i_s, o_s, lengths, h0):
@@ -360,7 +366,7 @@ def input_space(in_f, i_s, o_s, lengths, h0):
   elif i_s == 'h0_dt':
     if o_s == 't':
       dt = in_f[:, 1:, :] - in_f[:, :-1, :]
-      h0_rep = h0.repeat(1, 1, 5)
+      h0_rep = h0.repeat(1, 1, in_f.shape[2])
       #h0_rep = h0.expand(-1, -1, 5)
       in_f = pt.cat((h0_rep, dt), dim=1)
     else:

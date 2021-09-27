@@ -418,23 +418,26 @@ def add_noise(cam_dict):
   noisy_ray = utils_transform.cast_ray(uv=noisy_uv, I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
   #noisy_ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'])
 
-  # Intersect Plane
-  noisy_intr = utils_transform.ray_to_plane(ray=noisy_ray, cpos=cpos)
-  #print(noisy_intr[0][:10], in_f[0][:10, :3])
-  #print(noisy_intr[0][:10] - in_f[0][:10, :3])
+  # Intersect Horizontal Plane
+  noisy_intr_hori = utils_transform.ray_to_plane(ray=noisy_ray, cpos=cpos, plane='horizontal')
+
+  # Intersect Vertical Plane
+  noisy_intr_vert = utils_transform.ray_to_plane(ray=noisy_ray, cpos=cpos, plane='vertical')
 
   # New azimuth
   noisy_azim = utils_transform.compute_azimuth(ray=noisy_ray)
-  #print(noisy_azim[0][:10, :], in_f[0][:10, [4]])
-  #print(noisy_azim[0][:10, :] - in_f[0][:10, [4]])
 
   # New elevation
-  noisy_elev = utils_transform.compute_elevation(intr=noisy_intr, cpos=cpos)
-  #print(noisy_elev[0][:10, :], in_f[0][:10, [3]])
-  #print(noisy_elev[0][:10, :] - in_f[0][:10, [3]])
+  noisy_elev = utils_transform.compute_elevation(intr=noisy_intr_hori, cpos=cpos)
 
   # Replace in_f
-  noisy_in_f = pt.cat((noisy_intr, noisy_elev, noisy_azim), axis=-1)
+  # Replace in_f followed the input variation
+  if args.input_variation == 'intr_azim_elev':
+    noisy_in_f = pt.cat((noisy_intr_hori, noisy_elev, noisy_azim), axis=-1)
+  elif args.input_variation == 'intr_hori_vert':
+    noisy_in_f = pt.cat((noisy_intr_hori, noisy_intr_vert), axis=-1)
+  else:
+    raise ValueError("Input variation is wrong.")
 
   return noisy_in_f, noisy_ray
 
@@ -448,32 +451,25 @@ def generate_input(cam_dict):
   cpos = cam_dict['Einv'][..., 0:3, -1]
   ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
 
-  # Intersect Plane
-  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos)
-  #input("Intr check")
-  #print(intr[0][:10], in_f[0][:10, :3])
-  #print("DIFF : ", intr[0][:10] - in_f[0][:10, :3])
-  #print("MAX : ", pt.max(intr[0] - in_f[0][:, :3], dim=1))
-  #print("MEAN : ", pt.mean(intr[0] - in_f[0][:, :3]))
+  # Intersect Horizontal Plane
+  intr_hori = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane='horizontal')
+
+  # Intersect Vertical Plane
+  intr_vert = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane='vertical')
 
   # New azimuth
   azim = utils_transform.compute_azimuth(ray=ray)
-  #input("Azim check")
-  #print(azim[0][:10, :], in_f[0][:10, [4]])
-  #print("DIFF : ", azim[0][:10] - in_f[0][:10, [4]])
-  #print("MAX : ", pt.max(azim[0] - in_f[0][:, [4]], dim=1))
-  #print("MEAN : ", pt.mean(azim[0] - in_f[0][:, [4]]))
 
   # New elevation
-  elev = utils_transform.compute_elevation(intr=intr, cpos=cpos)
-  #input("Elev check")
-  #print(elev[0][:10, :], in_f[0][:10, [3]])
-  #print("DIFF : ", elev[0][:10] - in_f[0][:10, [3]])
-  #print("MAX : ", pt.max(elev[0] - in_f[0][:, [3]], dim=1))
-  #print("MEAN : ", pt.mean(elev[0] - in_f[0][:, [3]]))
+  elev = utils_transform.compute_elevation(intr=intr_hori, cpos=cpos)
 
-  # Replace in_f
-  in_f = pt.cat((intr, elev, azim), axis=-1)
+  # Replace in_f followed the input variation
+  if args.input_variation == 'intr_azim_elev':
+    in_f = pt.cat((intr_hori, elev, azim), axis=-1)
+  elif args.input_variation == 'intr_hori_vert':
+    in_f = pt.cat((intr_hori, intr_vert), axis=-1)
+  else:
+    raise ValueError("Input variation is wrong.")
 
   return in_f, ray
 

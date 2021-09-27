@@ -82,6 +82,9 @@ parser.add_argument('--optim_latent', dest='optim_latent', help='Optimize for la
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)
 parser.add_argument('--vis_path', dest='vis_path', type=str, help='Path to visualization directory', default=None)
 
+# Input Variation
+parser.add_argument('--input_variation', dest='input_variation', type=str, help='Input features variation', default=None)
+
 # Model
 parser.add_argument('--pipeline', dest='pipeline', help='Pipeline', nargs='+', default=None)
 

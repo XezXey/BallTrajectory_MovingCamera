@@ -90,7 +90,7 @@ def cast_ray(uv, I, E, cpos):
   ray = cdt[..., [0, 1, 2], -1] - cpos
   return ray
 
-def ray_to_plane(cpos, ray):
+def ray_to_plane(cpos, ray, plane):
   '''
   [#] Find the intersection points on the plane given ray-vector and camera position
   Input :
@@ -99,7 +99,13 @@ def ray_to_plane(cpos, ray):
   Output : 
       - intr_pts : ray to plane intersection points from camera through the ball tracking
   '''
-  intr_pos = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
+  if plane == 'horizontal':
+    intr_pos = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
+  elif plane == 'vertical':
+    intr_pos = cpos + (ray * (-cpos[..., [2]]/ray[..., [2]]))
+  else:
+    raise ValueError("A Wrong plane was given.")
+
   return intr_pos
 
 def compute_azimuth(ray):
