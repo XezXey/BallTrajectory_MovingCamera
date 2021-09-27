@@ -18,21 +18,26 @@ class Optimization(pt.nn.Module):
     def forward(self, loss):
         self.optimizer.zero_grad()
         loss.backward(retain_graph=True)
+        #self.info()
         self.optimizer.step()
         self.lr_scheduler.step(loss)
         #for param_group in self.optimizer.param_groups:
         #    print("LR : ", param_group['lr'], "Loss : ", loss)
 
     def get_params(self):
-        if self.name != 'init_h':
+        if self.name != 'init_first_h' and self.name != 'init_last_h':
             # Constraint/Normalize the latent
             #print(self.params)
             params_constrainted = self.params / (pt.sqrt(pt.sum(self.params**2, dim=-1, keepdims=True)) + 1e-16)
             #print(params_constrainted)
             return params_constrainted
-
         else:
             return self.params
 
     def get_name(self):
         return self.name
+
+    def info(self):
+        print("Name : ", self.name)
+        print("Grads : ", self.params.grad)
+        print("Params : ", self.params)

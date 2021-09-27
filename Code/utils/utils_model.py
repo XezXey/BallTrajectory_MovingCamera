@@ -106,9 +106,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   else:
     canon_dict = {'cam_cl' : None, 'R' : None}
 
-  in_f = input_manipulate(in_f=in_f, module='height')
-  in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
-
   # Augmentation
   if args.augment and not args.optim_init_h:
     search_h = {}
@@ -116,15 +113,23 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
     search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
     search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+    h0 = search_h['first_h']
   elif args.optim_init_h:
     search_h = {}
     search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
     search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
-  else: search_h = None
+    h0 = latent_dict['init_h']['first_h'].get_params()
+  else: 
+    search_h = None
+    h0 = gt_dict['gt'][:, [0], [1]]
+
+  in_f = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
+  in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
   
   if 'flag' in args.pipeline:
     #print("FLAG : ", in_f.shape)
     i_s = args.pipeline['flag']['i_s']
+    o_s = args.pipeline['flag']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths'])
     pred_dict['flag'] = pred_flag
@@ -133,8 +138,9 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   if 'height' in args.pipeline:
     #print("HEIGHT : ", in_f.shape)
     i_s = args.pipeline['height']['i_s']
+    o_s = args.pipeline['height']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths'])
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'])
     pred_dict['h'] = pred_h
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
@@ -184,11 +190,6 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     #    t0[name] = param.data.clone()
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict)
     loss_dict, loss = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
-    txt_loss = ''
-    for k, v in loss_dict.items():
-      txt_loss += '{}={:2f}, '.format(k, v)
-    t.set_description("Optimizing... (Loss = {}, {})".format(loss.item(), txt_loss))
-    t.refresh()
     for name, optim in latent_dict.items():
       if optim is not None:
         if name == 'init_h':
@@ -196,6 +197,12 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
           optim['last_h'](loss)
         else:
           optim(loss)
+
+    txt_loss = ''
+    for k, v in loss_dict.items():
+      txt_loss += '{}={:.3f}, '.format(k, v)
+    t.set_description("Optimizing... (Loss = {:.5f}, {})".format(loss.item(), txt_loss))
+    t.refresh()
 
     # Early Stopping mechanism
     if prev_loss <= loss.item():
@@ -222,6 +229,9 @@ def add_latent(in_f, module, input_dict, latent_dict):
   #print("Latent dim : ", latent_dim)
   #print("in_f shape : ", in_f.shape)
 
+  i_s = args.pipeline[module]['i_s']
+  o_s = args.pipeline[module]['o_s']
+
   if latent_dim > 0:
     # Auxialiary features have been used.
     if latent_dict[module] is not None:
@@ -235,7 +245,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
       latent_idx = 1 - sel_f  # Latent index in selected_features
       aux = input_dict['aux'][..., latent_idx:]
       #print("aux shape : ", aux.shape)
-      aux = aux_space(aux, lengths=input_dict['lengths'], i_s=args.pipeline[module]['i_s'])
+      aux = aux_space(aux, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'], i_s=i_s)
       in_f = pt.cat((in_f, aux), dim=-1)
   else:
     in_f = in_f
@@ -263,12 +273,13 @@ def create_latent(latent_dict, input_dict, model_dict):
       latent_dim = sum(args.pipeline[module]['latent_in'])
       if latent_dim > 0:
         print("[#] Module : {} have latent to be optimized.".format(module))
-        seq_len = input_dict['input'].shape[1] - 1 if args.pipeline[module]['i_s'] == 'dt' else input_dict['input'].shape[1]
+        #seq_len = input_dict['input'].shape[1] - 1 if args.pipeline[module]['i_s'] == 'dt' else input_dict['input'].shape[1]
+        seq_len = input_dict['input'].shape[1]
         optim_latent = Optimization(shape=(batch_size, seq_len, latent_dim), name=module)
         optim_latent.train()
         latent_dict[module] = optim_latent
   
-    return latent_dict
+  return latent_dict
 
 def reconstruct(height, cam_dict, recon_dict, canon_dict):
   '''
@@ -298,7 +309,7 @@ def reconstruct(height, cam_dict, recon_dict, canon_dict):
   
   return xyz
       
-def input_manipulate(in_f, module):
+def input_manipulate(in_f, module, input_dict, h0=None):
   '''
   Prepare input to have correct space(t, dt, tdt), sin-cos
   Input : 
@@ -306,8 +317,8 @@ def input_manipulate(in_f, module):
   Output : 
     1. in_f : input features after change into specified space(t, dt, tdt) and sin-cos
   '''
-
   i_s = args.pipeline[module]['i_s']
+  o_s = args.pipeline[module]['o_s']
   if args.sc == 'azim':
     azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3]], azim_sc), axis=2)
@@ -319,27 +330,43 @@ def input_manipulate(in_f, module):
     elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
 
-  in_f = input_space(in_f, i_s)
+  in_f = input_space(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
   return in_f
     
-def input_space(in_f, i_s):
+def input_space(in_f, i_s, o_s, lengths, h0):
   '''
   Input : 
     1. in_f : input features(t-space) in shape (batch, seq_len, f_dim) -> e.g. f_dim = (x, y, z, elev, azim)
   Output :
     1. in_f : input features in t/dt/t_dt-space in shape(batch, seq_len, _)
   '''
-  t0_pad = pt.zeros(size=(in_f.shape[0], 1, in_f.shape[2])).to(device)
   if i_s == 'dt':
-    dt = in_f[:, 1:, :] - in_f[:, :-1, :]
-    in_f = pt.cat((dt, t0_pad), dim=1)
+  # dt
+    if o_s == 't':
+      dt = in_f[:, 1:, :] - in_f[:, :-1, :]
+      dt = pt.cat((in_f[:, [0], :], dt), dim=1)
+    elif o_s == 'dt':
+      dt = in_f[:, 1:, :] - in_f[:, :-1, :]
   elif i_s == 't':
+  # t
     in_f = in_f
   elif i_s == 't_dt':
+  # t-dt
     dt = in_f[:, 1:, :] - in_f[:, :-1, :]
-    dt = pt.cat((dt, t0_pad), dim=1)
-    in_f = pt.cat((in_f, dt), dim=2)
+    dt_pad = utils_func.pad_at_length(tensor=dt, lengths=lengths-1)
+    in_f = pt.cat((in_f, dt_pad), dim=2)
+
+  elif i_s == 'h0_dt':
+    if o_s == 't':
+      dt = in_f[:, 1:, :] - in_f[:, :-1, :]
+      h0_rep = h0.repeat(1, 1, 5)
+      #h0_rep = h0.expand(-1, -1, 5)
+      in_f = pt.cat((h0_rep, dt), dim=1)
+    else:
+      raise NotImplemented
+  else: 
+    raise Exception("I/O space is wrong : {}<=>{}".format(i_s, o_s))
 
   return in_f
 
@@ -360,7 +387,10 @@ def output_space(pred_h, lengths, module, search_h=None):
   if o_s == 't':
     height = pred_h
   elif o_s == 'dt':
-    pred_h = pred_h[:, :-1, :]
+    if i_s == 'dt':
+      pred_h = pred_h
+    elif i_s == 't_dt' or i_s == 't':
+      pred_h = pred_h[:, :-1, :]
 
     # Aggregate the dt output with ramp_weight
     w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
@@ -388,7 +418,10 @@ def output_space(pred_h, lengths, module, search_h=None):
     relu = pt.nn.ReLU()
     height = relu(height)
   elif args.pipeline['height']['constraint_y'] == 'softplus':
-    softplus = pt.nn.Softplus(threshold=0)
+    softplus = pt.nn.Softplus()
+    height = softplus(height)
+  elif args.pipeline['height']['constraint_y'] == 'lrelu':
+    softplus = pt.nn.LeakyReLU(negative_slope=0.01)
     height = softplus(height)
   else:
     pass
@@ -513,16 +546,16 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   ######################################
   ########### Consine Sim ##############
   ######################################
-  if ('refinement' in args.pipeline):
-    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
-  else:                           
-    cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
+  #if ('refinement' in args.pipeline):
+  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
+  #else:                           
+  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
   loss = reprojection_loss + below_ground_loss + trajectory_loss + gravity_loss #+ cosinesim_loss
   loss_dict = {"Traj Loss":trajectory_loss.item(),
                "BGnd Loss":below_ground_loss.item(), 
                "Grav Loss":gravity_loss.item(), 
-               "Reproj Loss":reprojection_loss.item(),
-               "CosSim Loss":cosinesim_loss.item()}
+               "Reproj Loss":reprojection_loss.item()}
+               #"CosSim Loss":cosinesim_loss.item()}
 
   return loss_dict, loss

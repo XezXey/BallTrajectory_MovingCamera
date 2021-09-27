@@ -339,6 +339,24 @@ def show_dataset_info(dataloader, set):
     print("Unpacked equality : ", pt.eq(batch['input'][0], unpacked[0]).all())
     print("===============================================================================================================================================================")
 
+def pad_at_length(tensor, lengths):
+  '''
+  Pad 0 at a specific length : this used to handle dt-computation since it's [1:] - [:-1] and last timestep should not be the (0 - t_n)
+  Input : 
+    1. tensor : tensor to be padded in shape (batch_size, seq_len, 5)
+    2. lengths : list of seq_len
+  '''
+  pad_0 = pt.zeros(size=(tensor.shape[0], 1, tensor.shape[2])).to(device)
+  tensor_pad = pt.cat((tensor, pad_0), dim=1)
+  for i in range(lengths.shape[0]):
+    cutoff = lengths[i]
+    s = tensor[i, :cutoff, :]
+    e = tensor[i, cutoff:, :]
+    tmp = pt.cat((s, pad_0[i], e), dim=0)
+    tensor_pad[i] = tmp
+
+  return tensor_pad
+
 def cumsum(seq, t_0=None):
   '''
   Perform a cummulative summation to any seq along the time-dimension

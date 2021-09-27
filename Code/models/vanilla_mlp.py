@@ -12,7 +12,7 @@ class Vanilla_MLP(pt.nn.Module):
         # This will create the FC blocks by specify the input/output features
         ls = [pt.nn.Linear(in_node, hidden)]   # Original
         ls.append(self.activation)
-        for i in range(stack):
+        for _ in range(stack):
             ls.append(pt.nn.Linear(hidden, hidden))
             ls.append(self.activation)
         ls.append(pt.nn.Linear(hidden, out_node))

@@ -29,7 +29,7 @@ annealing_cycle: 1
 annealing_gamma:  0.7
 augment: True
 recon: 'clean'
-optim_h: False
+optim_init_h: False
 
 # Visualization
 visualize: True
@@ -69,9 +69,9 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt'
-    o_s: 'dt'
-    constraint_y: 'relu' # 'relu', 'softplus' or null
+    i_s: 'h0_dt'
+    o_s: 't'
+    constraint_y: 'lrelu' # 'relu', 'softplus' or null
 
   refinement:
     arch: 'lstm'
