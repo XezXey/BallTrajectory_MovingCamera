@@ -1,0 +1,113 @@
+# Dataset
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
+dataset_test_path : null
+trajectory_type: 'Mixed'
+env: 'unity'
+
+# Wandb
+wandb_dir: './'
+wandb_notes: null
+wandb_tags: 'TracknetV1_exp26_09_2021'
+wandb_name: 'tennis_tdt_tdt_noisy_intr'
+
+# Checkpoint
+save_ckpt: '../model_checkpoints/'
+load_ckpt: null # Lastest or Best
+
+# Training parameters
+batch_size: 512
+n_epochs: 100000
+lr: 0.001
+clip: 10
+decay_gamma: 0.7
+decay_cycle: 1300
+canonicalize: False
+noise: True
+noise_sd: 5
+annealing: True
+annealing_cycle: 300
+annealing_gamma:  0.7
+augment: True
+recon: 'noisy'
+optim_init_h: False
+
+# Visualization
+visualize: True
+vis_path: '../../visualize_html/'
+
+# Input variation
+input_variation: 'intr_hori_vert'
+
+# Model
+pipeline:
+
+  flag:
+    arch: 'lstm'
+    bidirectional: True
+    trainable_init: True
+    rnn_hidden: 64
+    rnn_stack: 2
+    mlp_hidden: 32
+    mlp_stack: 2
+    in_node: 4
+    out_node: 1
+    extra_in: []
+    extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 'dt'
+    o_s: 'dt'
+
+  height:
+    arch: 'lstm'
+    bidirectional: True
+    trainable_init: True
+    rnn_hidden: 64
+    rnn_stack: 2
+    mlp_hidden: 32
+    mlp_stack: 2
+    in_node: 4
+    out_node: 2
+    extra_in: [1]
+    extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 't_dt'
+    o_s: 't_dt'
+    constraint_y: 'lrelu' # 'relu', 'softplus' or null
+    attn: False
+
+  refinement:
+    arch: 'lstm'
+    bidirectional: True
+    trainable_init: True
+    rnn_hidden: 64
+    rnn_stack: 2
+    mlp_hidden: 32
+    mlp_stack: 2
+    in_node: 3
+    out_node: 3
+    extra_in: []
+    extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 't'
+    o_s: 't'
+    attn: False
+
+# Features
+selected_features: [eot]
+sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
+
+# Loss
+multiview_loss: []
+
+# Miscellaneous
+cuda_device_num: 0
+w: 1280
+h: 720
+fps: 30

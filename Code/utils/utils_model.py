@@ -362,12 +362,11 @@ def input_space(in_f, i_s, o_s, lengths, h0):
     dt = in_f[:, 1:, :] - in_f[:, :-1, :]
     dt_pad = utils_func.pad_at_length(tensor=dt, lengths=lengths-1)
     in_f = pt.cat((in_f, dt_pad), dim=2)
-
   elif i_s == 'h0_dt':
-    if o_s == 't':
+  #h0_dt
+    if o_s == 't' or o_s == 't_dt':
       dt = in_f[:, 1:, :] - in_f[:, :-1, :]
       h0_rep = h0.repeat(1, 1, in_f.shape[2])
-      #h0_rep = h0.expand(-1, -1, 5)
       in_f = pt.cat((h0_rep, dt), dim=1)
     else:
       raise NotImplemented
@@ -392,32 +391,35 @@ def output_space(pred_h, lengths, module, search_h=None):
 
   if o_s == 't':
     height = pred_h
-  elif o_s == 'dt':
+  elif o_s == 'dt' or 't_dt':
     if i_s == 'dt':
-      pred_h = pred_h
+      dh = pred_h
     elif i_s == 't_dt' or i_s == 't':
-      pred_h = pred_h[:, :-1, :]
+      dh = pred_h[:, :-1, :]
+
+    if o_s == 't_dt' and i_s == 't_dt':
+      dh = pred_h[:, :-1, [1]]
 
     # Aggregate the dt output with ramp_weight
-    w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(pred_h.shape[0], pred_h.shape[1]+1, 1)), lengths=lengths)
+    w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(dh.shape[0], dh.shape[1]+1, 1)), lengths=lengths)
 
     if search_h is None:
-      first_h = pt.zeros(size=(pred_h.shape[0], 1, 1)).to(device)
-      last_h = pt.zeros(size=(pred_h.shape[0], 1, 1)).to(device)
+      first_h = pt.zeros(size=(dh.shape[0], 1, 1)).to(device)
+      last_h = pt.zeros(size=(dh.shape[0], 1, 1)).to(device)
     else:
       first_h = search_h['first_h']
       last_h = search_h['last_h']
 
     # forward aggregate
-    h_fw = utils_func.cumsum(seq=pred_h, t_0=first_h)
+    h_fw = utils_func.cumsum(seq=dh, t_0=first_h)
     # backward aggregate
-    pred_h_bw = utils_func.reverse_masked_seq(seq=-pred_h, lengths=lengths-1) # This fn required len(seq) of dt-space
-    #print(pt.cat((pred_h, pred_h_bw), dim=-1))
+    pred_h_bw = utils_func.reverse_masked_seq(seq=-dh, lengths=lengths-1) # This fn required len(seq) of dt-space
     h_bw = utils_func.cumsum(seq=pred_h_bw, t_0=last_h)
     h_bw = utils_func.reverse_masked_seq(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
-    #print(pt.cat((h_fw[0], h_bw[0], w_ramp[0]), dim=1))
-    #print(pt.cat((h_fw[1], h_bw[1], w_ramp[1]), dim=1))
     height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+
+    if o_s == 't_dt':
+      height = (pred_h[..., [0]] * 0.5) + (height * 0.5)
 
   # Hard constraint on Height (y > 0)
   if args.pipeline['height']['constraint_y'] == 'relu':

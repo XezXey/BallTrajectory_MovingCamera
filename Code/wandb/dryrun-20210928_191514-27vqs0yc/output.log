@@ -1,0 +1,249 @@
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'rad-14', 'f_sin-15', 'f_cos-16', 'fx-17', 'fy-18', 'fz-19', 'fx_norm-20', 'fy_norm-21', 'fz_norm-22', 'intrinsic-23', 'extrinsic-24', 'azimuth-25', 'elevation-26', 'extrinsic_inv-27', 'g-28']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 26, 25]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Training : Trajectory Estimation
+Mixed:   0%|                                                                                                                                              | 0/1 [00:00<?, ?it/s]Mixed: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.65s/it]Mixed: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.65s/it]
+===============================Dataset shape===============================
+Mixed : (7000,)
+===========================================================================
+Mixed:   0%|                                                                                                                                              | 0/1 [00:00<?, ?it/s]Mixed: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  1.56it/s]Mixed: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00,  1.56it/s]
+===============================Dataset shape===============================
+Mixed : (2500,)
+===========================================================================
+===>No model ckpt
+[#] Define the Learning rate, Optimizer, Decay rate and Scheduler...
+[#]Model Architecture
+####### Model - flag #######
+Flag_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(4, 64, batch_first=True, bidirectional=True)
+      (1): LSTM(128, 64, batch_first=True, bidirectional=True)
+      (2): LSTM(128, 64, batch_first=True, bidirectional=True)
+    )
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=128, out_features=32, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=32, out_features=32, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=32, out_features=32, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=32, out_features=1, bias=True)
+    )
+  )
+  (sigmoid): Sigmoid()
+)
+rnn.h torch.Size([3, 2, 1, 64])
+rnn.c torch.Size([3, 2, 1, 64])
+rnn.ls.0.weight_ih_l0 torch.Size([256, 4])
+rnn.ls.0.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0 torch.Size([256])
+rnn.ls.0.bias_hh_l0 torch.Size([256])
+rnn.ls.0.weight_ih_l0_reverse torch.Size([256, 4])
+rnn.ls.0.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.0.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.1.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0 torch.Size([256])
+rnn.ls.1.bias_hh_l0 torch.Size([256])
+rnn.ls.1.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.1.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.2.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0 torch.Size([256])
+rnn.ls.2.bias_hh_l0 torch.Size([256])
+rnn.ls.2.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.2.bias_hh_l0_reverse torch.Size([256])
+mlp.seq1.0.weight torch.Size([32, 128])
+mlp.seq1.0.bias torch.Size([32])
+mlp.seq1.2.weight torch.Size([32, 32])
+mlp.seq1.2.bias torch.Size([32])
+mlp.seq1.4.weight torch.Size([32, 32])
+mlp.seq1.4.bias torch.Size([32])
+mlp.seq1.6.weight torch.Size([1, 32])
+mlp.seq1.6.bias torch.Size([1])
+####### Model - height #######
+Height_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(5, 64, batch_first=True, bidirectional=True)
+      (1): LSTM(128, 64, batch_first=True, bidirectional=True)
+      (2): LSTM(128, 64, batch_first=True, bidirectional=True)
+    )
+  )
+  (attention): Self_Attention(
+    (softmax): Softmax(dim=-1)
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=128, out_features=32, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=32, out_features=32, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=32, out_features=32, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=32, out_features=2, bias=True)
+    )
+  )
+)
+rnn.h torch.Size([3, 2, 1, 64])
+rnn.c torch.Size([3, 2, 1, 64])
+rnn.ls.0.weight_ih_l0 torch.Size([256, 5])
+rnn.ls.0.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0 torch.Size([256])
+rnn.ls.0.bias_hh_l0 torch.Size([256])
+rnn.ls.0.weight_ih_l0_reverse torch.Size([256, 5])
+rnn.ls.0.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.0.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.1.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0 torch.Size([256])
+rnn.ls.1.bias_hh_l0 torch.Size([256])
+rnn.ls.1.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.1.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.2.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0 torch.Size([256])
+rnn.ls.2.bias_hh_l0 torch.Size([256])
+rnn.ls.2.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.2.bias_hh_l0_reverse torch.Size([256])
+attention.gamma torch.Size([1])
+mlp.seq1.0.weight torch.Size([32, 128])
+mlp.seq1.0.bias torch.Size([32])
+mlp.seq1.2.weight torch.Size([32, 32])
+mlp.seq1.2.bias torch.Size([32])
+mlp.seq1.4.weight torch.Size([32, 32])
+mlp.seq1.4.bias torch.Size([32])
+mlp.seq1.6.weight torch.Size([2, 32])
+mlp.seq1.6.bias torch.Size([2])
+####### Model - refinement #######
+Refinement_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(3, 64, batch_first=True, bidirectional=True)
+      (1): LSTM(128, 64, batch_first=True, bidirectional=True)
+      (2): LSTM(128, 64, batch_first=True, bidirectional=True)
+    )
+  )
+  (attention): Self_Attention(
+    (softmax): Softmax(dim=-1)
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=128, out_features=32, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=32, out_features=32, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=32, out_features=32, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=32, out_features=3, bias=True)
+    )
+  )
+)
+rnn.h torch.Size([3, 2, 1, 64])
+rnn.c torch.Size([3, 2, 1, 64])
+rnn.ls.0.weight_ih_l0 torch.Size([256, 3])
+rnn.ls.0.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0 torch.Size([256])
+rnn.ls.0.bias_hh_l0 torch.Size([256])
+rnn.ls.0.weight_ih_l0_reverse torch.Size([256, 3])
+rnn.ls.0.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.0.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.0.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.1.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0 torch.Size([256])
+rnn.ls.1.bias_hh_l0 torch.Size([256])
+rnn.ls.1.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.1.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.1.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.1.bias_hh_l0_reverse torch.Size([256])
+rnn.ls.2.weight_ih_l0 torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0 torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0 torch.Size([256])
+rnn.ls.2.bias_hh_l0 torch.Size([256])
+rnn.ls.2.weight_ih_l0_reverse torch.Size([256, 128])
+rnn.ls.2.weight_hh_l0_reverse torch.Size([256, 64])
+rnn.ls.2.bias_ih_l0_reverse torch.Size([256])
+rnn.ls.2.bias_hh_l0_reverse torch.Size([256])
+attention.gamma torch.Size([1])
+mlp.seq1.0.weight torch.Size([32, 128])
+mlp.seq1.0.bias torch.Size([32])
+mlp.seq1.2.weight torch.Size([32, 32])
+mlp.seq1.2.bias torch.Size([32])
+mlp.seq1.4.weight torch.Size([32, 32])
+mlp.seq1.4.bias torch.Size([32])
+mlp.seq1.6.weight torch.Size([3, 32])
+mlp.seq1.6.bias torch.Size([3])
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[Epoch : 1/100000]<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+[#]Learning rate :  0.001
+===> [Minibatch 1/13].........
+   [##] Training... Training Loss : 290.720
+   ======> Trajectory Loss : 200.394, Gravity Loss : 0.038, BelowGnd Loss : 0.000, Flag Loss : 1.365, Reprojection Loss : 88.923
+   [##] Validating... Validating Loss : 235.670
+   ======> Trajectory Loss : 147.441, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.364, Reprojection Loss : 86.828
+===> [Minibatch 2/13].........
+   [##] Training... Training Loss : 235.920
+   ======> Trajectory Loss : 149.190, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.365, Reprojection Loss : 85.329
+   [##] Validating... Validating Loss : 225.821
+   ======> Trajectory Loss : 145.950, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.363, Reprojection Loss : 78.471
+===> [Minibatch 3/13].........
+   [##] Training... Training Loss : 226.106
+   ======> Trajectory Loss : 147.312, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.364, Reprojection Loss : 77.395
+   [##] Validating... Validating Loss : 216.302
+   ======> Trajectory Loss : 144.015, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.362, Reprojection Loss : 70.888
+===> [Minibatch 4/13].........
+   [##] Training... Training Loss : 213.511
+   ======> Trajectory Loss : 140.902, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.363, Reprojection Loss : 71.210
+   [##] Validating... Validating Loss : 207.000
+   ======> Trajectory Loss : 141.575, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.362, Reprojection Loss : 64.028
+===> [Minibatch 5/13].........
+   [##] Training... Training Loss : 210.540
+   ======> Trajectory Loss : 145.826, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.362, Reprojection Loss : 63.316
+   [##] Validating... Validating Loss : 197.194
+   ======> Trajectory Loss : 138.528, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.361, Reprojection Loss : 57.270
+===> [Minibatch 6/13].........
+   [##] Training... Training Loss : 197.610
+   ======> Trajectory Loss : 138.901, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.362, Reprojection Loss : 57.312
+   [##] Validating... Validating Loss : 186.676
+   ======> Trajectory Loss : 134.587, Gravity Loss : 0.036, BelowGnd Loss : 0.000, Flag Loss : 1.360, Reprojection Loss : 50.693
+===> [Minibatch 7/13].........
+   [##] Training... Training Loss : 181.442
+   ======> Trajectory Loss : 129.209, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.361, Reprojection Loss : 50.838
+   [##] Validating... Validating Loss : 175.720
+   ======> Trajectory Loss : 130.084, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.359, Reprojection Loss : 44.241
+===> [Minibatch 8/13].........
+   [##] Training... Training Loss : 177.677
+   ======> Trajectory Loss : 132.529, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.360, Reprojection Loss : 43.753
+   [##] Validating... Validating Loss : 163.563
+   ======> Trajectory Loss : 124.390, Gravity Loss : 0.035, BelowGnd Loss : 0.000, Flag Loss : 1.358, Reprojection Loss : 37.780
+===> [Minibatch 9/13].........
+   [##] Training... Training Loss : 161.172
+   ======> Trajectory Loss : 122.531, Gravity Loss : 0.034, BelowGnd Loss : 0.000, Flag Loss : 1.359, Reprojection Loss : 37.248
+   [##] Validating... Validating Loss : 150.022
+   ======> Trajectory Loss : 117.154, Gravity Loss : 0.034, BelowGnd Loss : 0.000, Flag Loss : 1.357, Reprojection Loss : 31.476
+===> [Minibatch 10/13].........
+   [##] Training... Training Loss : 158.385
+   ======> Trajectory Loss : 126.145, Gravity Loss : 0.034, BelowGnd Loss : 0.000, Flag Loss : 1.358, Reprojection Loss : 30.848
+   [##] Validating... Validating Loss : 134.577
+   ======> Trajectory Loss : 107.784, Gravity Loss : 0.034, BelowGnd Loss : 0.000, Flag Loss : 1.356, Reprojection Loss : 25.404
+===> [Minibatch 11/13].........
