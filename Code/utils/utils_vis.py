@@ -20,6 +20,7 @@ marker_dict_noisy = dict(color='rgba(204, 102, 0, 0.4)', size=4)
 marker_dict_pred = dict(color='rgba(255, 0, 0, 0.4)', size=4)
 marker_dict_eot = dict(color='rgba(0, 255, 0, 0.4)', size=4)
 marker_dict_cam = dict(color='rgba(255, 0, 0, 0.4)', size=10)
+marker_dict_intr = dict(color='rgba(255, 127, 14, 1.0)', size=3)
 
 args = None
 def share_args(a):
@@ -57,8 +58,10 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     ####################################
     ############### Ray ################
     ####################################
-    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1)
-    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2)
+    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='horizontal')
+    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='horizontal')
+    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='vertical')
+    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='vertical')
     ####################################
     ############### Flag ###############
     ####################################
@@ -120,12 +123,12 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
 
 
 
-def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
+def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizontal'):
   # Iterate to plot each trajectory
   #ray = cam_dict['ray'].cpu().numpy()
   cpos = cam_dict['Einv'][..., 0:3, -1]
   ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
-  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos)
+  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane=plane)
 
   cpos = cpos.cpu().numpy()
   ray = ray.cpu().numpy()
@@ -161,7 +164,8 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col):
         x=draw_ray_x,
         y=draw_ray_y,
         z=draw_ray_z,
-        mode='lines',
+        mode='lines+markers',
+        marker=marker_dict_intr,
         line = dict(width = 0.7, color = 'rgba(102, 0, 204, 0.5)'),
         name='{}-Ray-Trajectory [{}]'.format(set, i).format(i), 
         legendgroup=int(i)
