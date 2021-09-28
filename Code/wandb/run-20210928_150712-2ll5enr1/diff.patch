@@ -1,0 +1,69 @@
+diff --git a/Code/main/config_aug.yaml b/Code/main/config_aug.yaml
+index d0f44c2..9073bdc 100644
+--- a/Code/main/config_aug.yaml
++++ b/Code/main/config_aug.yaml
+@@ -5,7 +5,7 @@ trajectory_type: 'Mixed'
+ env: 'unity'
+ 
+ # Wandb
+-wandb_dir: './'
++wandb_dir: '../'
+ wandb_notes: null
+ wandb_tags: 'TracknetV1_SimTennis'
+ wandb_name: 'tennis_test'
+diff --git a/Code/models/__pycache__/height_module.cpython-36.pyc b/Code/models/__pycache__/height_module.cpython-36.pyc
+index 2a44211..68f090e 100644
+Binary files a/Code/models/__pycache__/height_module.cpython-36.pyc and b/Code/models/__pycache__/height_module.cpython-36.pyc differ
+diff --git a/Code/models/height_module.py b/Code/models/height_module.py
+index 5a6109b..f0bb8a2 100644
+--- a/Code/models/height_module.py
++++ b/Code/models/height_module.py
+@@ -20,6 +20,8 @@ class Height_Module(pt.nn.Module):
+         
+     def forward(self, in_f, lengths, h=None, c=None):
+         out1, (h, c) = self.rnn(in_f, lengths)
++        print(out1.shape)
++        input()
+         out2 = self.mlp(out1)
+         return out2, (h, c)
+ 
+diff --git a/Code/utils/__pycache__/utils_model.cpython-36.pyc b/Code/utils/__pycache__/utils_model.cpython-36.pyc
+index 1f767ec..4810cb5 100644
+Binary files a/Code/utils/__pycache__/utils_model.cpython-36.pyc and b/Code/utils/__pycache__/utils_model.cpython-36.pyc differ
+diff --git a/Code/utils/__pycache__/utils_vis.cpython-36.pyc b/Code/utils/__pycache__/utils_vis.cpython-36.pyc
+index 405f5ac..6276a1a 100644
+Binary files a/Code/utils/__pycache__/utils_vis.cpython-36.pyc and b/Code/utils/__pycache__/utils_vis.cpython-36.pyc differ
+diff --git a/Code/utils/utils_model.py b/Code/utils/utils_model.py
+index f38169f..cad0cb1 100644
+--- a/Code/utils/utils_model.py
++++ b/Code/utils/utils_model.py
+@@ -245,7 +245,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
+       aux = input_dict['aux'][..., latent_idx:]
+       #print("aux shape : ", aux.shape)
+       aux = aux_space(aux, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'], i_s=i_s)
+-      in_f = pt.cat((in_f, aunx), dim=-1)
++      in_f = pt.cat((in_f, aux), dim=-1)
+   else:
+     in_f = in_f
+   
+diff --git a/Code/wandb/debug.log b/Code/wandb/debug.log
+index e69de29..ef94ba5 100644
+--- a/Code/wandb/debug.log
++++ b/Code/wandb/debug.log
+@@ -0,0 +1,16 @@
++2021-09-28 22:07:12,594 DEBUG   MainThread:20093 [wandb_config.py:_load_defaults():122] no defaults not found in config-defaults.yaml
++2021-09-28 22:07:12,603 DEBUG   MainThread:20093 [meta.py:setup():97] code probe starting
++2021-09-28 22:07:12,604 DEBUG   MainThread:20093 [meta.py:_setup_code_git():49] probe for git information
++2021-09-28 22:07:12,612 DEBUG   MainThread:20093 [meta.py:_setup_code_program():58] save program starting
++2021-09-28 22:07:12,613 DEBUG   MainThread:20093 [meta.py:_setup_code_program():60] save program starting: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/main/train.py
++2021-09-28 22:07:12,613 DEBUG   MainThread:20093 [meta.py:_setup_code_program():65] save program saved: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/run-20210928_150712-2ll5enr1/code/Code/main/train.py
++2021-09-28 22:07:12,613 DEBUG   MainThread:20093 [meta.py:_setup_code_program():67] save program
++2021-09-28 22:07:12,613 DEBUG   MainThread:20093 [meta.py:setup():119] code probe done
++2021-09-28 22:07:12,621 DEBUG   MainThread:20093 [run_manager.py:__init__():541] Initialized sync for ball-trajectory-estimation/2ll5enr1
++2021-09-28 22:07:12,624 INFO    MainThread:20093 [run_manager.py:wrap_existing_process():1144] wrapping existing process 20036
++2021-09-28 22:07:12,624 WARNING MainThread:20093 [io_wrap.py:register():104] SIGWINCH handler was not None: <Handlers.SIG_DFL: 0>
++2021-09-28 22:07:12,766 INFO    MainThread:20093 [run_manager.py:init_run():924] system metrics and metadata threads started
++2021-09-28 22:07:12,766 INFO    MainThread:20093 [run_manager.py:init_run():963] upserting run before process can begin, waiting at most 10 seconds
++2021-09-28 22:07:13,202 INFO    Thread-14 :20093 [run_manager.py:_upsert_run():1048] saving patches
++rting run before process can begin, waiting at most 10 seconds
++2021-09-28 22:07:13,202 INFO    Thread-14 :20093 [2ll5enr1:run_manager.py:_upsert_run():1048] saving patches

@@ -1,0 +1,34 @@
+{
+    "root": "/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera",
+    "program": "train.py",
+    "git": {
+        "remote": "https://github.com/XezXey/BallTrajectory_MovingCamera.git",
+        "commit": "72af429776430aee0938c3cf11c6fdde5bcb6be3"
+    },
+    "email": "puntawat-1@hotmail.com",
+    "codePath": "Code/main/train.py",
+    "startedAt": "2021-09-28T10:01:17.687960",
+    "host": "puntawat-ms-7c37",
+    "username": "puntawat",
+    "executable": "/home/puntawat/Mint/Work/Vision/working_environment/ball_venv3/bin/python",
+    "os": "Linux-5.4.0-84-generic-x86_64-with-Ubuntu-18.04-bionic",
+    "python": "3.6.9",
+    "gpu": "GeForce RTX 2080 SUPER",
+    "gpu_count": 1,
+    "cpu_count": 24,
+    "cuda": "10.0.130",
+    "args": [
+        "--config_yaml",
+        "./config_aug.yaml",
+        "--wandb_mode",
+        "run",
+        "--recon",
+        "clean"
+    ],
+    "state": "running",
+    "jobType": null,
+    "mode": "run",
+    "name": "tennis_test",
+    "project": "ball-trajectory-estimation",
+    "heartbeatAt": "2021-09-28T10:01:17.989208"
+}

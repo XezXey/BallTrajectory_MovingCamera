@@ -5,7 +5,7 @@ trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
-wandb_dir: './'
+wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'TracknetV1_SimTennis'
 wandb_name: 'tennis_test'
@@ -75,6 +75,7 @@ pipeline:
     i_s: 'h0_dt'
     o_s: 't'
     constraint_y: 'lrelu' # 'relu', 'softplus' or null
+    attn: True
 
   refinement:
     arch: 'lstm'
@@ -92,6 +93,7 @@ pipeline:
     latent_out: []
     i_s: 't'
     o_s: 't'
+    attn: False
 
 
 # Features

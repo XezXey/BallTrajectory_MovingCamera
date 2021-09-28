@@ -1,0 +1,2 @@
+{"Learning Rate": 0.001, "n_epochs": 1, "_runtime": 5.046570777893066, "_timestamp": 1632845244.8017778, "_step": 0}
+{"Train Loss": 256.0927429199219, "Validation Loss": 513.41357421875, "_runtime": 8.218375444412231, "_timestamp": 1632845247.9735825, "_step": 1}

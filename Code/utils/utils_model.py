@@ -245,7 +245,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
       aux = input_dict['aux'][..., latent_idx:]
       #print("aux shape : ", aux.shape)
       aux = aux_space(aux, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'], i_s=i_s)
-      in_f = pt.cat((in_f, aunx), dim=-1)
+      in_f = pt.cat((in_f, aux), dim=-1)
   else:
     in_f = in_f
   

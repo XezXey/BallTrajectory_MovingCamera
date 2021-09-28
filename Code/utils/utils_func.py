@@ -129,21 +129,26 @@ def get_model(args):
                     batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                     is_bidirectional=module['bidirectional'], 
                     mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
-                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],)
+                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                    attn=module['attn'])
 
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
-                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],}
+                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],
+                      'attn':module['attn']}
+
     elif module_name == 'refinement': 
       model = Refinement_Module(in_node=in_node, out_node=out_node, 
                     batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                     is_bidirectional=module['bidirectional'], 
                     mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
-                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],)
+                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                    attn=module['attn'])
 
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
-                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],}
+                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],
+                      'attn':module['attn']}
 
     elif module_name == 'flag': 
       model = Flag_Module(in_node=in_node, out_node=out_node, 
