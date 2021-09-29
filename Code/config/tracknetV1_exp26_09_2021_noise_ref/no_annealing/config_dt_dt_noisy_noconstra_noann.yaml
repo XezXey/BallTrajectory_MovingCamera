@@ -12,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_exp29_09_2021_noise_ref'
-wandb_name: 'tennis_dt_dt_noisy_intr_noconstra_nref'
+wandb_name: 'tennis_dt_dt_noisy_intr_noconstra_nref_noann'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'

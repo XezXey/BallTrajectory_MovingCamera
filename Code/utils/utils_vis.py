@@ -18,6 +18,8 @@ import utils.loss as utils_loss
 marker_dict_gt = dict(color='rgba(0, 0, 255, 0.4)', size=4)
 marker_dict_noisy = dict(color='rgba(204, 102, 0, 0.4)', size=4)
 marker_dict_pred = dict(color='rgba(255, 0, 0, 0.4)', size=4)
+marker_dict_refined = dict(color='rgba(153, 0, 77, 0.8)', size=4)
+marker_dict_field = dict(color='rgba(0, 255, 0, 0.8)', size=4)
 marker_dict_eot = dict(color='rgba(0, 255, 0, 0.4)', size=4)
 marker_dict_cam = dict(color='rgba(255, 0, 0, 0.4)', size=10)
 marker_dict_intr = dict(color='rgba(255, 127, 14, 1.0)', size=3)
@@ -30,12 +32,12 @@ def share_args(a):
 def visualize_layout_update(fig=None, n_vis=5):
   # Save to html file and use wandb to log the html and display (Plotly3D is not working)
   for i in range(n_vis*2):
-    fig['layout']['scene{}'.format(i+1)].update(xaxis=dict(nticks=10, range=[-12, 12],), aspectmode='manual', aspectratio=dict(x=1, y=1, z=1))
+    fig['layout']['scene{}'.format(i+1)].update(xaxis=dict(nticks=5, range=[-9.5, 9.5]), zaxis=dict(nticks=15, range=[-35, 35]), aspectmode='manual', aspectratio=dict(x=1, y=1, z=3))
     #fig['layout']['scene{}'.format(i+1)].update(yaxis = dict(nticks=5, range=[-2, 6],),)
   return fig
 
 def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
-                  input_dict_val, gt_dict_val, pred_dict_val, cam_dict_val):
+                  input_dict_val, gt_dict_val, pred_dict_val, cam_dict_val, epoch):
     '''
     Make a visualization for logging a prediction to wandb
     Input : 
@@ -53,8 +55,10 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     ############ Trajectory ############
     ####################################
     fig_traj = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
-    visualize_trajectory(pred=pred_dict_train['xyz'][..., [0, 1, 2]], gt=gt_dict_train['gt'][..., [0, 1, 2]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0, 1, 2]], fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1)
-    visualize_trajectory(pred=pred_dict_val['xyz'][..., [0, 1, 2]], gt=gt_dict_val['gt'][..., [0, 1, 2]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0, 1, 2]], fig=fig_traj, set='Validation', vis_idx=val_vis_idx, col=2)
+    visualize_trajectory(pred=pred_dict_train, gt=gt_dict_train['gt'][..., [0, 1, 2]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0, 1, 2]], fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1)
+    visualize_trajectory(pred=pred_dict_val, gt=gt_dict_val['gt'][..., [0, 1, 2]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0, 1, 2]], fig=fig_traj, set='Validation', vis_idx=val_vis_idx, col=2)
+    visualize_layout_update(fig=fig_traj, n_vis=n_vis)
+
     ####################################
     ############### Ray ################
     ####################################
@@ -70,12 +74,12 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
       visualize_flag(pred=pred_dict_train['flag'][..., [0]], gt=input_dict_train['aux'][..., [0]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0]], fig=fig_flag, set='Train', vis_idx=train_vis_idx, col=1)
       visualize_flag(pred=pred_dict_val['flag'][..., [0]], gt=input_dict_val['aux'][..., [0]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0]], fig=fig_flag, set='Validation', vis_idx=val_vis_idx, col=2)
       plotly.offline.plot(fig_flag, filename='{}/wandb_vis_flag.html'.format(args.vis_path), auto_open=False)
-      wandb.log({"Flag(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_flag.html'.format(args.vis_path)))})
+      wandb.log({'n_epochs':epoch, "Flag(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_flag.html'.format(args.vis_path)))})
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
     plotly.offline.plot(fig_traj, filename='{}/wandb_vis_traj.html'.format(args.vis_path), auto_open=False)
     try:
-      wandb.log({"Trajectory(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_traj.html'.format(args.vis_path)))})
+      wandb.log({'n_epochs':epoch, "Trajectory(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_traj.html'.format(args.vis_path)))})
     except ValueError:
       print("[#] Wandb is not init")
 
@@ -87,15 +91,14 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
     ####################################
     # Variables
     len_ = input_dict['lengths']
-    pred = pred_dict['xyz'][..., [0, 1, 2]]
     mask = input_dict['mask'][..., [0, 1, 2]]
     if args.env == 'unity':
       gt = gt_dict['gt'][..., [0, 1, 2]]
     else:
       gt = None
     fig_traj = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*math.ceil(n_vis/2), horizontal_spacing=0.05, vertical_spacing=0.01)
-    visualize_trajectory(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
-    visualize_trajectory(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
+    visualize_trajectory(pred=pred_dict, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
+    visualize_trajectory(pred=pred_dict, gt=gt, lengths=len_, mask=mask, fig=fig_traj, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
     ####################################
     ############### Ray ################
     ####################################
@@ -185,27 +188,33 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizonta
   return fig
 
 def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
-  pred = pred.cpu().detach().numpy()
+  xyz = pred['xyz'][..., [0, 1, 2]].cpu().detach().numpy()
+  xyz_refined = pred['xyz_refined'][..., [0, 1, 2]].cpu().detach().numpy()
+
+  x = 9.5
+  y = 0
+  z = 17
+  field = np.array([[-x, 0, z], [x, 0, z], [x, 0, -z], [-x, 0, -z], [-x, 0, z]]) 
+
   if gt is not None:
     gt = gt.cpu().detach().numpy()
   # Iterate to plot each trajectory
   for idx, i in enumerate(vis_idx):
     if gt is not None:
-      mse = utils_loss.TrajectoryLoss(pt.tensor(pred[i]).cuda(), pt.tensor(gt[i]).cuda(), mask=mask[i])
+      # No-gt
+      mse = utils_loss.TrajectoryLoss(pt.tensor(xyz_refined[i]).cuda() if 'refinement' in args.pipeline else pt.tensor(xyz[i]).cuda(), pt.tensor(gt[i]).cuda(), mask=mask[i])
       fig.add_trace(go.Scatter3d(x=-gt[i][:lengths[i], 0], y=gt[i][:lengths[i], 1], z=gt[i][:lengths[i], 2], mode='markers+lines', 
                                 marker=marker_dict_gt, name="{}-Ground Truth Trajectory [{}], MSE={:3f}".format(set, i, mse)), row=idx+1, col=col)
+    if 'refinement' in args.pipeline:
+      # Refinement
+      fig.add_trace(go.Scatter3d(x=-xyz_refined[i][:lengths[i], 0], y=xyz_refined[i][:lengths[i], 1], z=xyz_refined[i][:lengths[i], 2], mode='markers+lines', 
+                                marker=marker_dict_refined, name="{}-Refined Trajectory [{}]".format(set, i)), row=idx+1, col=col)
 
-    fig.add_trace(go.Scatter3d(x=-pred[i][:lengths[i], 0], y=pred[i][:lengths[i], 1], z=pred[i][:lengths[i], 2], mode='markers+lines', 
+    # Reconstructed (from height)
+    fig.add_trace(go.Scatter3d(x=-xyz[i][:lengths[i], 0], y=xyz[i][:lengths[i], 1], z=xyz[i][:lengths[i], 2], mode='markers+lines', 
                               marker=marker_dict_pred, name="{}-Estimated Trajectory [{}]".format(set, i)), row=idx+1, col=col)
-
-    #height=2
-    #x= np.linspace(-1, 1, 75)
-    #y= np.linspace(0, 2, 100)
-    #z= height*np.ones((100,75))
-    #mycolorscale = [[0, '#aa9ce2'],
-    #                [1, '#aa9ce2']]
-    #fig.add_trace(go.Surface(x=x, y=y, z=z, colorscale=mycolorscale, showscale=False))
-
+  
+    fig.add_trace(go.Scatter3d(x=field[:, 0], y=field[:, 1], z=field[:, 2], mode='markers+lines', marker=marker_dict_field, name='Field'), row=idx+1, col=col)
 
 def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   # pred : concat with startpos and stack back to (batch_size, sequence_length+1, 1)

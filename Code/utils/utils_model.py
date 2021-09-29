@@ -148,11 +148,11 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   if 'refinement' in args.pipeline:
     #print("REFINEMENT : ", xyz.shape)
-    xyz = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
-    xyz_ = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+    xyz_ = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
+    xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
     pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
-    xyz_refined = xyz + pred_refoff
+    xyz_refined = xyz_ + pred_refoff
   else:
     xyz_refined = None
 
@@ -430,33 +430,19 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   '''
   Calculate loss
   '''
-  ######################################
-  ############# Trajectory #############
-  ######################################
-  if (args.annealing) and ('refinement' in args.pipeline):
-    # Annealing
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    trajectory_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    trajectory_loss = trajectory_loss + trajectory_loss_refined * anneal_w
-  elif ('refinement' in args.pipeline):
-    # No annealing
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    trajectory_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    trajectory_loss = trajectory_loss + trajectory_loss_refined
-  else:
-    # No refinement
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-
-  ######################################
-  ############# Below GND ##############
-  ######################################
+  #########################################################################
+  ############# Trajectory, Below GND, Gravity, Reprojection ##############
+  #########################################################################
+  traj_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   bg_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  g_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+  reprj_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
-  ######################################
-  ############## Gravity ###############
-  ######################################
-  gravity_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #gravity_loss = pt.tensor(0.).to(device)
+  if 'refinement' in args.pipeline:
+    bg_loss_refined = utils_loss.BelowGroundLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    g_loss_refined = utils_loss.GravityLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    traj_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    reprj_loss_refined = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
   ######################################
   ############### Flag #################
@@ -468,14 +454,6 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])
 
   ######################################
-  ########### Reprojection #############
-  ######################################
-  if ('refinement' in args.pipeline):
-    reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
-  else:
-    reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
-
-  ######################################
   ########### Consine Sim ##############
   ######################################
   #if ('refinement' in args.pipeline):
@@ -483,13 +461,36 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #else:                           
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
+
+  ######################################
+  ############# Annealing ##############
+  ######################################
+  if (args.annealing) and ('refinement' in args.pipeline):
+    # Annealing
+    traj_loss_ = traj_loss + traj_loss_refined * anneal_w
+    bg_loss_ = bg_loss + bg_loss_refined * anneal_w
+    g_loss_ = g_loss + g_loss_refined * anneal_w
+    reprj_loss_ = reprj_loss + reprj_loss_refined * anneal_w
+  elif ('refinement' in args.pipeline):
+    # No annealing
+    traj_loss_ = traj_loss + traj_loss_refined
+    bg_loss_ = bg_loss + bg_loss_refined
+    g_loss_ = g_loss + g_loss_refined
+    reprj_loss_ = reprj_loss + reprj_loss_refined
+  else:
+    # No refinement
+    traj_loss_ = traj_loss
+    bg_loss_ = bg_loss
+    g_loss_ = g_loss
+    reprj_loss_ = reprj_loss
+
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss + bg_loss + flag_loss + reprojection_loss# + cosinesim_loss
-  loss_dict = {"Trajectory Loss":trajectory_loss.item(),
-               "Gravity Loss":gravity_loss.item(),
-               "BelowGnd Loss":bg_loss.item(),
+  loss = traj_loss_ + g_loss_ + bg_loss_ + flag_loss + reprj_loss_ 
+  loss_dict = {"Trajectory Loss":traj_loss_.item(),
+               "Gravity Loss":g_loss_.item(),
+               "BelowGnd Loss":bg_loss_.item(),
                "Flag Loss":flag_loss.item(),
-               "Reprojection Loss":reprojection_loss.item(),}
+               "Reprojection Loss":reprj_loss_.item(),}
                #"ConsineSim Loss":cosinesim_loss.item(),
                #}
 

@@ -12,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_exp29_09_2021_noise_ref'
-wandb_name: 'tennis_dt_dt_clean_intr_noconstra_nref'
+wandb_name: 'tennis_dt_dt_noisy_intr_nref_noann'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -24,7 +24,7 @@ n_epochs: 100000
 lr: 0.001
 clip: 10
 decay_gamma: 0.7
-decay_cycle: 1350
+decay_cycle: 1300
 canonicalize: False
 noise: True
 noise_sd: 5
@@ -32,7 +32,7 @@ annealing: False
 annealing_cycle: 300
 annealing_gamma:  0.7
 augment: True
-recon: 'clean'
+recon: 'noisy'
 optim_init_h: False
 
 # Visualization
@@ -77,7 +77,7 @@ pipeline:
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
-    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    constraint_y: 'lrelu' # 'relu', 'softplus' or null
     attn: False
 
   refinement:
