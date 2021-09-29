@@ -627,3 +627,20 @@ def augment(batch):
 
   return batch 
     
+def add_noise_refinement(h, xyz, cam_dict, recon_dict, canon_dict):
+  if args.noise:
+    if args.pipeline['refinement']['noise'] == 'h':
+      # Noise on height
+      noise_h = pt.normal(mean=0.0, std=1, size=h.shape).to(device)
+      height = h + noise_h
+      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+    elif args.pipeline['refinement']['noise'] == 'xyz':
+      # 3D augmentation
+      raise NotImplemented
+    else:
+      raise ValueError("[#] Refinement noise is invalid.") 
+  else:
+    # Retain the xyz
+    pass
+
+  return xyz

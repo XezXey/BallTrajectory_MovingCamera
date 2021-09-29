@@ -144,10 +144,11 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
-  xyz = reconstruct(height, cam_dict, recon_dict, canon_dict)
+  xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
 
   if 'refinement' in args.pipeline:
     #print("REFINEMENT : ", xyz.shape)
+    xyz = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
     xyz_ = add_latent(in_f=xyz, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
     pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
     pred_dict['refine_offset'] = pred_refoff
@@ -280,33 +281,6 @@ def create_latent(latent_dict, input_dict, model_dict):
   
   return latent_dict
 
-def reconstruct(height, cam_dict, recon_dict, canon_dict):
-  '''
-  Reconstruct the 3d points from predicted height
-  Input : 
-    1. height : predicted height in shape(batch_size, seq_len, 1)
-    2. cam_dict : contains ['I', 'E', 'Einv', 'tracking']
-    3. recon_dict : contains 
-      - 'clean' : for clean reconstruction
-      - 'noisy' : for noisy reconstruction
-    4. canon_dict : contains ['cam_cl', 'R'] to be used in reconstruction and canonicalize
-  Output : 
-    1. xyz : reconstructed xyz in shape(batch_size, seq_len, 3)
-  '''
-
-  if args.canonicalize:
-    intr_clean = utils_transform.canonicalize(pts=recon_dict['clean'], R=canon_dict['R'])
-    intr_noisy = utils_transform.canonicalize(pts=recon_dict['noisy'], R=canon_dict['R'])
-  else:
-    intr_clean = recon_dict['clean']
-    intr_noisy = recon_dict['noisy']
-
-  if args.recon == 'clean':
-    xyz = utils_transform.h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
-  elif args.recon == 'noisy':
-    xyz = utils_transform.h_to_3d(height=height, intr=intr_noisy, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
-  
-  return xyz
       
 def input_manipulate(in_f, module, input_dict, h0=None):
   '''
@@ -466,7 +440,9 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     trajectory_loss = trajectory_loss + trajectory_loss_refined * anneal_w
   elif ('refinement' in args.pipeline):
     # No annealing
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    trajectory_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+    trajectory_loss = trajectory_loss + trajectory_loss_refined
   else:
     # No refinement
     trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
@@ -474,8 +450,7 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   ######################################
   ############# Below GND ##############
   ######################################
-  below_ground_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  #below_ground_loss = pt.tensor(0.).to(device)
+  bg_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
 
   ######################################
   ############## Gravity ###############
@@ -509,10 +484,10 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
 
   # Combined all losses term
-  loss = trajectory_loss + gravity_loss + below_ground_loss + flag_loss + reprojection_loss# + cosinesim_loss
+  loss = trajectory_loss + gravity_loss + bg_loss + flag_loss + reprojection_loss# + cosinesim_loss
   loss_dict = {"Trajectory Loss":trajectory_loss.item(),
                "Gravity Loss":gravity_loss.item(),
-               "BelowGnd Loss":below_ground_loss.item(),
+               "BelowGnd Loss":bg_loss.item(),
                "Flag Loss":flag_loss.item(),
                "Reprojection Loss":reprojection_loss.item(),}
                #"ConsineSim Loss":cosinesim_loss.item(),

@@ -12,7 +12,7 @@ env: 'unity'
 wandb_dir: './'
 wandb_notes: null
 wandb_tags: 'TracknetV1_exp26_09_2021'
-wandb_name: 'tennis_tdt_dt_clean_intr_noconstra'
+wandb_name: 'tennis_tdt_tdt_clean_intr_noconstra'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'

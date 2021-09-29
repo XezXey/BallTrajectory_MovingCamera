@@ -14,3 +14,177 @@ Code/main/wandb/
 Code/utils/__pycache__/transformation.cpython-36.pyc
 Code/utils/__pycache__/utils_vis.cpython-36.pyc
 visualize_html/
+Code/wandb/
+Code/wandb/debug.log
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/config.yaml
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/output.log
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/wandb-events.jsonl
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/wandb-history.jsonl
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/wandb-metadata.json
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/wandb-summary.json
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/code/Code/main/train.py
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/media/graph/graph_0_summary_93f4b707.graph.json
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/media/graph/graph_1_summary_4423746d.graph.json
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/media/graph/graph_2_summary_97c14584.graph.json
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/media/html/Flag(Col1=Train, Col2=Val)_2_109ed8a1.html
+Code/wandb/dryrun-20210928_194647-3kpfvcuu/media/html/Trajectory(Col1=Train, Col2=Val)_3_a14227e4.html
+Code/wandb/dryrun-20210929_060851-3u4zst1h/config.yaml
+Code/wandb/dryrun-20210929_060851-3u4zst1h/output.log
+Code/wandb/dryrun-20210929_060851-3u4zst1h/wandb-events.jsonl
+Code/wandb/dryrun-20210929_060851-3u4zst1h/wandb-history.jsonl
+Code/wandb/dryrun-20210929_060851-3u4zst1h/wandb-metadata.json
+Code/wandb/dryrun-20210929_060851-3u4zst1h/wandb-summary.json
+Code/wandb/dryrun-20210929_060851-3u4zst1h/code/Code/main/train.py
+Code/wandb/dryrun-20210929_060851-3u4zst1h/media/graph/graph_0_summary_70c7d6af.graph.json
+Code/wandb/dryrun-20210929_060851-3u4zst1h/media/graph/graph_1_summary_a5b60b64.graph.json
+Code/wandb/dryrun-20210929_061031-390a7nwp/config.yaml
+Code/wandb/dryrun-20210929_061031-390a7nwp/output.log
+Code/wandb/dryrun-20210929_061031-390a7nwp/wandb-events.jsonl
+Code/wandb/dryrun-20210929_061031-390a7nwp/wandb-history.jsonl
+Code/wandb/dryrun-20210929_061031-390a7nwp/wandb-metadata.json
+Code/wandb/dryrun-20210929_061031-390a7nwp/wandb-summary.json
+Code/wandb/dryrun-20210929_061031-390a7nwp/code/Code/main/train.py
+Code/wandb/dryrun-20210929_061048-1qfpm038/config.yaml
+Code/wandb/dryrun-20210929_061048-1qfpm038/output.log
+Code/wandb/dryrun-20210929_061048-1qfpm038/wandb-history.jsonl
+Code/wandb/dryrun-20210929_061048-1qfpm038/wandb-metadata.json
+Code/wandb/dryrun-20210929_061048-1qfpm038/wandb-summary.json
+Code/wandb/dryrun-20210929_061048-1qfpm038/code/Code/main/train.py
+Code/wandb/dryrun-20210929_061048-1qfpm038/media/graph/graph_0_summary_c0cbca25.graph.json
+Code/wandb/dryrun-20210929_061048-1qfpm038/media/graph/graph_1_summary_96046d62.graph.json
+Code/wandb/dryrun-20210929_061428-36bzhd1r/config.yaml
+Code/wandb/dryrun-20210929_061428-36bzhd1r/output.log
+Code/wandb/dryrun-20210929_061428-36bzhd1r/wandb-events.jsonl
+Code/wandb/dryrun-20210929_061428-36bzhd1r/wandb-history.jsonl
+Code/wandb/dryrun-20210929_061428-36bzhd1r/wandb-metadata.json
+Code/wandb/dryrun-20210929_061428-36bzhd1r/wandb-summary.json
+Code/wandb/dryrun-20210929_061428-36bzhd1r/code/Code/main/train.py
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/graph/graph_0_summary_ce427a75.graph.json
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/graph/graph_1_summary_64f00123.graph.json
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/html/Flag(Col1=Train, Col2=Val)_2_99880e88.html
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/html/Flag(Col1=Train, Col2=Val)_5_7397cd8d.html
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/html/Trajectory(Col1=Train, Col2=Val)_3_4875856a.html
+Code/wandb/dryrun-20210929_061428-36bzhd1r/media/html/Trajectory(Col1=Train, Col2=Val)_6_ab231edb.html
+Code/wandb/dryrun-20210929_061621-27tki993/config.yaml
+Code/wandb/dryrun-20210929_061621-27tki993/output.log
+Code/wandb/dryrun-20210929_061621-27tki993/wandb-events.jsonl
+Code/wandb/dryrun-20210929_061621-27tki993/wandb-history.jsonl
+Code/wandb/dryrun-20210929_061621-27tki993/wandb-metadata.json
+Code/wandb/dryrun-20210929_061621-27tki993/wandb-summary.json
+Code/wandb/dryrun-20210929_061621-27tki993/code/Code/main/train.py
+Code/wandb/dryrun-20210929_062004-23f0e6ie/config.yaml
+Code/wandb/dryrun-20210929_062004-23f0e6ie/output.log
+Code/wandb/dryrun-20210929_062004-23f0e6ie/wandb-events.jsonl
+Code/wandb/dryrun-20210929_062004-23f0e6ie/wandb-history.jsonl
+Code/wandb/dryrun-20210929_062004-23f0e6ie/wandb-metadata.json
+Code/wandb/dryrun-20210929_062004-23f0e6ie/wandb-summary.json
+Code/wandb/dryrun-20210929_062004-23f0e6ie/code/Code/main/train.py
+Code/wandb/dryrun-20210929_062004-23f0e6ie/media/graph/graph_0_summary_3d515dda.graph.json
+Code/wandb/dryrun-20210929_062004-23f0e6ie/media/graph/graph_1_summary_33ad144d.graph.json
+Code/wandb/dryrun-20210929_062004-23f0e6ie/media/html/Flag(Col1=Train, Col2=Val)_2_35b6dede.html
+Code/wandb/dryrun-20210929_062004-23f0e6ie/media/html/Trajectory(Col1=Train, Col2=Val)_3_e38be168.html
+Code/wandb/dryrun-20210929_062046-187g7s5z/config.yaml
+Code/wandb/dryrun-20210929_062046-187g7s5z/output.log
+Code/wandb/dryrun-20210929_062046-187g7s5z/wandb-events.jsonl
+Code/wandb/dryrun-20210929_062046-187g7s5z/wandb-history.jsonl
+Code/wandb/dryrun-20210929_062046-187g7s5z/wandb-metadata.json
+Code/wandb/dryrun-20210929_062046-187g7s5z/code/Code/main/train.py
+Code/wandb/dryrun-20210929_062056-1lphcpi8/config.yaml
+Code/wandb/dryrun-20210929_062056-1lphcpi8/output.log
+Code/wandb/dryrun-20210929_062056-1lphcpi8/wandb-events.jsonl
+Code/wandb/dryrun-20210929_062056-1lphcpi8/wandb-history.jsonl
+Code/wandb/dryrun-20210929_062056-1lphcpi8/wandb-metadata.json
+Code/wandb/dryrun-20210929_062056-1lphcpi8/wandb-summary.json
+Code/wandb/dryrun-20210929_062056-1lphcpi8/code/Code/main/train.py
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/graph/graph_0_summary_becc5db9.graph.json
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/graph/graph_1_summary_6d847ea3.graph.json
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/html/Flag(Col1=Train, Col2=Val)_2_ca336cf3.html
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/html/Flag(Col1=Train, Col2=Val)_5_aa8a0aa4.html
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/html/Trajectory(Col1=Train, Col2=Val)_3_c1234993.html
+Code/wandb/dryrun-20210929_062056-1lphcpi8/media/html/Trajectory(Col1=Train, Col2=Val)_6_c68b0350.html
+Code/wandb/dryrun-20210929_062447-2qfunpgm/config.yaml
+Code/wandb/dryrun-20210929_062447-2qfunpgm/output.log
+Code/wandb/dryrun-20210929_062447-2qfunpgm/wandb-events.jsonl
+Code/wandb/dryrun-20210929_062447-2qfunpgm/wandb-history.jsonl
+Code/wandb/dryrun-20210929_062447-2qfunpgm/wandb-metadata.json
+Code/wandb/dryrun-20210929_062447-2qfunpgm/wandb-summary.json
+Code/wandb/dryrun-20210929_062447-2qfunpgm/code/Code/main/train.py
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/graph/graph_0_summary_4c0784d5.graph.json
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/graph/graph_1_summary_b83ec119.graph.json
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/html/Flag(Col1=Train, Col2=Val)_2_84994e2c.html
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/html/Flag(Col1=Train, Col2=Val)_5_f50a973c.html
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/html/Trajectory(Col1=Train, Col2=Val)_3_e5511a14.html
+Code/wandb/dryrun-20210929_062447-2qfunpgm/media/html/Trajectory(Col1=Train, Col2=Val)_6_8db541ce.html
+Code/wandb/dryrun-20210929_070729-76a1weey/config.yaml
+Code/wandb/dryrun-20210929_070729-76a1weey/output.log
+Code/wandb/dryrun-20210929_070729-76a1weey/wandb-events.jsonl
+Code/wandb/dryrun-20210929_070729-76a1weey/wandb-history.jsonl
+Code/wandb/dryrun-20210929_070729-76a1weey/wandb-metadata.json
+Code/wandb/dryrun-20210929_070729-76a1weey/wandb-summary.json
+Code/wandb/dryrun-20210929_070729-76a1weey/code/Code/main/train.py
+Code/wandb/dryrun-20210929_071216-1nzznhex/config.yaml
+Code/wandb/dryrun-20210929_071216-1nzznhex/output.log
+Code/wandb/dryrun-20210929_071216-1nzznhex/wandb-events.jsonl
+Code/wandb/dryrun-20210929_071216-1nzznhex/wandb-history.jsonl
+Code/wandb/dryrun-20210929_071216-1nzznhex/wandb-metadata.json
+Code/wandb/dryrun-20210929_071216-1nzznhex/wandb-summary.json
+Code/wandb/dryrun-20210929_071216-1nzznhex/code/Code/main/train.py
+Code/wandb/dryrun-20210929_071359-3ndaro2i/config.yaml
+Code/wandb/dryrun-20210929_071359-3ndaro2i/output.log
+Code/wandb/dryrun-20210929_071359-3ndaro2i/wandb-events.jsonl
+Code/wandb/dryrun-20210929_071359-3ndaro2i/wandb-history.jsonl
+Code/wandb/dryrun-20210929_071359-3ndaro2i/wandb-metadata.json
+Code/wandb/dryrun-20210929_071359-3ndaro2i/wandb-summary.json
+Code/wandb/dryrun-20210929_071359-3ndaro2i/code/Code/main/train.py
+Code/wandb/dryrun-20210929_071359-3ndaro2i/media/graph/graph_0_summary_ca44f12e.graph.json
+Code/wandb/dryrun-20210929_071359-3ndaro2i/media/graph/graph_1_summary_ee15d62a.graph.json
+Code/wandb/dryrun-20210929_071359-3ndaro2i/media/graph/graph_2_summary_0124fb47.graph.json
+Code/wandb/dryrun-20210929_071359-3ndaro2i/media/html/Flag(Col1=Train, Col2=Val)_2_636c0d63.html
+Code/wandb/dryrun-20210929_071359-3ndaro2i/media/html/Trajectory(Col1=Train, Col2=Val)_3_31a34a9c.html
+Code/wandb/dryrun-20210929_071425-1fnzm48f/config.yaml
+Code/wandb/dryrun-20210929_071425-1fnzm48f/output.log
+Code/wandb/dryrun-20210929_071425-1fnzm48f/wandb-history.jsonl
+Code/wandb/dryrun-20210929_071425-1fnzm48f/wandb-metadata.json
+Code/wandb/dryrun-20210929_071425-1fnzm48f/wandb-summary.json
+Code/wandb/dryrun-20210929_071425-1fnzm48f/code/Code/main/train.py
+Code/wandb/dryrun-20210929_071425-1fnzm48f/media/graph/graph_0_summary_81a0a28c.graph.json
+Code/wandb/dryrun-20210929_071425-1fnzm48f/media/graph/graph_1_summary_4bc8a310.graph.json
+Code/wandb/dryrun-20210929_071425-1fnzm48f/media/graph/graph_2_summary_ea0a607a.graph.json
+Code/wandb/dryrun-20210929_071425-1fnzm48f/media/html/Flag(Col1=Train, Col2=Val)_2_18983e1e.html
+Code/wandb/dryrun-20210929_071425-1fnzm48f/media/html/Trajectory(Col1=Train, Col2=Val)_3_1232a683.html
+Code/wandb/dryrun-20210929_071450-obynki4n/config.yaml
+Code/wandb/dryrun-20210929_071450-obynki4n/output.log
+Code/wandb/dryrun-20210929_071450-obynki4n/wandb-events.jsonl
+Code/wandb/dryrun-20210929_071450-obynki4n/wandb-history.jsonl
+Code/wandb/dryrun-20210929_071450-obynki4n/wandb-metadata.json
+Code/wandb/dryrun-20210929_071450-obynki4n/wandb-summary.json
+Code/wandb/dryrun-20210929_071450-obynki4n/code/Code/main/train.py
+Code/wandb/dryrun-20210929_071450-obynki4n/media/graph/graph_0_summary_5751610e.graph.json
+Code/wandb/dryrun-20210929_071450-obynki4n/media/graph/graph_1_summary_a0852354.graph.json
+Code/wandb/dryrun-20210929_071450-obynki4n/media/graph/graph_2_summary_d17ba79e.graph.json
+Code/wandb/dryrun-20210929_074647-1ekxp80q/config.yaml
+Code/wandb/dryrun-20210929_074647-1ekxp80q/output.log
+Code/wandb/dryrun-20210929_074647-1ekxp80q/wandb-events.jsonl
+Code/wandb/dryrun-20210929_074647-1ekxp80q/wandb-history.jsonl
+Code/wandb/dryrun-20210929_074647-1ekxp80q/wandb-metadata.json
+Code/wandb/dryrun-20210929_074647-1ekxp80q/code/Code/main/train.py
+Code/wandb/dryrun-20210929_074651-26bqyv9d/config.yaml
+Code/wandb/dryrun-20210929_074651-26bqyv9d/output.log
+Code/wandb/dryrun-20210929_074651-26bqyv9d/wandb-events.jsonl
+Code/wandb/dryrun-20210929_074651-26bqyv9d/wandb-history.jsonl
+Code/wandb/dryrun-20210929_074651-26bqyv9d/wandb-metadata.json
+Code/wandb/dryrun-20210929_074651-26bqyv9d/wandb-summary.json
+Code/wandb/dryrun-20210929_074651-26bqyv9d/code/Code/main/train.py
+Code/wandb/dryrun-20210929_074651-26bqyv9d/media/graph/graph_0_summary_bba808fe.graph.json
+Code/wandb/dryrun-20210929_074651-26bqyv9d/media/graph/graph_1_summary_5cc01aff.graph.json
+Code/wandb/dryrun-20210929_074651-26bqyv9d/media/graph/graph_2_summary_0cb73af9.graph.json
+Code/wandb/dryrun-20210929_074651-26bqyv9d/media/html/Flag(Col1=Train, Col2=Val)_2_73d3eb91.html
+Code/wandb/dryrun-20210929_074651-26bqyv9d/media/html/Trajectory(Col1=Train, Col2=Val)_3_bd532bc3.html
+Code/wandb/dryrun-20210929_080328-3luyydmf/config.yaml
+Code/wandb/dryrun-20210929_080328-3luyydmf/output.log
+Code/wandb/dryrun-20210929_080328-3luyydmf/wandb-events.jsonl
+Code/wandb/dryrun-20210929_080328-3luyydmf/wandb-history.jsonl
+Code/wandb/dryrun-20210929_080328-3luyydmf/wandb-metadata.json
+Code/wandb/dryrun-20210929_080328-3luyydmf/wandb-summary.json
+Code/wandb/dryrun-20210929_080328-3luyydmf/code/Code/main/train.py
+Code/wandb/debug.log

@@ -201,3 +201,31 @@ def projection_2d(pts, cam_dict, normalize=False):
 
   d = scr[..., [2]]
   return u, v, d
+
+def reconstruct(height, cam_dict, recon_dict, canon_dict):
+  '''
+  Reconstruct the 3d points from predicted height
+  Input : 
+    1. height : predicted height in shape(batch_size, seq_len, 1)
+    2. cam_dict : contains ['I', 'E', 'Einv', 'tracking']
+    3. recon_dict : contains 
+      - 'clean' : for clean reconstruction
+      - 'noisy' : for noisy reconstruction
+    4. canon_dict : contains ['cam_cl', 'R'] to be used in reconstruction and canonicalize
+  Output : 
+    1. xyz : reconstructed xyz in shape(batch_size, seq_len, 3)
+  '''
+
+  if args.canonicalize:
+    intr_clean = canonicalize(pts=recon_dict['clean'], R=canon_dict['R'])
+    intr_noisy = canonicalize(pts=recon_dict['noisy'], R=canon_dict['R'])
+  else:
+    intr_clean = recon_dict['clean']
+    intr_noisy = recon_dict['noisy']
+
+  if args.recon == 'clean':
+    xyz = h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
+  elif args.recon == 'noisy':
+    xyz = h_to_3d(height=height, intr=intr_noisy, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
+  
+  return xyz
