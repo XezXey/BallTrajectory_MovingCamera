@@ -1,14 +1,18 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_eot/val_set/'
+dataset_test_path : null
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
-wandb_dir: '../'
+wandb_dir: './'
 wandb_notes: null
-wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_test'
+wandb_tags: 'TracknetV1_exp26_09_2021_cont3'
+wandb_name: 'tennis_tdt_dt_clean_intr_cont3'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -23,9 +27,9 @@ decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize: False
 noise: True
-noise_sd: 10
-annealing: False
-annealing_cycle: 1
+noise_sd: 5
+annealing: True
+annealing_cycle: 300
 annealing_gamma:  0.7
 augment: True
 recon: 'clean'
@@ -36,7 +40,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_hori_vert' # 'intr_azim_elev'
+input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:
@@ -72,9 +76,9 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt'
+    i_s: 't_dt'
     o_s: 'dt'
-    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    constraint_y: 'lrelu' # 'relu', 'softplus' or null
     attn: False
 
   refinement:
@@ -85,8 +89,8 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 1
-    out_node: 1
+    in_node: 3
+    out_node: 3
     extra_in: []
     extra_out: []
     latent_in: []
@@ -94,10 +98,7 @@ pipeline:
     i_s: 't'
     o_s: 't'
     attn: False
-    noise: 'dh' # adding noise space ('dh', 'h', 'xyz')
-    noise_sd: 0.1
-    refine: 'h' # refinement space ('xyz', 'h')
-
+    noise: null
 
 # Features
 selected_features: [eot]

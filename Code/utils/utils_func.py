@@ -372,7 +372,8 @@ def cumsum(seq, t_0=None):
 
   if t_0 is not None:
     # output : perform cumsum along the sequence_length axis
-    seq = pt.stack([pt.cat([t_0[i][:, [0]], seq[i]]) for i in range(seq.shape[0])])
+    #seq = pt.stack([pt.cat([t_0[i][:, [0]], seq[i]]) for i in range(seq.shape[0])])
+    seq = pt.cat((t_0, seq), dim=1)
   
   seq = pt.cumsum(seq, dim=1)
   return seq
@@ -629,14 +630,20 @@ def augment(batch):
     
 def add_noise_refinement(h, xyz, cam_dict, recon_dict, canon_dict):
   if args.noise:
+    noise_sd = args.pipeline['refinement']['noise_sd']
     if args.pipeline['refinement']['noise'] == 'h':
       # Noise on height
-      noise_h = pt.normal(mean=0.0, std=1, size=h.shape).to(device)
+      noise_h = pt.normal(mean=0.0, std=noise_sd, size=h.shape).to(device)
       height = h + noise_h
       xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
     elif args.pipeline['refinement']['noise'] == 'xyz':
       # 3D augmentation
       raise NotImplemented
+    elif args.pipeline['refinement']['noise'] == 'dh':
+      dh = h[:, 1:, :] - h[:, :-1, :]
+      noise_h = pt.normal(mean=0.0, std=noise_sd, size=dh.shape).to(device)
+      height = cumsum(t_0=h[:, [0], :], seq=dh + noise_h)
+      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
     elif args.pipeline['refinement']['noise'] == None:
       pass
     else:
@@ -645,4 +652,4 @@ def add_noise_refinement(h, xyz, cam_dict, recon_dict, canon_dict):
     # Retain the xyz
     pass
 
-  return xyz
+  return xyz, height

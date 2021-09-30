@@ -16,8 +16,9 @@ class Refinement_Module(pt.nn.Module):
 
         self.rnn = Trainable_LSTM(in_node=in_node, hidden=rnn_hidden, stack=rnn_stack, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
-        self.attention = Self_Attention()
         self.attn = attn
+        if self.attn:
+            self.attention = Self_Attention()
         self.mlp = Vanilla_MLP(in_node=bidirectional*rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
         

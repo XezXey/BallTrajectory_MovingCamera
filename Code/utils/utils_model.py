@@ -144,15 +144,23 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
-  xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
 
+  xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
   if 'refinement' in args.pipeline:
     #print("REFINEMENT : ", xyz.shape)
-    xyz_ = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
-    xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
-    pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
-    pred_dict['refine_offset'] = pred_refoff
-    xyz_refined = xyz_ + pred_refoff
+    if args.pipeline['refinement']['refine'] == 'xyz':
+      xyz_, _ = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
+      xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+      pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
+      pred_dict['refine_offset'] = pred_refoff
+      xyz_refined = xyz_ + pred_refoff
+    elif args.pipeline['refinement']['refine'] == 'h':
+      _, height = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
+      height = add_latent(in_f=height, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+      pred_refoff, _ = model_dict['refinement'](in_f=height, lengths=input_dict['lengths'])
+      pred_dict['refine_offset'] = pred_refoff
+      height_refined = height + pred_refoff
+      xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
   else:
     xyz_refined = None
 
