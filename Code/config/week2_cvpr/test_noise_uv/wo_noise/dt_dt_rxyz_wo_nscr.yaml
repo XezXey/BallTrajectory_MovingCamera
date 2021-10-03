@@ -1,14 +1,14 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_test'
+wandb_tags: 'CVPR_Week2_TracknetV1'
+wandb_name: 'dt_dt_rxyz_wo_nscr'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -20,9 +20,9 @@ n_epochs: 100000
 lr: 0.001
 clip: 10
 decay_gamma: 0.7
-decay_cycle: 10000
+decay_cycle: 1000
 canonicalize: False
-noise: True
+noise: False
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: 10
+    noise_sd: 0.0
 
   refinement:
     arch: 'lstm'
@@ -86,8 +86,8 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 1
-    out_node: 1
+    in_node: 3
+    out_node: 3
     extra_in: []
     extra_out: []
     latent_in: []
@@ -95,9 +95,9 @@ pipeline:
     i_s: 't'
     o_s: 't'
     attn: False
-    refine: 'h' # refinement space ('xyz', 'h')
-    noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
-    noise_sd: 0.1
+    refine: 'xyz' # refinement space ('xyz', 'h')
+    noise_space: null # adding noise space ('dh', 'h', 'xyz')
+    noise_sd: 0.0
 
 
 # Features

@@ -83,7 +83,7 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     except ValueError:
       print("[#] Wandb is not init")
 
-def inference_vis(input_dict, gt_dict, pred_dict, cam_dict):
+def inference_vis(input_dict, gt_dict, pred_dict, cam_dict, latent_dict):
     n_vis = 10 if input_dict['input'].shape[0] > 10 else input_dict['input'].shape[0]
     vis_idx = np.random.choice(np.arange(input_dict['input'].shape[0]), size=(n_vis), replace=False)
     ####################################

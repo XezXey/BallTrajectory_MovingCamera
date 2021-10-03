@@ -132,54 +132,6 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
-def get_each_batch_pred(latent_optimized, pred_flag, pred_xyz, lengths):
-  if args.optimize is not None:
-    return {'latent_optimized':latent_optimized.clone().detach().cpu().numpy(), 'flag':pred_flag.clone().detach().cpu().numpy(), 'xyz':pred_xyz.clone().detach().cpu().numpy(), 'lengths':lengths.clone().detach().cpu().numpy()}
-  else:
-    if eot not in args.pipeline:
-      return {'latent_optimized':latent_optimized, 'flag':pred_flag, 'xyz':pred_xyz.clone().detach().cpu().numpy(), 'lengths':lengths.clone().detach().cpu().numpy()}
-    else:
-      return {'latent_optimized':latent_optimized, 'flag':pred_flag.clone().detach().cpu().numpy(), 'xyz':pred_xyz.clone().detach().cpu().numpy(), 'lengths':lengths.clone().detach().cpu().numpy()}
-
-def get_each_batch_trajectory(pred, gt, mask, lengths):
-  gt_xyz = []
-  pred_xyz = []
-
-  for i in range(lengths.shape[0]):
-    if i == 0:
-      gt_xyz = ((gt[i] * mask[i])[:lengths[i], :])
-      pred_xyz = ((pred[i] * mask[i])[:lengths[i], :])
-    else:
-      gt_xyz = pt.cat((gt_xyz, (gt[i] * mask[i])[:lengths[i], :]), dim=0)
-      pred_xyz = pt.cat((pred_xyz, (pred[i] * mask[i])[:lengths[i], :]), dim=0)
-
-  return {'pred_xyz':pred_xyz.cpu().detach(), 'gt_xyz':gt_xyz.cpu().detach()}
-
-def evaluateModel(pred, gt, mask, lengths, threshold=1, delmask=True):
-  evaluation_results = {'MAE':{}, 'MSE':{}, 'RMSE':{}}
-
-  for distance in evaluation_results:
-    if distance == 'MAE':
-      loss_3axis = pt.sum(((pt.abs(gt - pred)) * mask), axis=1) / pt.sum(mask, axis=1)
-      maxdist_3axis = pt.max(pt.abs(gt - pred) * mask, dim=1)[0]
-    elif distance == 'MSE':
-      loss_3axis = pt.sum((((gt - pred)**2) * mask), axis=1) / pt.sum(mask, axis=1)
-      maxdist_3axis = pt.max(((gt - pred)**2) * mask, dim=1)[0]
-    elif distance == 'RMSE':
-      loss_3axis = pt.sqrt(pt.sum((((gt - pred)**2) * mask), axis=1) / pt.sum(mask, axis=1))
-      maxdist_3axis = pt.max(((gt - pred)**2) * mask, dim=1)[0]
-
-
-    # Trajectory 3 axis loss
-    evaluation_results[distance]['maxdist_3axis'] = maxdist_3axis.cpu().detach().numpy()
-    evaluation_results[distance]['loss_3axis'] = loss_3axis.cpu().detach().numpy()
-    evaluation_results[distance]['mean_loss_3axis'] = pt.mean(loss_3axis, axis=0).cpu().detach().numpy()
-    evaluation_results[distance]['sd_loss_3axis'] = pt.std(loss_3axis, axis=0).cpu().detach().numpy()
-
-    print("Distance : ", distance)
-
-  return evaluation_results
-
 def evaluate(all_batch_trajectory):
   print("[#]Summary All Trajectory")
   distance = ['MAE', 'MSE', 'RMSE', 'RMSE-DISTANCE']
@@ -241,25 +193,19 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   ############ Evaluation ###########
   ###################################
   # Calculate loss per trajectory
-  evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
-  reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-                              'pred':pred_dict_test['xyz_refined'].detach().cpu().numpy(), 
-                              #'pred_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy()
-                              'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
-                              'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
-
-  each_batch_trajectory = get_each_batch_trajectory(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'])
-  each_batch_pred=None
+  recon_traj = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
+                'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
+                'pred_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy(),
+                'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
+                'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 
   utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
 
   if args.visualize:
     utils_vis.inference_vis(input_dict=input_dict_test, pred_dict=pred_dict_test, gt_dict=gt_dict_test, 
-                            cam_dict=cam_dict_test)
-  
+                            cam_dict=cam_dict_test, latent_dict=latent_dict_test)
 
-
-  return evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred
+  return recon_traj
 
 def collate_fn_padd(batch):
   if args.env != 'unity':
@@ -373,8 +319,7 @@ if __name__ == '__main__':
   ckpt = ['best', 'lastest', 'best_traj_ma']
   if (args.load_ckpt is None) or (args.load_ckpt not in ckpt):
     # Create a model
-    print('===>No model ckpt')
-    exit()
+    raise ValueError('===>No model ckpt')
   else:
     print('===>Load ckpt with Optimizer state, Decay and Scheduler state')
     ckpt = '{}/{}/{}/{}_{}.pth'.format(args.save_ckpt, args.wandb_tags, args.wandb_name, args.wandb_name, args.load_ckpt)
@@ -388,11 +333,8 @@ if __name__ == '__main__':
 
   # Test a model iterate over dataloader to get each batch and pass to predict function
   run_time = []
-  # seq_len = []
-  evaluation_results_all = []
-  reconstructed_trajectory_all = []
+  recon_traj_all = []
   all_batch_trajectory = {'gt_xyz':[], 'pred_xyz':[], 'gt_h':[], 'pred_h':[]}
-  all_batch_pred = {'xyz':[], 'lengths':[]}
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test)):
     print("[#]Batch-{}".format(batch_idx))
@@ -406,25 +348,20 @@ if __name__ == '__main__':
 
     # Call function to test
     start_time = time.time()
-    evaluation_results, reconstructed_trajectory, each_batch_trajectory, each_batch_pred = predict(input_dict_test=input_dict_test, gt_dict_test=gt_dict_test, 
-                                                                                                  cam_dict_test=cam_dict_test, model_dict=model_dict)
+    recon_traj = predict(input_dict_test=input_dict_test, gt_dict_test=gt_dict_test, 
+                                                           cam_dict_test=cam_dict_test, model_dict=model_dict)
 
-    reconstructed_trajectory_all.append(reconstructed_trajectory)
-    evaluation_results_all.append(evaluation_results)
+    recon_traj_all.append(recon_traj)
     n_trajectory += input_dict_test['input'].shape[0]
-
-    for key in each_batch_trajectory.keys():
-      all_batch_trajectory[key].append(each_batch_trajectory[key])
 
     run_time.append(time.time()-start_time)
 
-  summary_evaluation = summary(evaluation_results_all)
-  evaluate(all_batch_trajectory)
+  eval_results = evaluate(recon_traj_all)
 
   print("[#] Runtime : ", np.mean(run_time), "+-", np.std(run_time))
   # Save prediction file
   if args.save_cam_traj is not None:
     utils_func.initialize_folder(args.save_cam_traj)
-    utils_func.save_cam_traj(trajectory=reconstructed_trajectory_all, cam_dict=cam_dict_test)
+    utils_func.save_cam_traj(trajectory=recon_traj_all, cam_dict=cam_dict_test)
   print("[#] Done")
 
