@@ -397,6 +397,10 @@ def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict):
     elif args.pipeline['refinement']['noise_space'] == 'dxyz':
       # 3D augmentation
       raise NotImplemented
+    elif args.pipeline['refinement']['noise_space'] == None:
+      # Retain h, xyz
+      height = h
+      xyz = xyz
     else:
       raise ValueError("[#] Refinement noise is invalid.") 
   else:
