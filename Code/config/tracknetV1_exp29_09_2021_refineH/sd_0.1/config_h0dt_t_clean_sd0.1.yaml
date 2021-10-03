@@ -1,14 +1,18 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+#dataset_train_path: '../../Dataset/Single/train_set/'
+#dataset_val_path: '../../Dataset/Single/val_set/'
+
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont2_eot/val_set/'
+dataset_test_path : null
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
-wandb_dir: '../'
+wandb_dir: './'
 wandb_notes: null
-wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_test'
+wandb_tags: 'TracknetV1_exp26_09_2021_refineH'
+wandb_name: 'tennis_h0dt_t_clean_intr_sd0.1'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -23,8 +27,9 @@ decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize: False
 noise: True
+noise_sd: 5
 annealing: False
-annealing_cycle: 1
+annealing_cycle: 300
 annealing_gamma:  0.7
 augment: True
 recon: 'clean'
@@ -35,7 +40,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_hori_vert' # 'intr_azim_elev'
+input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:
@@ -71,12 +76,10 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt'
-    o_s: 'dt'
-    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    i_s: 'h0_dt'
+    o_s: 't'
+    constraint_y: null # 'relu', 'softplus' or null
     attn: False
-    noise_space: 'uv'
-    noise_sd: 10
 
   refinement:
     arch: 'lstm'
@@ -95,10 +98,9 @@ pipeline:
     i_s: 't'
     o_s: 't'
     attn: False
-    refine: 'h' # refinement space ('xyz', 'h')
-    noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
+    noise: 'dh' # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.1
-
+    refine: 'h' # refinement space ('xyz', 'h')
 
 # Features
 selected_features: [eot]

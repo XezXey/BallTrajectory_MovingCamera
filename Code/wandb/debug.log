@@ -1,16 +1,20 @@
-2021-10-01 02:18:10,642 DEBUG   MainThread:31921 [wandb_config.py:_load_defaults():122] no defaults not found in config-defaults.yaml
-2021-10-01 02:18:10,650 DEBUG   MainThread:31921 [meta.py:setup():97] code probe starting
-2021-10-01 02:18:10,650 DEBUG   MainThread:31921 [meta.py:_setup_code_git():49] probe for git information
-2021-10-01 02:18:10,660 DEBUG   MainThread:31921 [meta.py:_setup_code_program():58] save program starting
-2021-10-01 02:18:10,660 DEBUG   MainThread:31921 [meta.py:_setup_code_program():60] save program starting: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/main/train.py
-2021-10-01 02:18:10,660 DEBUG   MainThread:31921 [meta.py:_setup_code_program():65] save program saved: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/dryrun-20210930_191810-3hqq9hxn/code/Code/main/train.py
-2021-10-01 02:18:10,660 DEBUG   MainThread:31921 [meta.py:_setup_code_program():67] save program
-2021-10-01 02:18:10,660 DEBUG   MainThread:31921 [meta.py:setup():119] code probe done
-2021-10-01 02:18:10,668 DEBUG   MainThread:31921 [run_manager.py:__init__():541] Initialized sync for ball-trajectory-estimation/3hqq9hxn
-2021-10-01 02:18:10,669 INFO    MainThread:31921 [run_manager.py:wrap_existing_process():1144] wrapping existing process 31879
-2021-10-01 02:18:10,669 WARNING MainThread:31921 [io_wrap.py:register():104] SIGWINCH handler was not None: <Handlers.SIG_DFL: 0>
-2021-10-01 02:18:10,802 INFO    MainThread:31921 [run_manager.py:init_run():924] system metrics and metadata threads started
-2021-10-01 02:18:10,802 INFO    MainThread:31921 [run_manager.py:wrap_existing_process():1161] informing user process we are ready to proceed
-2021-10-01 02:18:10,802 INFO    MainThread:31921 [run_manager.py:_sync_etc():1268] entering loop for messages from user process
-2021-10-01 02:18:11,646 INFO    Thread-3  :31921 [run_manager.py:_on_file_modified():688] file/dir modified: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/dryrun-20210930_191810-3hqq9hxn/config.yaml
-2021-10-01 02:18:11,646 INFO    Thread-3  :31921 [3hqq9hxn:run_manager.py:_on_file_modified():688] file/dir modified: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/dryrun-20210930_191810-3hqq9hxn/config.yaml
+2021-10-03 16:32:30,058 DEBUG   MainThread:9512 [wandb_config.py:_load_defaults():122] no defaults not found in config-defaults.yaml
+2021-10-03 16:32:30,065 DEBUG   MainThread:9512 [meta.py:setup():97] code probe starting
+2021-10-03 16:32:30,065 DEBUG   MainThread:9512 [meta.py:_setup_code_git():49] probe for git information
+2021-10-03 16:32:30,073 DEBUG   MainThread:9512 [meta.py:_setup_code_program():58] save program starting
+2021-10-03 16:32:30,073 DEBUG   MainThread:9512 [meta.py:_setup_code_program():60] save program starting: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/main/train.py
+2021-10-03 16:32:30,073 DEBUG   MainThread:9512 [meta.py:_setup_code_program():65] save program saved: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/dryrun-20211003_093229-2zgvcckc/code/Code/main/train.py
+2021-10-03 16:32:30,073 DEBUG   MainThread:9512 [meta.py:_setup_code_program():67] save program
+2021-10-03 16:32:30,073 DEBUG   MainThread:9512 [meta.py:setup():119] code probe done
+2021-10-03 16:32:30,081 DEBUG   MainThread:9512 [run_manager.py:__init__():541] Initialized sync for ball-trajectory-estimation/2zgvcckc
+2021-10-03 16:32:30,083 INFO    MainThread:9512 [run_manager.py:wrap_existing_process():1144] wrapping existing process 9470
+2021-10-03 16:32:30,083 WARNING MainThread:9512 [io_wrap.py:register():104] SIGWINCH handler was not None: <Handlers.SIG_DFL: 0>
+2021-10-03 16:32:30,222 INFO    MainThread:9512 [run_manager.py:init_run():924] system metrics and metadata threads started
+2021-10-03 16:32:30,222 INFO    MainThread:9512 [run_manager.py:wrap_existing_process():1161] informing user process we are ready to proceed
+2021-10-03 16:32:30,222 INFO    MainThread:9512 [run_manager.py:_sync_etc():1268] entering loop for messages from user process
+2021-10-03 16:32:31,063 INFO    Thread-3  :9512 [run_manager.py:_on_file_modified():688] file/dir modified: /home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Code/wandb/dryrun-20211003_093229-2zgvcckc/config.yaml
+2021-10-03 16:32:57,693 INFO    MainThread:9512 [run_manager.py:_sync_etc():1324] process received interrupt signal, shutting down
+2021-10-03 16:32:57,694 INFO    MainThread:9512 [run_manager.py:_sync_etc():1377] closing log streams and sending exitcode to W&B
+2021-10-03 16:32:57,697 INFO    MainThread:9512 [run_manager.py:shutdown():1068] shutting down system stats and metadata service
+7,694 INFO    MainThread:9512 [2zgvcckc:run_manager.py:_sync_etc():1377] closing log streams and sending exitcode to W&B
+2021-10-03 16:32:57,697 INFO    MainThread:9512 [2zgvcckc:run_manager.py:shutdown():1068] shutting down system stats and metadata service

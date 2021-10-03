@@ -69,7 +69,6 @@ parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction sele
 ## Noise
 parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true', default=None)
 parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false', default=None)
-parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=float, default=None)
 ## Augment
 parser.add_argument('--augment', dest='augment', help='Apply an augmented training', action='store_true', default=None)
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
@@ -244,7 +243,8 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   # Calculate loss per trajectory
   evaluation_results = evaluateModel(pred=pred_dict_test['xyz'][..., [0, 1, 2]], gt=gt_dict_test['gt'][..., [0, 1, 2]], mask=gt_dict_test['mask'][..., [0, 1, 2]], lengths=gt_dict_test['lengths'], threshold=threshold)
   reconstructed_trajectory = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-                              'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
+                              'pred':pred_dict_test['xyz_refined'].detach().cpu().numpy(), 
+                              #'pred_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy()
                               'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
                               'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 

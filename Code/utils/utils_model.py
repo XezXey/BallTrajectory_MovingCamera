@@ -119,12 +119,18 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
     search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
     h0 = latent_dict['init_h']['first_h'].get_params()
+  elif args.env == 'no_gt':
+    search_h = None
+    h0 = pt.zeros(size=(in_f.shape[0], 1, 1)).to(device)
   else: 
     search_h = None
     h0 = gt_dict['gt'][:, [0], [1]]
 
   in_f = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
   
+  ######################################
+  ################ Flag ################
+  ######################################
   if 'flag' in args.pipeline:
     #print("FLAG : ", in_f.shape)
     i_s = args.pipeline['flag']['i_s']
@@ -134,6 +140,9 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
+  ######################################
+  ############### Height ###############
+  ######################################
   if 'height' in args.pipeline:
     #print("HEIGHT : ", in_f.shape)
     i_s = args.pipeline['height']['i_s']
@@ -144,18 +153,20 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
 
-
   xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+
+  ######################################
+  ############# Refinement #############
+  ######################################
   if 'refinement' in args.pipeline:
-    #print("REFINEMENT : ", xyz.shape)
     if args.pipeline['refinement']['refine'] == 'xyz':
-      xyz_, _ = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
+      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
       xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
       xyz_refined = xyz_ + pred_refoff
     elif args.pipeline['refinement']['refine'] == 'h':
-      _, height = utils_func.add_noise_refinement(height, xyz, cam_dict, recon_dict, canon_dict)
+      _, height = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
       height = add_latent(in_f=height, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=height, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
@@ -171,6 +182,8 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
       xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=canon_dict['R'], inv=True)
 
   pred_dict['xyz'] = xyz
+  if args.env == 'no_gt':
+    gt_dict['gt'] = xyz
   pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f
@@ -247,7 +260,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
       #print(in_f.shape, latent.shape)
       in_f = pt.cat((in_f, latent), dim=-1)
     elif 'aux' not in input_dict.keys():
-      raise ValueError('[#] Aux features are not provided. Please check --optim_<module>, --env <unity/tennis>')
+      raise ValueError('[#] Aux features are not provided. Please check --optim_<module>, --env <unity/no_gt>')
     else:
       sel_f = 0 if 'flag' in args.pipeline else 1   # selected_features -1 since first is eot/cd
       latent_idx = 1 - sel_f  # Latent index in selected_features

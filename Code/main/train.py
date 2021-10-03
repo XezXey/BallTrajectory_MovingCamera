@@ -59,16 +59,19 @@ parser.add_argument('--clip', dest='clip', type=float, help='Clipping gradients 
 parser.add_argument('--decay_gamma', help='Gamma (Decay rate)', type=float, default=None)
 parser.add_argument('--decay_cycle', help='Decay cycle', type=int, default=None)
 parser.add_argument('--canonicalize', dest='canonicalize', default=None)
+
 ## Annealing
 parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=None)
 parser.add_argument('--no_annealing', dest='annealing', help='Apply annealing', action='store_false', default=None)
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=None)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=None)
 parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction selection (noisy/clean)', default=None)
+
 ## Noise
 parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true', default=None)
 parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false', default=None)
-parser.add_argument('--noise_sd', dest='noise_sd', help='Std. of noise', type=float, default=None)
+
+
 ## Augment
 parser.add_argument('--augment', dest='augment', help='Apply an augmented training', action='store_true', default=None)
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)

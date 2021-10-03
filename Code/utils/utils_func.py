@@ -378,6 +378,34 @@ def cumsum(seq, t_0=None):
   seq = pt.cumsum(seq, dim=1)
   return seq
 
+def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict):
+  if args.noise:
+    noise_sd = args.pipeline['refinement']['noise_sd']
+    if args.pipeline['refinement']['noise_space'] == 'h':
+      # Noise on height
+      noise_h = pt.normal(mean=0.0, std=noise_sd, size=h.shape).to(device)
+      height = h + noise_h
+      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+    elif args.pipeline['refinement']['noise_space'] == 'dh':
+      dh = h[:, 1:, :] - h[:, :-1, :]
+      noise_dh = pt.normal(mean=0.0, std=noise_sd, size=dh.shape).to(device)
+      height = cumsum(t_0=h[:, [0], :], seq=dh + noise_dh)
+      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+    elif args.pipeline['refinement']['noise_space'] == 'xyz':
+      # 3D augmentation
+      raise NotImplemented
+    elif args.pipeline['refinement']['noise_space'] == 'dxyz':
+      # 3D augmentation
+      raise NotImplemented
+    else:
+      raise ValueError("[#] Refinement noise is invalid.") 
+  else:
+    # Retain h, xyz
+    height = h
+    xyz = xyz
+
+  return xyz, height
+
 def uv_noise(uv):
     '''
     Add noise to uv tracking
@@ -387,8 +415,9 @@ def uv_noise(uv):
         1. Noisy-UV in shape = (batch, seq_len, 2)
     '''
     # Generate noise
-    noise_u = pt.normal(mean=0.0, std=args.noise_sd, size=uv[..., [0]].shape)
-    noise_v = pt.normal(mean=0.0, std=args.noise_sd, size=uv[..., [1]].shape)
+    noise_sd = args.pipeline['height']['noise_sd']
+    noise_u = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [0]].shape)
+    noise_v = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [1]].shape)
     noise_uv = pt.cat((noise_u, noise_v), axis=-1).to(device)
 
     # Masking noise
@@ -413,12 +442,9 @@ def add_noise(cam_dict):
   - Need to recalculate all features since
     => UV changed -> Ray changed -> Intersect/Azimuth/Elevation changed
   '''
-
   # UV-noise
   cpos = cam_dict['Einv'][..., 0:3, -1]
   noisy_uv = uv_noise(uv=cam_dict['tracking'])
-  #print(noisy_uv[0][:10], cam_dict['tracking'][0][:10])
-  #print(noisy_uv[0][:10] - cam_dict['tracking'][0][:10])
 
   # Cast-Ray
   noisy_ray = utils_transform.cast_ray(uv=noisy_uv, I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
@@ -627,29 +653,3 @@ def augment(batch):
     batch[i] = batch[i][start:end]
 
   return batch 
-    
-def add_noise_refinement(h, xyz, cam_dict, recon_dict, canon_dict):
-  if args.noise:
-    noise_sd = args.pipeline['refinement']['noise_sd']
-    if args.pipeline['refinement']['noise'] == 'h':
-      # Noise on height
-      noise_h = pt.normal(mean=0.0, std=noise_sd, size=h.shape).to(device)
-      height = h + noise_h
-      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
-    elif args.pipeline['refinement']['noise'] == 'xyz':
-      # 3D augmentation
-      raise NotImplemented
-    elif args.pipeline['refinement']['noise'] == 'dh':
-      dh = h[:, 1:, :] - h[:, :-1, :]
-      noise_h = pt.normal(mean=0.0, std=noise_sd, size=dh.shape).to(device)
-      height = cumsum(t_0=h[:, [0], :], seq=dh + noise_h)
-      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
-    elif args.pipeline['refinement']['noise'] == None:
-      pass
-    else:
-      raise ValueError("[#] Refinement noise is invalid.") 
-  else:
-    # Retain the xyz
-    pass
-
-  return xyz, height
