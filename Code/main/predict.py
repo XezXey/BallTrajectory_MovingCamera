@@ -132,43 +132,71 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
-def evaluate(all_batch_trajectory):
-  print("[#]Summary All Trajectory")
-  distance = ['MAE', 'MSE', 'RMSE', 'RMSE-DISTANCE']
-  space = ['xyz']
-  trajectory = {}
-  for key in all_batch_trajectory.keys():
-    if len(all_batch_trajectory[key]) == 0:
-      print("Skipping key=[{}]".format(key))
-      trajectory[key] = []
-      continue
-    trajectory[key] = pt.cat((all_batch_trajectory[key]), dim=0)
+def concat_traj(recon_traj_all, space, concat=True):
+  '''
+  Concat all trajectory for evaluate
+  1. Input: 
+    - recon_traj_all : list of dict contains
+        - xyz
+        - gt
+        - xyz_refined
+        - seq_len
+  '''
+  trajectory = {k:[] for k in space}
+  for s in space:
+    for i in range(len(recon_traj_all)):
+      # Each batch
+      tmp = recon_traj_all[i][s]
+      seq_len = recon_traj_all[i]['seq_len']
+      for j in range(recon_traj_all[i][s].shape[0]):
+        # Each trajectory
+        trajectory[s].append(tmp[j][:seq_len[j]])
+    if concat:
+      trajectory[s] = np.concatenate(trajectory[s], axis=0)
+  return trajectory
 
-  for each_space in space:
-    print("Space : ", each_space)
-    gt = trajectory['gt_{}'.format(each_space)]
-    pred = trajectory['pred_{}'.format(each_space)]
-    for each_distance in distance:
-      print("===>Distance : ", each_distance)
-      if each_distance == 'MAE':
-        mean = pt.mean((pt.abs(gt - pred)), dim=0)
-        std = pt.std((pt.abs(gt - pred)), dim=0)
-        print("MEAN : ", mean.cpu().detach().numpy())
-        print("SD : ", std.cpu().detach().numpy())
-      elif each_distance == 'MSE':
-        mean = pt.mean(((gt - pred)**2), dim=0)
-        std = pt.std(((gt - pred)**2), dim=0)
-        print("MEAN : ", mean.cpu().detach().numpy())
-        print("SD : ", std.cpu().detach().numpy())
-      elif each_distance == 'RMSE':
-        rmse = pt.sqrt(pt.mean(((gt - pred)**2), dim=0))
-        print("RMSE : ", rmse.cpu().detach().numpy())
-      elif each_distance == 'RMSE-DISTANCE' and each_space == 'xyz':
-        rmse_distance_1 = pt.mean(pt.sqrt(pt.sum(((gt - pred)**2), dim=-1)), dim=0)
-        print("RMSE-DISTANCE-1 : ", rmse_distance_1.cpu().detach().numpy())
-        #rmse_distance_2 = pt.sqrt(pt.mean(pt.sum(((gt - pred)**2), dim=-1), dim=0))
-        #print("RMSE-DISTANCE-2 : ", rmse_distance_2.cpu().detach().numpy())
+def evaluate(recon_traj_all):
+  print("*"*100)
+  print("[#]Evaluation Results : \"{}/{}\"".format(args.wandb_tags, args.wandb_name))
+  print("[#]Data : \"{}\"".format(args.dataset_test_path))
+  print("*"*100)
+
+  distance = ['MAE', 'MSE', 'RMSE', 'RMSE-DISTANCE']
+  space = ['gt', 'xyz', 'xyz_refined'] if 'refinement' in args.pipeline else ['gt', 'xyz']
+  trajectory = concat_traj(recon_traj_all, space)
+
+  for s in space:
+    if s == 'gt':
+      continue
+    print("Space : ", s)
+    gt = trajectory['gt']
+    pred = trajectory[s]
+    for e_d in distance:
+      print("===> Distance : ", e_d)
+      if e_d == 'MAE':
+        err = np.abs(gt - pred)
+        mean = np.mean(err, axis=0)
+        std = np.std(err, axis=0)
+        print("\tMEAN : ", mean)
+        print("\tSD : ", std)
+      elif e_d == 'MSE':
+        err = (gt - pred)**2
+        mean = np.mean(err, axis=0)
+        std = np.std(err, axis=0)
+        print("\tMEAN : ", mean)
+        print("\tSD : ", std)
+      elif e_d == 'RMSE':
+        err = (gt - pred)**2
+        rmse = np.sqrt(np.mean(err, axis=0))
+        print("\tRMSE : ", rmse)
+      elif e_d == 'RMSE-DISTANCE' and (s == 'xyz' or s == 'xyz_refined'):
+        rmse_distance_1 = np.mean(np.sqrt(np.sum(((gt - pred)**2), axis=-1)), axis=0)
+        print("\tRMSE-DISTANCE-1 : ", rmse_distance_1)
+        #rmse_distance_2 = np.sqrt(np.mean(np.sum(((gt - pred)**2), axis=-1), axis=0))
+        #print("RMSE-DISTANCE-2 : ", rmse_distance_2)
+
     print("*"*100)
+  return trajectory
 
 def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=0.01):
   # Testing RNN/LSTM model
@@ -194,12 +222,13 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   ###################################
   # Calculate loss per trajectory
   recon_traj = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-                'pred':pred_dict_test['xyz'].detach().cpu().numpy(), 
-                'pred_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy(),
+                'flag':pred_dict_test['flag'].detach().cpu().numpy(),
+                'xyz':pred_dict_test['xyz'].detach().cpu().numpy(), 
+                'xyz_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy(),
                 'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
                 'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 
-  utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
+  #utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
 
   if args.visualize:
     utils_vis.inference_vis(input_dict=input_dict_test, pred_dict=pred_dict_test, gt_dict=gt_dict_test, 
@@ -278,25 +307,6 @@ def collate_fn_padd(batch):
           'tracking':[tracking],
           'I':[I], 'E':[E], 'Einv':[Einv]}
 
-def summary(evaluation_results_all):
-  print("="*100)
-  summary_evaluation = evaluation_results_all[0]
-  print("[#]Summary")
-  for distance in summary_evaluation.keys():
-    for idx, each_batch_eval in enumerate(evaluation_results_all):
-      if idx == 0:
-        continue
-      summary_evaluation[distance]['maxdist_3axis'] = np.concatenate((summary_evaluation[distance]['maxdist_3axis'], each_batch_eval[distance]['maxdist_3axis']), axis=0)
-      summary_evaluation[distance]['loss_3axis'] = np.concatenate((summary_evaluation[distance]['loss_3axis'], each_batch_eval[distance]['loss_3axis']), axis=0)
-
-    print("Distance : ", distance)
-    print("Mean 3-Axis(X, Y, Z) loss : {}".format(np.mean(summary_evaluation[distance]['loss_3axis'], axis=0)))
-    print("SD 3-Axis(X, Y, Z) loss : {}".format(np.std(summary_evaluation[distance]['loss_3axis'], axis=0)))
-
-    print("="*100)
-
-  return summary_evaluation
-
 if __name__ == '__main__':
   print('[#]Testing : Trajectory Estimation')
 
@@ -356,12 +366,13 @@ if __name__ == '__main__':
 
     run_time.append(time.time()-start_time)
 
-  eval_results = evaluate(recon_traj_all)
+  _ = evaluate(recon_traj_all)
 
-  print("[#] Runtime : ", np.mean(run_time), "+-", np.std(run_time))
+  print("[#] Runtime : {}+-{}".format(np.mean(run_time), np.std(run_time)))
+
   # Save prediction file
   if args.save_cam_traj is not None:
     utils_func.initialize_folder(args.save_cam_traj)
-    utils_func.save_cam_traj(trajectory=recon_traj_all, cam_dict=cam_dict_test)
+    utils_func.save_cam_traj(trajectory=recon_traj_all, cam_dict=cam_dict_test, n=n_trajectory)
   print("[#] Done")
 
