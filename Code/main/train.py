@@ -46,6 +46,7 @@ parser.add_argument('--wandb_name', dest='wandb_name', type=str, help='WanDB ses
 parser.add_argument('--wandb_notes', dest='wandb_notes', type=str, help='WanDB notes', default='')
 parser.add_argument('--wandb_tags', dest='wandb_tags', type=str, help='WanDB tags name', default=None)
 parser.add_argument('--wandb_mode', dest='wandb_mode', type=str, help='WanDB mode (run/dryrun)', default=None)
+parser.add_argument('--wandb_resume', dest='wandb_resume', type=str, help='Resume the training session given run-id', default=None)
 
 # ckpt
 parser.add_argument('--save_ckpt', dest='save_ckpt', type=str, help='Path to save a model ckpt', default=None)
@@ -132,7 +133,10 @@ if args.wandb_notes is None:
   args.wandb_notes = args.wandb_name
 
 os.environ['WANDB_MODE'] = args.wandb_mode
-wandb.init(project="ball-trajectory-estimation", name=args.wandb_name, tags=args.wandb_tags, notes=args.wandb_notes, dir=args.wandb_dir)
+if args.wandb_resume is not None:
+  wandb.init(project="ball-trajectory-estimation", name=args.wandb_name, tags=args.wandb_tags, notes=args.wandb_notes, dir=args.wandb_dir, id=args.wandb_resume)
+else:
+  wandb.init(project="ball-trajectory-estimation", name=args.wandb_name, tags=args.wandb_tags, notes=args.wandb_notes, dir=args.wandb_dir)
 
 # Get selected features to input into a network
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
@@ -305,8 +309,6 @@ if __name__ == '__main__':
   for model in model_cfg.keys():
     print('####### Model - {} #######'.format(model))
     print(model_dict[model])
-    for name, param in model_dict[model].named_parameters():
-      print(name, param.shape)
     # Log metrics with wandb
     wandb.watch(model_dict[model])
 

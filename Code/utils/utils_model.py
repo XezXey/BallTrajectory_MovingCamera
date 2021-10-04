@@ -136,7 +136,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     i_s = args.pipeline['flag']['i_s']
     o_s = args.pipeline['flag']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
-    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths'])
+    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
@@ -165,12 +165,30 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
       pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
       xyz_refined = xyz_ + pred_refoff
+    elif args.pipeline['refinement']['refine'] == 'dxyz':
+      raise NotImplemented
+      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
+      dxyz_ = xyz_[:, 1:, :] - xyz_[:, :-1, :]
+      dxyz_ = add_latent(in_f=dxyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+      pred_refoff, _ = model_dict['refinement'](in_f=dxyz_, lengths=input_dict['lengths']-1)
+      pred_dict['refine_offset'] = pred_refoff
+      dxyz_refined = dxyz_ + pred_refoff
+      xyz_refined = utils_func.aggregation(tensor=dxyz_refined, lengths=input_dict['lengths'], search_h=search_h)
+
     elif args.pipeline['refinement']['refine'] == 'h':
       _, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
       height_ = add_latent(in_f=height_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=height_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
-      height_refined = height_ + pred_refoff
+      height_refined = height_[..., [0]] + pred_refoff
+      xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
+    elif args.pipeline['refinement']['refine'] == 'dh':
+      _, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
+      dh_ = height_[:, 1:, :] - height_[:, :-1, :]
+      dh_ = add_latent(in_f=dh_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+      pred_refoff, _ = model_dict['refinement'](in_f=dh_, lengths=input_dict['lengths']-1)
+      dh_refined = dh_[..., [0]] + pred_refoff
+      height_refined = utils_func.aggregation(tensor=dh_refined, lengths=input_dict['lengths'], search_h=search_h)
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
   else:
     xyz_refined = None
@@ -182,8 +200,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
       xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=canon_dict['R'], inv=True)
 
   pred_dict['xyz'] = xyz
-  if args.env == 'no_gt':
-    gt_dict['gt'] = xyz
   pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f
@@ -249,7 +265,7 @@ def add_latent(in_f, module, input_dict, latent_dict):
   latent_dim = sum(args.pipeline[module]['latent_in'])
   #print("Latent dim : ", latent_dim)
   #print("in_f shape : ", in_f.shape)
-
+  
   i_s = args.pipeline[module]['i_s']
   o_s = args.pipeline[module]['o_s']
 
@@ -271,8 +287,6 @@ def add_latent(in_f, module, input_dict, latent_dict):
   else:
     in_f = in_f
   
-  #print("in_f shape : ", in_f.shape)
-  #input()
   return in_f
 
 def create_latent(latent_dict, input_dict, model_dict):
@@ -301,8 +315,7 @@ def create_latent(latent_dict, input_dict, model_dict):
         latent_dict[module] = optim_latent
   
   return latent_dict
-
-      
+    
 def input_manipulate(in_f, module, input_dict, h0=None):
   '''
   Prepare input to have correct space(t, dt, tdt), sin-cos
@@ -349,6 +362,7 @@ def input_space(in_f, i_s, o_s, lengths, h0):
       dt = pt.cat((in_f[:, [0], :], dt), dim=1)
     elif o_s == 'dt':
       dt = in_f[:, 1:, :] - in_f[:, :-1, :]
+    in_f = dt
   elif i_s == 't':
   # t
     in_f = in_f
@@ -432,7 +446,6 @@ def output_space(pred_h, lengths, module, search_h=None):
   return height
 
 def aux_space(aux, i_s, lengths):
-  return aux
   if i_s == 'dt':
     tmp = []
     for i in range(aux.shape[0]):
@@ -471,7 +484,14 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   if 'flag' not in pred_dict.keys() or args.env != 'unity':
     flag_loss = pt.tensor(0.).to(device)
   else:
+    i_s = args.pipeline['flag']['i_s']
+    o_s = args.pipeline['flag']['i_s']
+    if i_s == 'dt' and o_s == 'dt':
+      pred_dict['flag'] = utils_func.pad_at_length(tensor=pred_dict['flag'], lengths=gt_dict['lengths']-1)
     m = utils_func.mask_from_lengths(lengths=gt_dict['lengths'], n_rmv=1, n_dim=1, retain_L=True)
+    #tmp = pt.cat((m.float(), pred_dict['flag']), dim=-1)
+    #print(tmp[0])
+    #flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths']-1 if i_s == 'dt' and o_s == 'dt' else gt_dict['lengths'])
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])
 
   ######################################

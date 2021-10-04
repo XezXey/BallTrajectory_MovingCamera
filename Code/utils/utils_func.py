@@ -104,7 +104,7 @@ def get_extra_fsize(module):
     ########### EXTRA OUTPUT FEATURES ###########
     #############################################
     extra_out = sum(module['extra_out'])                # Extra output to module (e.g. force, acc)
-    latent_out = sum(module['latent_out'] )             # Extra latent(aux) from module (e.g. force, acc)
+    latent_out = sum(module['latent_out'])             # Extra latent(aux) from module (e.g. force, acc)
 
     return extra_in, extra_out, latent_in, latent_out
     
@@ -312,7 +312,7 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent']
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'wandb_resume']
   for k in args_dict.keys():
     if k in exception:
       continue
@@ -520,9 +520,9 @@ def save_cam_traj(trajectory, cam_dict, n):
 
   for i in range(len(trajectory)):
     # Each batch
-    #gt_tmp =  trajectory[i]['gt']
-    gt_tmp =  trajectory[i]['xyz_refined']
+    gt_tmp =  trajectory[i]['gt']
     pred_tmp =  trajectory[i]['xyz']
+    pred_refined_tmp =  trajectory[i]['xyz_refined']
     seq_len = trajectory[i]['seq_len']
     cpos_tmp = trajectory[i]['cpos']
     E_tmp = cam_dict['E'].cpu().numpy()
@@ -535,14 +535,13 @@ def save_cam_traj(trajectory, cam_dict, n):
       cpos.append(cpos_tmp[j][:seq_len[j]])
 
       if gt is None:
-        json_dat = {"gt" : None,
+        json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
       else:
-        gt.append(gt_tmp[j][:seq_len[j]])
         json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
@@ -602,3 +601,25 @@ def augment(batch):
     batch[i] = batch[i][start:end]
 
   return batch 
+
+def aggregation(tensor, lengths, search_h, space='h'):
+  # Aggregate the dt output with ramp_weight
+  w_ramp = construct_w_ramp(weight_template=pt.zeros(size=(tensor.shape[0], tensor.shape[1]+1, 1)), lengths=lengths)
+  f_dim = 1 if space == 'h' else 3
+
+  if search_h is None:
+    first_h = pt.zeros(size=(tensor.shape[0], 1, f_dim)).to(device)
+    last_h = pt.zeros(size=(tensor.shape[0], 1, f_dim)).to(device)
+  else:
+    first_h = search_h['first_h']
+    last_h = search_h['last_h']
+
+  # forward aggregate
+  h_fw = cumsum(seq=tensor, t_0=first_h)
+  # backward aggregate
+  pred_h_bw = reverse_masked_seq(seq=-tensor, lengths=lengths-1) # This fn required len(seq) of dt-space
+  h_bw = cumsum(seq=pred_h_bw, t_0=last_h)
+  h_bw = reverse_masked_seq(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
+  height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+
+  return height

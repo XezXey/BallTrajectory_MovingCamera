@@ -189,7 +189,8 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizonta
 
 def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   xyz = pred['xyz'][..., [0, 1, 2]].cpu().detach().numpy()
-  xyz_refined = pred['xyz_refined'][..., [0, 1, 2]].cpu().detach().numpy()
+  if 'refinement' in args.pipeline:
+    xyz_refined = pred['xyz_refined'][..., [0, 1, 2]].cpu().detach().numpy()
 
   x = 9.5
   y = 0
@@ -219,8 +220,8 @@ def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
 def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   # pred : concat with startpos and stack back to (batch_size, sequence_length+1, 1)
   
-  zeros = pt.zeros((pred.shape[0], 1, 1)).cuda()
-  pred = pt.cat((zeros, pred), dim=1)
+  #zeros = pt.zeros((pred.shape[0], 1, 1)).cuda()
+  #pred = pt.cat((zeros, pred), dim=1)
 
   # Here we use output mask so we need to append the startpos to the pred before multiplied with mask(already included the startpos)
   lengths = lengths.cpu().detach().numpy()
@@ -230,6 +231,7 @@ def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
     gt = gt.cpu().detach().numpy()
   # Iterate to plot each trajectory
   for idx, i in enumerate(vis_idx):
+    l = lengths[i] - 1 if args.pipeline['flag']['i_s'] == 'dt' and args.pipeline['flag']['o_s'] == 'dt' else lengths[i]
     if gt is not None:
-      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt[i][:lengths[i]].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Ground Truth EOT [{}]".format(set, i)), row=idx+1, col=col)
-    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=pred[i][:lengths[i]].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
+      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Ground Truth EOT [{}]".format(set, i)), row=idx+1, col=col)
+    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=pred[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
