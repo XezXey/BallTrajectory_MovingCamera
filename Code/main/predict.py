@@ -237,7 +237,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
 
   return recon_traj
 
-def collate_fn_padd(batch):
+def collate_fn_padd(batch, set_):
   if args.env != 'unity':
     global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
     u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
@@ -247,7 +247,7 @@ def collate_fn_padd(batch):
     features_col = []
 
   # Padding batch of variable length
-  if args.augment:
+  if args.augment and set_=='train':
     batch = utils_func.augment(batch=batch)
 
   padding_value = -1000.0
