@@ -445,7 +445,7 @@ def output_space(pred_h, lengths, module, search_h=None):
 
   return height
 
-def aux_space(aux, i_s, lengths):
+def aux_space_(aux, i_s, lengths):
   if i_s == 'dt':
     tmp = []
     for i in range(aux.shape[0]):
@@ -453,6 +453,16 @@ def aux_space(aux, i_s, lengths):
       e = aux[i][lengths[i]:, :]
       tmp.append(pt.cat((s, e), dim=0))
     aux = pt.stack(tmp)
+  elif i_s == 't':
+    aux = aux
+  else:
+    raise NotImplementedError
+
+  return aux
+
+def aux_space(aux, i_s, lengths):
+  if i_s == 'dt':
+    aux = aux[:, :-1, :]
   elif i_s == 't':
     aux = aux
   else:
@@ -489,9 +499,6 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     if i_s == 'dt' and o_s == 'dt':
       pred_dict['flag'] = utils_func.pad_at_length(tensor=pred_dict['flag'], lengths=gt_dict['lengths']-1)
     m = utils_func.mask_from_lengths(lengths=gt_dict['lengths'], n_rmv=1, n_dim=1, retain_L=True)
-    #tmp = pt.cat((m.float(), pred_dict['flag']), dim=-1)
-    #print(tmp[0])
-    #flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths']-1 if i_s == 'dt' and o_s == 'dt' else gt_dict['lengths'])
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])
 
   ######################################

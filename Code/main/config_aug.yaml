@@ -92,12 +92,12 @@ pipeline:
     extra_out: []
     latent_in: [2]
     latent_out: []
-    i_s: 'dt'
-    o_s: 'dt'
+    i_s: 't'
+    o_s: 't'
     attn: False
-    refine: 'dh' # refinement space ('xyz', 'h')
+    refine: 'h' # refinement space ('xyz', 'h')
     noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
-    noise_sd: 0.3
+    noise_sd: 0.0
 
 
 # Features

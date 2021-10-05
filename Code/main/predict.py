@@ -97,6 +97,7 @@ parser.add_argument('--sc', dest='sc', help='Sin/Cos of the angle', type=str, de
 # Miscellaneous
 parser.add_argument('--cuda_device_num', dest='cuda_device_num', type=int, help='Provide cuda device number', default=0)
 parser.add_argument('--save_cam_traj', dest='save_cam_traj', type=str, help='Save a trajectory', default=None)
+parser.add_argument('--save_suffix', dest='save_suffix', type=str, help='Save file suffix', default='')
 parser.add_argument('--no_gt', dest='no_gt', help='Is ground-truth available?', action='store_true', default=False)
 parser.add_argument('--w', dest='w', type=float, help='width', default=None)
 parser.add_argument('--h', dest='h', type=float, help='height', default=None)

@@ -312,7 +312,7 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'wandb_resume']
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'wandb_resume', 'save_suffix']
   for k in args_dict.keys():
     if k in exception:
       continue
@@ -534,7 +534,7 @@ def save_cam_traj(trajectory, cam_dict, n):
       pred.append(pred_tmp[j][:seq_len[j]])
       cpos.append(cpos_tmp[j][:seq_len[j]])
 
-      if gt is None:
+      if gt is None or args.env != 'unity':
         json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
@@ -551,7 +551,9 @@ def save_cam_traj(trajectory, cam_dict, n):
 
       traj_json[j] = json_dat
 
-    with open("{}/{}.json".format(save_path, args.wandb_name), "w") as file:
+    if args.save_suffix is not None:
+      args.save_suffix = '_' + args.save_suffix
+    with open("{}/{}{}.json".format(save_path, args.wandb_name, args.save_suffix), "w") as file:
       txt = "var data = " + str(traj_json)
       file.write(txt)
 
