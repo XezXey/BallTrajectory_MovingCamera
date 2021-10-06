@@ -47,11 +47,15 @@ def GravityLoss(pred, mask, lengths, gt=None):
 
   # Finite diff 2 times : ds/dt -> dv/dt -> a
   pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
+  #pred_1st_fd = gt[:, 1:, :] - gt[:, :-1, :]
   accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
   # Create mask from a given list of lengths
   mask_ = utils_func.mask_from_lengths(lengths=lengths, n_rmv=2, n_dim=3)
+  # CosineSim on gravity
+  cos = pt.nn.CosineSimilarity(dim=2, eps=1e-16)
+  gravity_loss = pt.sum(1 - (cos(accel, g)) * mask_[..., 0]) / pt.sum(mask_)
 
-  gravity_loss = pt.sum(pt.abs(accel - g) * mask_) / pt.sum(mask_)
+  #gravity_loss = pt.sum(pt.abs(accel - g) * mask_) / pt.sum(mask_)
   return gravity_loss
 
 def BelowGroundLoss(pred, mask, lengths):

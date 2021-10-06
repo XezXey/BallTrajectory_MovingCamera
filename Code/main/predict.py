@@ -21,6 +21,7 @@ import wandb
 import json
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from functools import partial
 # Utils
 from utils.dataloader import TrajectoryDataset
 import utils.utils_func as utils_func
@@ -316,7 +317,7 @@ if __name__ == '__main__':
 
   # Create Datasetloader for test and testidation
   dataset_test = TrajectoryDataset(dataset_path=args.dataset_test_path, trajectory_type=args.trajectory_type)
-  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=collate_fn_padd, pin_memory=True, drop_last=False)
+  dataloader_test = DataLoader(dataset_test, batch_size=args.batch_size, num_workers=10, shuffle=False, collate_fn=partial(collate_fn_padd, set_='test'), pin_memory=True, drop_last=False)
   # Cast it to iterable object
   trajectory_test_iterloader = iter(dataloader_test)
 

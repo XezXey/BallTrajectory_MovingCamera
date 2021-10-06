@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_eot/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_cd/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_cd/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -92,10 +92,10 @@ pipeline:
     extra_out: []
     latent_in: [2]
     latent_out: []
-    i_s: 't'
-    o_s: 't'
+    i_s: 'dt'
+    o_s: 'dt'
     attn: False
-    refine: 'h' # refinement space ('xyz', 'h')
+    refine: 'dh' # refinement space ('xyz', 'h')
     noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
 

@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week2_TracknetV1'
-wandb_name: 'dt_dt_rh_uv3_ref0_noz'
+wandb_name: 'dt_dt_rdh_uv3_ref0_noz'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'

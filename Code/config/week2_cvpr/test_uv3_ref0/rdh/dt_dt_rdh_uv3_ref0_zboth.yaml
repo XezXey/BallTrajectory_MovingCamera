@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week2_TracknetV1'
-wandb_name: 'dt_dt_rh_uv3_ref0_zboth'
+wandb_name: 'dt_dt_rdh_uv3_ref0_zboth'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -92,10 +92,10 @@ pipeline:
     extra_out: []
     latent_in: [2]
     latent_out: []
-    i_s: 't'
-    o_s: 't'
+    i_s: 'dt'
+    o_s: 'dt'
     attn: False
-    refine: 'h' # refinement space ('xyz', 'h')
+    refine: 'dh' # refinement space ('xyz', 'h')
     noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
 

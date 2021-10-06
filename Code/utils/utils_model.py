@@ -249,7 +249,7 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     prev_loss = loss.item()
     if count >= patience:
       break
-
+    break
     #t1 = {}
     #for name, param in latent_dict['height'].named_parameters():
     #for name, param in model_dict['refinement'].named_parameters():
@@ -273,7 +273,6 @@ def add_latent(in_f, module, input_dict, latent_dict):
     # Auxialiary features have been used.
     if latent_dict[module] is not None:
       latent = latent_dict[module].get_params()
-      #print(in_f.shape, latent.shape)
       in_f = pt.cat((in_f, latent), dim=-1)
     elif 'aux' not in input_dict.keys():
       raise ValueError('[#] Aux features are not provided. Please check --optim_<module>, --env <unity/no_gt>')
@@ -308,8 +307,8 @@ def create_latent(latent_dict, input_dict, model_dict):
       latent_dim = sum(args.pipeline[module]['latent_in'])
       if latent_dim > 0:
         print("[#] Module : {} have latent to be optimized.".format(module))
-        #seq_len = input_dict['input'].shape[1] - 1 if args.pipeline[module]['i_s'] == 'dt' else input_dict['input'].shape[1]
-        seq_len = input_dict['input'].shape[1]
+        seq_len = input_dict['input'].shape[1] - 1 if args.pipeline[module]['i_s'] == 'dt' and args.pipeline[module]['o_s'] == 'dt' else input_dict['input'].shape[1]
+        #seq_len = input_dict['input'].shape[1]
         optim_latent = Optimization(shape=(batch_size, seq_len, latent_dim), name=module)
         optim_latent.train()
         latent_dict[module] = optim_latent
@@ -479,12 +478,10 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #########################################################################
   traj_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   bg_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  g_loss = utils_loss.GravityLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   reprj_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
   if 'refinement' in args.pipeline:
     bg_loss_refined = utils_loss.BelowGroundLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    g_loss_refined = utils_loss.GravityLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
     traj_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
     reprj_loss_refined = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
@@ -517,25 +514,21 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     # Annealing
     traj_loss_ = traj_loss + traj_loss_refined * anneal_w
     bg_loss_ = bg_loss + bg_loss_refined * anneal_w
-    g_loss_ = g_loss + g_loss_refined * anneal_w
     reprj_loss_ = reprj_loss + reprj_loss_refined * anneal_w
   elif ('refinement' in args.pipeline):
     # No annealing
     traj_loss_ = traj_loss + traj_loss_refined
     bg_loss_ = bg_loss + bg_loss_refined
-    g_loss_ = g_loss + g_loss_refined
     reprj_loss_ = reprj_loss + reprj_loss_refined
   else:
     # No refinement
     traj_loss_ = traj_loss
     bg_loss_ = bg_loss
-    g_loss_ = g_loss
     reprj_loss_ = reprj_loss
 
   # Combined all losses term
-  loss = traj_loss_ + g_loss_ + bg_loss_ + flag_loss + reprj_loss_ 
+  loss = traj_loss_ + bg_loss_ + flag_loss + reprj_loss_ 
   loss_dict = {"Trajectory Loss":traj_loss_.item(),
-               "Gravity Loss":g_loss_.item(),
                "BelowGnd Loss":bg_loss_.item(),
                "Flag Loss":flag_loss.item(),
                "Reprojection Loss":reprj_loss_.item(),}
@@ -546,14 +539,6 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
 
 def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   # Optimization loss term
-  ######################################
-  ############# Trajectory #############
-  ######################################
-  if args.env == 'unity':
-    trajectory_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  else:
-    trajectory_loss = pt.tensor([0.]).to(device)
-
   ######################################
   ############# Below GND ##############
   ######################################
@@ -583,9 +568,8 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   #else:                           
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
-  loss = reprojection_loss + below_ground_loss + trajectory_loss + gravity_loss #+ cosinesim_loss
-  loss_dict = {"Traj Loss":trajectory_loss.item(),
-               "BGnd Loss":below_ground_loss.item(), 
+  loss = reprojection_loss + below_ground_loss + gravity_loss #+ cosinesim_loss
+  loss_dict = {"BGnd Loss":below_ground_loss.item(), 
                "Grav Loss":gravity_loss.item(), 
                "Reproj Loss":reprojection_loss.item()}
                #"CosSim Loss":cosinesim_loss.item()}
