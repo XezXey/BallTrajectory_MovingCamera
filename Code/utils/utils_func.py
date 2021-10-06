@@ -551,7 +551,7 @@ def save_cam_traj(trajectory, cam_dict, n):
 
       traj_json[j] = json_dat
 
-    if args.save_suffix is not None:
+    if args.save_suffix != '':
       args.save_suffix = '_' + args.save_suffix
     with open("{}/{}{}.json".format(save_path, args.wandb_name, args.save_suffix), "w") as file:
       txt = "var data = " + str(traj_json)

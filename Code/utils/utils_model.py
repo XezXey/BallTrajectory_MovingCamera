@@ -187,6 +187,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
       dh_ = height_[:, 1:, :] - height_[:, :-1, :]
       dh_ = add_latent(in_f=dh_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=dh_, lengths=input_dict['lengths']-1)
+      pred_dict['refine_offset'] = pred_refoff
       dh_refined = dh_[..., [0]] + pred_refoff
       height_refined = utils_func.aggregation(tensor=dh_refined, lengths=input_dict['lengths'], search_h=search_h)
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
@@ -234,6 +235,10 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
           optim['last_h'](loss)
         else:
           optim(loss)
+          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]]), dim=-1))
+          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]], pred_dict['xyz_refined'][0][..., [1]]), dim=-1))
+          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]], pred_dict['xyz_refined'][0][..., [1]], pred_dict['xyz'][0][..., [1]] + pred_dict['refine_offset'][0]), dim=-1)[:input_dict['lengths'][0]+1])
+          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz_refined'][0]), dim=-1))
 
     txt_loss = ''
     for k, v in loss_dict.items():
@@ -249,7 +254,6 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     prev_loss = loss.item()
     if count >= patience:
       break
-    break
     #t1 = {}
     #for name, param in latent_dict['height'].named_parameters():
     #for name, param in model_dict['refinement'].named_parameters():
