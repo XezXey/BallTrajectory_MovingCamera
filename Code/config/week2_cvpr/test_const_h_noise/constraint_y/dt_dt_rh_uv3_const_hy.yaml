@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week2_TracknetV1'
-wandb_name: 'dt_dt_rh_uv0_const_h'
+wandb_name: 'dt_dt_rh_uv3_const_hy_clip1'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -18,7 +18,7 @@ load_ckpt: null # Lastest or Best
 batch_size: 512
 n_epochs: 100000
 lr: 0.001
-clip: 10
+clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
 canonicalize: False
@@ -73,10 +73,10 @@ pipeline:
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
-    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    constraint_y: 'lrelu' #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: 2.0
+    noise_sd: 3.0
 
   refinement:
     arch: 'lstm'

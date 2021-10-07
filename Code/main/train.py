@@ -161,9 +161,9 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   train_loss.backward()
 
   # Gradient Clipping
-  #if args.clip > 0:
-  #  for model in model_dict:
-  #    pt.nn.utils.clip_grad_norm_(model_dict[model].parameters(), args.clip)
+  if args.clip > 0:
+    for model in model_dict:
+      pt.nn.utils.clip_grad_norm_(model_dict[model].parameters(), args.clip)
 
   optimizer.step()
 

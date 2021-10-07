@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week2_TracknetV1'
-wandb_name: 'dt_dt_rh_uv1_ref0'
+wandb_name: 'dt_dt_rh_uv1_ref0_clip1'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -18,7 +18,7 @@ load_ckpt: null # Lastest or Best
 batch_size: 512
 n_epochs: 100000
 lr: 0.001
-clip: 10
+clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
 canonicalize: False

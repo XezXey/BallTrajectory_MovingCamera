@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week2_TracknetV1'
-wandb_name: 'dt_dt_rh_uv2_ref0_clip1'
+wandb_name: 'dt_dt_rh_uv3_const_h_clip1'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: 2.0
+    noise_sd: 3.0
 
   refinement:
     arch: 'lstm'
@@ -96,7 +96,7 @@ pipeline:
     o_s: 't'
     attn: False
     refine: 'h' # refinement space ('xyz', 'h')
-    noise_space: 'dh' # adding noise space ('dh', 'h', 'xyz')
+    noise_space: 'const_h' # adding noise space ('dh', 'h', 'xyz', 'dxyz', 'const_h')
     noise_sd: 0.0
 
 
