@@ -378,8 +378,8 @@ def cumsum(seq, t_0=None):
   seq = pt.cumsum(seq, dim=1)
   return seq
 
-def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict):
-  if args.noise:
+def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_):
+  if args.noise and set_ == 'train':
     noise_sd = args.pipeline['refinement']['noise_sd']
     if args.pipeline['refinement']['noise_space'] == 'h':
       # Noise on height
@@ -397,6 +397,27 @@ def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict):
     elif args.pipeline['refinement']['noise_space'] == 'dxyz':
       # 3D augmentation
       raise NotImplemented
+    elif args.pipeline['refinement']['noise_space'] == 'const_h':
+      start = time.time()
+      L = pt.unsqueeze(input_dict['lengths'], dim=-1).to(device)
+      n_mask = 3  # 3 blocks per sequence
+      mask_rl = pt.rand(n_mask).to(device)
+      mask_ratio = pt.unsqueeze(mask_rl/pt.sum(mask_rl), dim=0).to(device)
+      mask_L = (mask_ratio * L-1).int()
+      const_h = h
+      for i in range(h.shape[0]):
+        m = mask_L[i]
+        L_list = np.cumsum([1] + m.cpu().numpy().tolist())
+        for j in range(len(L_list)-1):
+          s = L_list[j]
+          e = L_list[j+1]
+          if np.random.rand(1) > 0.5:
+            const_h[i][s:e] = pt.mean(h[i][s:e])
+          else:
+            const_h[i][s:e] = h[i][s:e]
+      height = const_h
+      xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+
     elif args.pipeline['refinement']['noise_space'] == None:
       # Retain h, xyz
       height = h

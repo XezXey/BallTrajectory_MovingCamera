@@ -33,7 +33,7 @@ def eval_mode(model_dict):
   for model in model_dict.keys():
     model_dict[model].eval()
 
-def uv_to_input_features(cam_dict):
+def uv_to_input_features(cam_dict, set_):
   '''
   Create the input features from uv-tracking
   Input : 
@@ -48,7 +48,7 @@ def uv_to_input_features(cam_dict):
   # Generate input
   in_f_raw, ray_raw = utils_func.generate_input(cam_dict=cam_dict)
 
-  if args.noise:
+  if args.noise and set_ == 'train':
     in_f, ray = in_f_noisy, ray_noisy
   else:
     in_f, ray = in_f_raw, ray_raw
@@ -79,7 +79,7 @@ def canonicalize_features(Einv, intr, ray, in_f):
 
   return canon_dict, in_f
 
-def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
+def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   '''
   Forward Pass to the whole pipeline
   Input :
@@ -98,7 +98,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   # Prediction dict
   pred_dict = {}
 
-  in_f, ray, recon_dict = uv_to_input_features(cam_dict)
+  in_f, ray, recon_dict = uv_to_input_features(cam_dict, set_)
 
   # Canonicalize
   if args.canonicalize:
@@ -160,30 +160,22 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   ######################################
   if 'refinement' in args.pipeline:
     if args.pipeline['refinement']['refine'] == 'xyz':
-      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
+      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
       xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
       xyz_refined = xyz_ + pred_refoff
     elif args.pipeline['refinement']['refine'] == 'dxyz':
       raise NotImplemented
-      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
-      dxyz_ = xyz_[:, 1:, :] - xyz_[:, :-1, :]
-      dxyz_ = add_latent(in_f=dxyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
-      pred_refoff, _ = model_dict['refinement'](in_f=dxyz_, lengths=input_dict['lengths']-1)
-      pred_dict['refine_offset'] = pred_refoff
-      dxyz_refined = dxyz_ + pred_refoff
-      xyz_refined = utils_func.aggregation(tensor=dxyz_refined, lengths=input_dict['lengths'], search_h=search_h)
-
     elif args.pipeline['refinement']['refine'] == 'h':
-      _, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
+      xyz_, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
       height_ = add_latent(in_f=height_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=height_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
       height_refined = height_[..., [0]] + pred_refoff
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
     elif args.pipeline['refinement']['refine'] == 'dh':
-      _, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict)
+      xyz_, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
       dh_ = height_[:, 1:, :] - height_[:, :-1, :]
       dh_ = add_latent(in_f=dh_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=dh_, lengths=input_dict['lengths']-1)
@@ -199,8 +191,10 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     xyz = utils_transform.canonicalize(pts=xyz, R=canon_dict['R'], inv=True)
     if xyz_refined is not None:
       xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=canon_dict['R'], inv=True)
+      xyz_ = utils_transform.canonicalize(pts=xyz_, R=canon_dict['R'], inv=True)
 
   pred_dict['xyz'] = xyz
+  pred_dict['xyz_refnoise'] = xyz_
   pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f

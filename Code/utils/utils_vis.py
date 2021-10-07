@@ -23,6 +23,7 @@ marker_dict_field = dict(color='rgba(0, 255, 0, 0.8)', size=4)
 marker_dict_eot = dict(color='rgba(0, 255, 0, 0.4)', size=4)
 marker_dict_cam = dict(color='rgba(255, 0, 0, 0.4)', size=10)
 marker_dict_intr = dict(color='rgba(255, 127, 14, 1.0)', size=3)
+marker_dict_in_refnoisy = dict(color='rgba(0, 255, 255, 1.0)', size=3)
 
 args = None
 def share_args(a):
@@ -191,6 +192,7 @@ def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   xyz = pred['xyz'][..., [0, 1, 2]].cpu().detach().numpy()
   if 'refinement' in args.pipeline:
     xyz_refined = pred['xyz_refined'][..., [0, 1, 2]].cpu().detach().numpy()
+    xyz_refnoise = pred['xyz_refnoise'][..., [0, 1, 2]].cpu().detach().numpy()
 
   x = 9.5
   y = 0
@@ -210,6 +212,8 @@ def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
       # Refinement
       fig.add_trace(go.Scatter3d(x=-xyz_refined[i][:lengths[i], 0], y=xyz_refined[i][:lengths[i], 1], z=xyz_refined[i][:lengths[i], 2], mode='markers+lines', 
                                 marker=marker_dict_refined, name="{}-Refined Trajectory [{}]".format(set, i)), row=idx+1, col=col)
+      fig.add_trace(go.Scatter3d(x=-xyz_refnoise[i][:lengths[i], 0], y=xyz_refnoise[i][:lengths[i], 1], z=xyz_refnoise[i][:lengths[i], 2], mode='markers+lines', 
+                                marker=marker_dict_in_refnoisy, name="{}-In-noisy ref Trajectory[{}]".format(set, i)), row=idx+1, col=col)
 
     # Reconstructed (from height)
     fig.add_trace(go.Scatter3d(x=-xyz[i][:lengths[i], 0], y=xyz[i][:lengths[i], 1], z=xyz[i][:lengths[i], 2], mode='markers+lines', 

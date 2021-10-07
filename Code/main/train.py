@@ -153,7 +153,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_model.train_mode(model_dict=model_dict)
 
   latent_dict_train = {module:None for module in args.pipeline}
-  pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train, latent_dict=latent_dict_train)
+  pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train, latent_dict=latent_dict_train, set_='train')
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   train_loss_dict, train_loss = utils_model.training_loss(input_dict=input_dict_train, gt_dict=gt_dict_train, pred_dict=pred_dict_train, cam_dict=cam_dict_train, anneal_w=anneal_w) # Calculate the loss
@@ -174,7 +174,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_model.eval_mode(model_dict=model_dict)
 
   latent_dict_val = {module:None for module in args.pipeline}
-  pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val, latent_dict=latent_dict_val)
+  pred_dict_val, in_val = utils_model.fw_pass(model_dict, input_dict=input_dict_val, cam_dict=cam_dict_val, gt_dict=gt_dict_val, latent_dict=latent_dict_val, set_='val')
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
   val_loss_dict, val_loss = utils_model.training_loss(input_dict=input_dict_val, gt_dict=gt_dict_val, pred_dict=pred_dict_val, cam_dict=cam_dict_val, anneal_w=anneal_w) # Calculate the loss
