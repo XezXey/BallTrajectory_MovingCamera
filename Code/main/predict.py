@@ -224,9 +224,9 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   ###################################
   # Calculate loss per trajectory
   recon_traj = {'gt':gt_dict_test['gt'][..., [0, 1, 2]].detach().cpu().numpy(), 
-                'flag':pred_dict_test['flag'].detach().cpu().numpy(),
+                'flag':pred_dict_test['flag'].detach().cpu().numpy() if 'flag' in args.pipeline else None,
                 'xyz':pred_dict_test['xyz'].detach().cpu().numpy(), 
-                'xyz_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy(),
+                'xyz_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy() if 'refinement' in args.pipeline else None,
                 'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
                 'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
 

@@ -72,8 +72,8 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     ####################################
     if ('flag' in pred_dict_train.keys()) and ('flag' in pred_dict_val.keys()):
       fig_flag = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
-      visualize_flag(pred=pred_dict_train['flag'][..., [0]], gt=input_dict_train['aux'][..., [0]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0]], fig=fig_flag, set='Train', vis_idx=train_vis_idx, col=1)
-      visualize_flag(pred=pred_dict_val['flag'][..., [0]], gt=input_dict_val['aux'][..., [0]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0]], fig=fig_flag, set='Validation', vis_idx=val_vis_idx, col=2)
+      visualize_flag(pred=pred_dict_train, gt=input_dict_train['aux'][..., [0]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0]], fig=fig_flag, set='Train', vis_idx=train_vis_idx, col=1)
+      visualize_flag(pred=pred_dict_val, gt=input_dict_val['aux'][..., [0]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0]], fig=fig_flag, set='Validation', vis_idx=val_vis_idx, col=2)
       plotly.offline.plot(fig_flag, filename='{}/wandb_vis_flag.html'.format(args.vis_path), auto_open=False)
       wandb.log({'n_epochs':epoch, "Flag(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_flag.html'.format(args.vis_path)))})
 
@@ -115,14 +115,13 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict, latent_dict):
     if ('flag' in pred_dict.keys()):
       # Variables
       len_ = input_dict['lengths']
-      pred = pred_dict['flag'][..., [0]]
       if args.env == 'unity':
         gt = input_dict['aux'][..., [0]]
       else:
         gt = None
       fig_flag = make_subplots(rows=math.ceil(n_vis/2), cols=2, specs=[[{'type':'scatter'}, {'type':'scatter'}]]*math.ceil(n_vis/2), horizontal_spacing=0.05, vertical_spacing=0.01)
-      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
-      visualize_flag(pred=pred, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
+      visualize_flag(pred=pred_dict, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[:n_vis//2], col=1)
+      visualize_flag(pred=pred_dict, gt=gt, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
       plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
 
 
@@ -222,15 +221,13 @@ def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
     fig.add_trace(go.Scatter3d(x=field[:, 0], y=field[:, 1], z=field[:, 2], mode='markers+lines', marker=marker_dict_field, name='Field'), row=idx+1, col=col)
 
 def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
-  # pred : concat with startpos and stack back to (batch_size, sequence_length+1, 1)
-  
-  #zeros = pt.zeros((pred.shape[0], 1, 1)).cuda()
-  #pred = pt.cat((zeros, pred), dim=1)
-
   # Here we use output mask so we need to append the startpos to the pred before multiplied with mask(already included the startpos)
   lengths = lengths.cpu().detach().numpy()
   # detach() for visualization
-  pred = pred.cpu().detach().numpy()
+  flag = pred['flag'][..., [0]].cpu().detach().numpy()
+  y = pred['xyz'][..., [1]].cpu().detach().numpy()
+  if 'refinement' in args.pipeline:
+    y_refined = pred['xyz_refined'][..., [1]].cpu().detach().numpy()
   if gt is not None:
     gt = gt.cpu().detach().numpy()
   # Iterate to plot each trajectory
@@ -238,4 +235,8 @@ def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
     l = lengths[i] - 1 if args.pipeline['flag']['i_s'] == 'dt' and args.pipeline['flag']['o_s'] == 'dt' else lengths[i]
     if gt is not None:
       fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Ground Truth EOT [{}]".format(set, i)), row=idx+1, col=col)
-    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=pred[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
+    if 'refinement' in args.pipeline:
+      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y_refined[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_refined, name="{}-Y Refined  [{}]".format(set, i)), row=idx+1, col=col)
+
+    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_in_refnoisy, name="{}-Y Predicted [{}]".format(set, i)), row=idx+1, col=col)
+    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=flag[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
