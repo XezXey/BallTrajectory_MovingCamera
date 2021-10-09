@@ -126,7 +126,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     search_h = None
     h0 = gt_dict['gt'][:, [0], [1]]
 
-  in_f = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
+  in_f, in_f_orig = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
   
   ######################################
   ################ Flag ################
@@ -183,6 +183,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       dh_refined = dh_[..., [0]] + pred_refoff
       height_refined = utils_func.aggregation(tensor=dh_refined, lengths=input_dict['lengths'], search_h=search_h)
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
+    elif args.pipeline['refinement']['refine'] == 'infref_h':
+      xyz_, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
+      height_ = pt.cat((height_, in_f_orig), dim=2)
+      height_ = add_latent(in_f=height_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+      pred_refoff, _ = model_dict['refinement'](in_f=height_, lengths=input_dict['lengths'])
+      pred_dict['refine_offset'] = pred_refoff
+      height_refined = height_[..., [0]] + pred_refoff
+      xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
+  
   else:
     xyz_refined = None
 
@@ -334,16 +343,19 @@ def input_manipulate(in_f, module, input_dict, h0=None):
     elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
     in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
 
+  in_f_orig = in_f    
   in_f = input_space(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
   if args.input_variation == 'intr_azim_elev':
     in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
+    in_f_orig = in_f_orig[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
   elif args.input_variation == 'intr_hori_vert':
     in_f = in_f[..., [0, 2, 3, 4]]  # Remove intr_y = 0 and intr_z = 0
+    in_f_orig = in_f_orig[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
   else :
     raise ValueError("Input variation is wrong.")
 
-  return in_f
+  return in_f, in_f_orig
     
 def input_space(in_f, i_s, o_s, lengths, h0):
   '''

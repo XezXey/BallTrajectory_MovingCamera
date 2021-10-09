@@ -417,7 +417,6 @@ def refinement_noise(h, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
             const_h[i][s:e] = h[i][s:e]
       height = const_h
       xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
-
     elif args.pipeline['refinement']['noise_space'] == None:
       # Retain h, xyz
       height = h
