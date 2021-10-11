@@ -27,10 +27,18 @@ else:
   device = pt.device('cpu')
 
 args=None
+""" 
+# Not og dataset
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
             'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+"""
+
+features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
+            'eot', 'cd', 'og', 'hw', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
+            'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, og, hw, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 
 def share_args(a):
   global args
@@ -53,6 +61,8 @@ def get_selected_cols(args, pred):
   features_col = []
   if 'eot' in args.selected_features:
     features_col.append(eot)
+  if 'og' in args.selected_features:
+    features_col.append(og)
   if 'cd' in args.selected_features:
     features_col.append(cd)
   if 'rad' in args.selected_features:

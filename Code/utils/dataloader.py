@@ -27,7 +27,7 @@ class TrajectoryDataset(Dataset):
     self.trajectory_type = trajectory_type
     # Load data
 
-    self.trajectory_dataset = {trajectory_type : [np.load(self.dataset_path[trajectory_type][i], allow_pickle=True) for i in tqdm(range(len(self.dataset_path[trajectory_type])), desc=trajectory_type)]}
+    self.trajectory_dataset = {trajectory_type : [np.load(self.dataset_path[trajectory_type][i], allow_pickle=True) for i in tqdm(range(len(self.dataset_path[trajectory_type])), desc=trajectory_type, disable=True)]}
     '''
     self.trajectory_dataset = {"Rolling" : [np.load(self.dataset_path["Rolling"][i], allow_pickle=True) for i in tqdm(range(len(self.dataset_path["Rolling"])), desc="Rolling")],
                                "Projectile" : [np.load(self.dataset_path["Projectile"][i], allow_pickle=True) for i in tqdm(range(len(self.dataset_path["Projectile"])), desc="Projectile")],
@@ -51,37 +51,6 @@ class TrajectoryDataset(Dataset):
     # print("At idx={} : {}".format(idx, self.trajectory_dataset[self.trajectory_type][idx].shape))
     # print(type(self.trajectory_dataset[self.trajectory_type]))
     return self.trajectory_dataset[self.trajectory_type][idx]
-
-def collate_fn_padd(batch):
-    # Padding batch of variable length
-    # Columns convention : (x, y, z, u, v, d, eot, og, rad)
-    padding_value = -1000.0
-    ## Get sequence lengths
-    lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
-    # Input features : columns 4-5 contain u, v in screen space
-    ## Padding
-    input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
-    input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
-    ## Compute mask
-    input_mask = (input_batch != padding_value)
-
-    # Output features : columns 6 cotain depth from camera to projected screen
-    ## Padding
-    gt_batch = [pt.Tensor(trajectory[:, gt_col].astype(np.float64)) for trajectory in batch]
-    gt_batch = pad_sequence(gt_batch, batch_first=True, padding_value=padding_value)
-    ## Compute mask
-    gt_mask = (gt_batch != padding_value)
-
-    # Extra columns : columns that contains information for recon/auxiliary
-    ## Padding
-    extra_batch = [pt.Tensor(trajectory[:, extra_col].astype(np.float64)) for trajectory in batch] # (4, 5, -2) = (u, v ,end_of_trajectory)
-    extra_batch = pad_sequence(extra_batch, batch_first=True, padding_value=padding_value)
-    ## Compute mask
-    extra_mask = (extra_batch != padding_value)
-
-    return {'input':[input_batch, lengths, input_mask],
-            'gt':[gt_batch, lengths, gt_mask],
-            'extra':[extra_batch, lengths, extra_mask]}
 
 if __name__ == '__main__':
   print("************************************TESTING DATALOADER CLASS************************************")

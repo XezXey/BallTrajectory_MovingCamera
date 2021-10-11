@@ -1,5 +1,5 @@
 import argparse
-import os, glob
+import os, glob, sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', help='Input the model_ckpt path that contains config files', type=str, required=True)
@@ -41,10 +41,11 @@ else:
 for ckpt in ckpt_path:
     ckpt += '/config.yaml'
     cmd = """
-        python predict.py --dataset_test_path {} --load_ckpt {} --save_cam_traj {} --env {} 
-        {} {} {} --fps {} --recon {} --config {} --save_suffix {}
+        python predict.py --dataset_test_path {} --load_ckpt {} --save_cam_traj {} --env {} {} {} {} --fps {} --recon {} --config {} --save_suffix {} > ../logs/log.txt
         """.format(args.dataset_test_path, args.load_ckpt, args.save_cam_traj, args.env, 
-        noise, annealing, augment, args.fps, args.recon, ckpt, args.save_suffix
-        )
-    input(cmd)
-    os.system(cmd)
+        noise, annealing, augment, args.fps, args.recon, ckpt, args.save_suffix, ckpt)
+    print(cmd)
+    try:
+        os.system(cmd)
+    except Exception:
+        sys.exit()

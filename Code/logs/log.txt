@@ -1,0 +1,224 @@
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  No features cols from real data
+1. input_col =  [u, v]
+2. gt_col =  [x, y, z] (if existed)
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (119,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger/dt_dt_rh_uv0_ref0_lrelu_bigger_best_traj_ma.pth
+====================================================================================================
+[#] Model Parameters
+===>  rnn.h torch.Size([3, 2, 1, 128])
+===>  rnn.c torch.Size([3, 2, 1, 128])
+===>  rnn.ls.0.weight_ih_l0 torch.Size([512, 4])
+===>  rnn.ls.0.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.0.weight_ih_l0_reverse torch.Size([512, 4])
+===>  rnn.ls.0.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0_reverse torch.Size([512])
+===>  mlp.seq1.0.weight torch.Size([64, 256])
+===>  mlp.seq1.0.bias torch.Size([64])
+===>  mlp.seq1.2.weight torch.Size([64, 64])
+===>  mlp.seq1.2.bias torch.Size([64])
+===>  mlp.seq1.4.weight torch.Size([64, 64])
+===>  mlp.seq1.4.bias torch.Size([64])
+===>  mlp.seq1.6.weight torch.Size([1, 64])
+===>  mlp.seq1.6.bias torch.Size([1])
+===>  rnn.h torch.Size([3, 2, 1, 128])
+===>  rnn.c torch.Size([3, 2, 1, 128])
+===>  rnn.ls.0.weight_ih_l0 torch.Size([512, 5])
+===>  rnn.ls.0.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.0.weight_ih_l0_reverse torch.Size([512, 5])
+===>  rnn.ls.0.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0_reverse torch.Size([512])
+===>  mlp.seq1.0.weight torch.Size([64, 256])
+===>  mlp.seq1.0.bias torch.Size([64])
+===>  mlp.seq1.2.weight torch.Size([64, 64])
+===>  mlp.seq1.2.bias torch.Size([64])
+===>  mlp.seq1.4.weight torch.Size([64, 64])
+===>  mlp.seq1.4.bias torch.Size([64])
+===>  mlp.seq1.6.weight torch.Size([1, 64])
+===>  mlp.seq1.6.bias torch.Size([1])
+===>  rnn.h torch.Size([3, 2, 1, 128])
+===>  rnn.c torch.Size([3, 2, 1, 128])
+===>  rnn.ls.0.weight_ih_l0 torch.Size([512, 1])
+===>  rnn.ls.0.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.0.weight_ih_l0_reverse torch.Size([512, 1])
+===>  rnn.ls.0.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.0.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.0.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.1.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.1.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.1.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.1.bias_hh_l0_reverse torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0 torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0 torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0 torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0 torch.Size([512])
+===>  rnn.ls.2.weight_ih_l0_reverse torch.Size([512, 256])
+===>  rnn.ls.2.weight_hh_l0_reverse torch.Size([512, 128])
+===>  rnn.ls.2.bias_ih_l0_reverse torch.Size([512])
+===>  rnn.ls.2.bias_hh_l0_reverse torch.Size([512])
+===>  mlp.seq1.0.weight torch.Size([64, 256])
+===>  mlp.seq1.0.bias torch.Size([64])
+===>  mlp.seq1.2.weight torch.Size([64, 64])
+===>  mlp.seq1.2.bias torch.Size([64])
+===>  mlp.seq1.4.weight torch.Size([64, 64])
+===>  mlp.seq1.4.bias torch.Size([64])
+===>  mlp.seq1.6.weight torch.Size([1, 64])
+===>  mlp.seq1.6.bias torch.Size([1])
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger/dt_dt_rh_uv0_ref0_lrelu_bigger_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Model Architecture
+####### Model - flag #######
+Flag_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(4, 128, batch_first=True, bidirectional=True)
+      (1): LSTM(256, 128, batch_first=True, bidirectional=True)
+      (2): LSTM(256, 128, batch_first=True, bidirectional=True)
+    )
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=256, out_features=64, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=64, out_features=64, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=64, out_features=64, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+  )
+  (sigmoid): Sigmoid()
+)
+####### Model - height #######
+Height_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(5, 128, batch_first=True, bidirectional=True)
+      (1): LSTM(256, 128, batch_first=True, bidirectional=True)
+      (2): LSTM(256, 128, batch_first=True, bidirectional=True)
+    )
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=256, out_features=64, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=64, out_features=64, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=64, out_features=64, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+  )
+)
+####### Model - refinement #######
+Refinement_Module(
+  (rnn): Trainable_LSTM(
+    (ls): Sequential(
+      (0): LSTM(1, 128, batch_first=True, bidirectional=True)
+      (1): LSTM(256, 128, batch_first=True, bidirectional=True)
+      (2): LSTM(256, 128, batch_first=True, bidirectional=True)
+    )
+  )
+  (mlp): Vanilla_MLP(
+    (activation): LeakyReLU(negative_slope=0.01)
+    (seq1): Sequential(
+      (0): Linear(in_features=256, out_features=64, bias=True)
+      (1): LeakyReLU(negative_slope=0.01)
+      (2): Linear(in_features=64, out_features=64, bias=True)
+      (3): LeakyReLU(negative_slope=0.01)
+      (4): Linear(in_features=64, out_features=64, bias=True)
+      (5): LeakyReLU(negative_slope=0.01)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+  )
+)
+[#]Batch-0
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger"
+[#]Data : "../../Public_dataset/Dataset/TrackNet1_Dataset/prep_npy_trimmed/"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [2.0003 0.5789 6.7479]
+	SD :  [1.2632 0.3349 4.0194]
+===> Distance :  MSE
+	MEAN :  [ 5.597   0.4473 61.6893]
+	SD :  [ 6.0142  0.3929 66.1647]
+===> Distance :  RMSE
+	RMSE :  [2.3658 0.6688 7.8543]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  7.239145
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [1.9809 0.5149 6.5767]
+	SD :  [1.2513 0.3024 3.9296]
+===> Distance :  MSE
+	MEAN :  [ 5.4895  0.3565 58.695 ]
+	SD :  [ 5.8988  0.328  62.2282]
+===> Distance :  RMSE
+	RMSE :  [2.343  0.5971 7.6613]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  7.059768
+****************************************************************************************************
+[#] Runtime : 1.9047060012817383+-0.0
+[#] Saving reconstruction to ../reconstructed/TMP//tags_CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger
+[#] Done

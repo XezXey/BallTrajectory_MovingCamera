@@ -107,7 +107,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     canon_dict = {'cam_cl' : None, 'R' : None}
 
   # Augmentation
-  if args.augment and not args.optim_init_h:
+  if set_ == 'train' or set_ == 'val':
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
@@ -119,7 +119,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
     search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
     h0 = latent_dict['init_h']['first_h'].get_params()
-  elif args.env == 'no_gt':
+  elif args.env == 'no_gt' or args.env == 'tennis':
     search_h = None
     h0 = pt.zeros(size=(in_f.shape[0], 1, 1)).to(device)
   else: 

@@ -348,7 +348,7 @@ if __name__ == '__main__':
   recon_traj_all = []
   all_batch_trajectory = {'gt_xyz':[], 'pred_xyz':[], 'gt_h':[], 'pred_h':[]}
   n_trajectory = 0
-  for batch_idx, batch_test in tqdm(enumerate(dataloader_test)):
+  for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:
