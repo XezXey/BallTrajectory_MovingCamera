@@ -9,7 +9,7 @@ Selected features :  No features cols from real data
 ====================================================================================================
 [#]Testing : Trajectory Estimation
 ===============================Dataset shape===============================
-Mixed : (119,)
+Mixed : (118,)
 ===========================================================================
 ===>Load ckpt with Optimizer state, Decay and Scheduler state
 [#] Loading ... ../model_checkpoints//CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger/dt_dt_rh_uv0_ref0_lrelu_bigger_best_traj_ma.pth
@@ -193,32 +193,32 @@ Refinement_Module(
 [#]Batch-0
 ****************************************************************************************************
 [#]Evaluation Results : "CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger"
-[#]Data : "../../Public_dataset/Dataset/TrackNet1_Dataset/prep_npy_trimmed/"
+[#]Data : "../../Public_dataset/Dataset/TrackNet1_Dataset/prep_npy_finale/"
 ****************************************************************************************************
 Space :  xyz
 ===> Distance :  MAE
-	MEAN :  [2.0003 0.5789 6.7479]
-	SD :  [1.2632 0.3349 4.0194]
+	MEAN :  [1.9906 0.5721 6.6598]
+	SD :  [1.2574 0.3336 3.9284]
 ===> Distance :  MSE
-	MEAN :  [ 5.597   0.4473 61.6893]
-	SD :  [ 6.0142  0.3929 66.1647]
+	MEAN :  [ 5.5435  0.4386 59.7856]
+	SD :  [ 5.9329  0.3909 61.3069]
 ===> Distance :  RMSE
-	RMSE :  [2.3658 0.6688 7.8543]
+	RMSE :  [2.3545 0.6623 7.7321]
 ===> Distance :  RMSE-DISTANCE
-	RMSE-DISTANCE-1 :  7.239145
+	RMSE-DISTANCE-1 :  7.147219
 ****************************************************************************************************
 Space :  xyz_refined
 ===> Distance :  MAE
-	MEAN :  [1.9809 0.5149 6.5767]
-	SD :  [1.2513 0.3024 3.9296]
+	MEAN :  [1.9729 0.5167 6.5019]
+	SD :  [1.2469 0.3046 3.8426]
 ===> Distance :  MSE
-	MEAN :  [ 5.4895  0.3565 58.695 ]
-	SD :  [ 5.8988  0.328  62.2282]
+	MEAN :  [ 5.4472  0.3598 57.04  ]
+	SD :  [ 5.8353  0.3339 57.7832]
 ===> Distance :  RMSE
-	RMSE :  [2.343  0.5971 7.6613]
+	RMSE :  [2.3339 0.5998 7.5525]
 ===> Distance :  RMSE-DISTANCE
-	RMSE-DISTANCE-1 :  7.059768
+	RMSE-DISTANCE-1 :  6.983371
 ****************************************************************************************************
-[#] Runtime : 1.9047060012817383+-0.0
-[#] Saving reconstruction to ../reconstructed/TMP//tags_CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger
+[#] Runtime : 1.9538099765777588+-0.0
+[#] Saving reconstruction to ../reconstructed/STATS//tags_CVPR_Week3_TracknetV1/dt_dt_rh_uv0_ref0_lrelu_bigger
 [#] Done

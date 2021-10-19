@@ -34,11 +34,12 @@ features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 """
-
+#"""
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
             'eot', 'cd', 'og', 'hw', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, og, hw, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+#"""
 
 def share_args(a):
   global args
@@ -564,7 +565,7 @@ def save_cam_traj(trajectory, cam_dict, n):
       pred.append(pred_tmp[j][:seq_len[j]])
       cpos.append(cpos_tmp[j][:seq_len[j]])
 
-      if gt is None or args.env != 'unity':
+      if gt is None or args.env != 'unity' and ('refinement' in args.pipeline):
         json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "pred" : pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),

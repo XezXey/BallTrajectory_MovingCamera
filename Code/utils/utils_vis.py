@@ -230,17 +230,17 @@ def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   y = pred['xyz'][..., [1]].cpu().detach().numpy()
   if 'refinement' in args.pipeline:
     y_refined = pred['xyz_refined'][..., [1]].cpu().detach().numpy()
-  if gt is not None:
+  if gt['flag'] is not None:
     gt_flag = gt['flag'][..., [0]].cpu().detach().numpy()
     gt_y = gt['gt'][..., [1]].cpu().detach().numpy()
   # Iterate to plot each trajectory
   for idx, i in enumerate(vis_idx):
     l = lengths[i] - 1 if args.pipeline['flag']['i_s'] == 'dt' and args.pipeline['flag']['o_s'] == 'dt' else lengths[i]
-    if gt is not None:
+    if gt['flag'] is not None:
       fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt_flag[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Ground Truth EOT [{}]".format(set, i)), row=idx+1, col=col)
-      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt_y[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Y Ground Truth [{}]".format(set, i)), row=idx+1, col=col)
+      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=gt_y[i][:l+1].reshape(-1,), mode='markers+lines', marker=marker_dict_gt, name="{}-Y Ground Truth [{}]".format(set, i)), row=idx+1, col=col)
     if 'refinement' in args.pipeline:
-      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y_refined[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_refined, name="{}-Y Refined  [{}]".format(set, i)), row=idx+1, col=col)
+      fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y_refined[i][:l+1].reshape(-1,), mode='markers+lines', marker=marker_dict_refined, name="{}-Y Refined  [{}]".format(set, i)), row=idx+1, col=col)
 
-    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_in_refnoisy, name="{}-Y Predicted [{}]".format(set, i)), row=idx+1, col=col)
+    fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y[i][:l+1].reshape(-1,), mode='markers+lines', marker=marker_dict_in_refnoisy, name="{}-Y Predicted [{}]".format(set, i)), row=idx+1, col=col)
     fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=flag[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)

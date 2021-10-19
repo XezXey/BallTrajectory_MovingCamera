@@ -194,6 +194,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   
   else:
     xyz_refined = None
+    xyz_ = None
 
   # Decoanonicalize
   if args.canonicalize:
@@ -332,16 +333,25 @@ def input_manipulate(in_f, module, input_dict, h0=None):
   '''
   i_s = args.pipeline[module]['i_s']
   o_s = args.pipeline[module]['o_s']
-  if args.sc == 'azim':
-    azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
-    in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3]], azim_sc), axis=2)
-  elif args.sc == 'elev':
-    elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
-    in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, in_f[..., [4]]), axis=2)
-  elif args.sc == 'both':
-    azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
-    elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
-    in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
+
+  if args.input_variation == 'intr_azim_elev':
+    # Convert degree to radian
+    in_f[..., [3]] = in_f[..., [3]] * np.pi / 180
+    in_f[..., [4]] = in_f[..., [4]] * np.pi / 180
+    if args.sc == 'azim':
+      in_f[..., [4]] = in_f[..., [4]] * np.pi / 180
+      azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
+      in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3]], azim_sc), axis=2)
+    elif args.sc == 'elev':
+      elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
+      in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, in_f[..., [4]]), axis=2)
+    elif args.sc == 'both':
+      azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
+      elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
+      in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
+    
+  print(in_f)
+  input()
 
   in_f_orig = in_f    
   in_f = input_space(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)

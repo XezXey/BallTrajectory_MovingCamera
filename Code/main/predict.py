@@ -128,10 +128,18 @@ else:
   print('[%]GPU Disabled, CPU Enabled')
 
 # Get selected features to input into a network
+# Not og features
+"""
 features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
             'eot', 'cd', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
             'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
 x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
+"""
+
+features = ['x', 'y', 'z', 'u', 'v', 'd', 'intr_x', 'intr_y', 'intr_z', 'ray_x', 'ray_y', 'ray_z', 
+            'eot', 'cd', 'og', 'hw', 'rad', 'f_sin', 'f_cos', 'fx', 'fy', 'fz', 'fx_norm', 'fy_norm', 'fz_norm',
+            'intrinsic', 'extrinsic', 'azimuth', 'elevation', 'extrinsic_inv', 'g']
+x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, og, hw, rad, f_sin, f_cos, fx, fy, fz, fx_norm, fy_norm, fz_norm, intrinsic, extrinsic, azimuth, elevation, extrinsic_inv, g = range(len(features))
 input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
 def concat_traj(recon_traj_all, space, concat=True):
@@ -255,6 +263,7 @@ def collate_fn_padd(batch, set_):
   ## Get sequence lengths
   lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
   # Input features : (u, v)
+  #input_batch = [pt.Tensor(np.flip(trajectory[:, input_col].astype(np.float64), axis=0).copy()) for trajectory in batch]
   input_batch = [pt.Tensor(trajectory[:, input_col].astype(np.float64)) for trajectory in batch]
   input_batch = pad_sequence(input_batch, batch_first=True, padding_value=padding_value)
   ## Compute mask
