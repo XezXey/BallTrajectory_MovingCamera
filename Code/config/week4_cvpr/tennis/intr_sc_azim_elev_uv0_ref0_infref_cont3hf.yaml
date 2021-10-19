@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week4_Mocap_RayParams'
-wandb_name: 'intr_hori_vert_uv0_ref0_infref_cont3hf'
+wandb_name: 'intr_sc_azim_elev_uv0_ref0_infref_cont3hf'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -35,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_hori_vert' # 'intr_azim_elev'
+input_variation: 'intr_azim_elev'
 
 # Model
 pipeline:
@@ -48,7 +48,7 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 4
+    in_node: 6
     out_node: 1
     extra_in: []
     extra_out: []
@@ -65,7 +65,7 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 4
+    in_node: 6
     out_node: 1
     extra_in: [1]
     extra_out: []
@@ -88,7 +88,7 @@ pipeline:
     mlp_stack: 2
     in_node: 1
     out_node: 1
-    extra_in: [4]
+    extra_in: [6]
     extra_out: []
     latent_in: []
     latent_out: []
@@ -102,7 +102,7 @@ pipeline:
 
 # Features
 selected_features: [eot]
-sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
+sc: 'both'  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []

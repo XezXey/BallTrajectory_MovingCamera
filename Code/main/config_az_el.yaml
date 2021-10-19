@@ -36,6 +36,7 @@ vis_path: '../../visualize_html/'
 
 # Input variation
 input_variation: 'intr_azim_elev'
+#input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:

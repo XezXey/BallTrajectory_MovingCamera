@@ -57,7 +57,7 @@ def uv_to_input_features(cam_dict, set_):
   recon_dict = {'clean' : in_f_raw[..., [0, 1, 2]], 'noisy': in_f_noisy[..., [0, 1, 2]]}
   return in_f, ray, recon_dict
 
-def canonicalize_features(Einv, intr, ray, in_f):
+def canonicalize_features(Einv, ray, in_f):
   '''
   Canonicalize all features
   Input : 
@@ -70,11 +70,19 @@ def canonicalize_features(Einv, intr, ray, in_f):
     2. in_f : the new input features after canonicalized
   '''
   R = utils_transform.find_R(Einv=Einv)
-  intr_cl = utils_transform.canonicalize(pts=intr, R=R)
   cam_cl = utils_transform.canonicalize(pts=Einv[..., 0:3, -1], R=R)
   ray_cl = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=R)
-  azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
-  in_f = pt.cat((intr_cl, azim_cl, in_f[..., [3]]), dim=2)
+
+  # Recalculate features
+  if args.input_variation == 'intr_hori_vert':
+    # 1. vertical-plane intersection
+    hori_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
+    vert_cl = utils_transform.ray_to_plane(ray=ray_cl, cpos=cam_cl, plane='vertical')
+    in_f = pt.cat((hori_cl, vert_cl), dim=2)
+  elif args.input_variation == 'intr_azim_elev':
+    intr_cl = utils_transform.canonicalize(pts=in_f[..., [0, 1, 2]], R=R)
+    azim_cl = utils_transform.compute_azimuth(ray=ray_cl)
+    in_f = pt.cat((intr_cl, azim_cl, in_f[..., [3]]), dim=2)
   canon_dict = {'cam_cl' : cam_cl, 'R' : R}
 
   return canon_dict, in_f
@@ -102,7 +110,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
 
   # Canonicalize
   if args.canonicalize:
-    canon_dict, in_f = canonicalize_features(Einv=cam_dict['Einv'], intr=in_f[..., [0, 1, 2]], ray=ray, in_f=in_f)
+    canon_dict, in_f = canonicalize_features(Einv=cam_dict['Einv'], ray=ray, in_f=in_f)
   else:
     canon_dict = {'cam_cl' : None, 'R' : None}
 
@@ -339,7 +347,6 @@ def input_manipulate(in_f, module, input_dict, h0=None):
     in_f[..., [3]] = in_f[..., [3]] * np.pi / 180
     in_f[..., [4]] = in_f[..., [4]] * np.pi / 180
     if args.sc == 'azim':
-      in_f[..., [4]] = in_f[..., [4]] * np.pi / 180
       azim_sc = pt.cat((pt.sin(in_f[..., [4]]), pt.cos(in_f[..., [4]])), axis=2)
       in_f = pt.cat((in_f[..., [0, 1, 2]], in_f[..., [3]], azim_sc), axis=2)
     elif args.sc == 'elev':
@@ -350,15 +357,15 @@ def input_manipulate(in_f, module, input_dict, h0=None):
       elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
       in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
     
-  print(in_f)
-  input()
-
-  in_f_orig = in_f    
-  in_f = input_space(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
+  in_f_orig = in_f.clone()
+  if args.input_variation == 'intr_azim_elev':
+    in_f = input_space_intr_az(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
+  elif args.input_variation == 'intr_hori_vert':
+    in_f = input_space_intr_hv(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
   if args.input_variation == 'intr_azim_elev':
-    in_f = in_f[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
-    in_f_orig = in_f_orig[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
+    in_f = pt.cat((in_f[..., [0, 2]], in_f[..., 3:]), dim=2)  # Remove intr_y = 0
+    in_f_orig = pt.cat((in_f_orig[..., [0, 2]], in_f_orig[..., 3:]), dim=2)  # Remove intr_y = 0
   elif args.input_variation == 'intr_hori_vert':
     in_f = in_f[..., [0, 2, 3, 4]]  # Remove intr_y = 0 and intr_z = 0
     in_f_orig = in_f_orig[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
@@ -367,7 +374,20 @@ def input_manipulate(in_f, module, input_dict, h0=None):
 
   return in_f, in_f_orig
     
-def input_space(in_f, i_s, o_s, lengths, h0):
+def input_space_intr_az(in_f, i_s, o_s, lengths, h0):
+  in_f_intr = in_f[..., [0, 1, 2]]
+  in_f_azim_elev = in_f[..., 3:]
+  if i_s == 'dt':
+    if o_s == 'dt':
+      dt = in_f_intr[:, 1:, :] - in_f_intr[:, :-1, :]
+    else:
+      raise NotImplemented
+    in_f = pt.cat((dt, in_f_azim_elev[:, :-1, :]), dim=2)
+  else: raise NotImplemented
+
+  return in_f
+
+def input_space_intr_hv(in_f, i_s, o_s, lengths, h0):
   '''
   Input : 
     1. in_f : input features(t-space) in shape (batch, seq_len, f_dim) -> e.g. f_dim = (x, y, z, elev, azim)

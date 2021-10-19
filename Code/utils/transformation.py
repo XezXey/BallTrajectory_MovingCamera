@@ -100,9 +100,9 @@ def ray_to_plane(cpos, ray, plane):
       - intr_pts : ray to plane intersection points from camera through the ball tracking
   '''
   if plane == 'horizontal':
-    intr_pos = cpos + (ray * (-cpos[..., [1]]/ray[..., [1]]))
+    intr_pos = cpos + (ray * (-cpos[..., [1]]/(ray[..., [1]] + 1e-16)))
   elif plane == 'vertical':
-    intr_pos = cpos + (ray * (-cpos[..., [2]]/ray[..., [2]]))
+    intr_pos = cpos + (ray * (-cpos[..., [2]]/(ray[..., [2]] + 1e-16)))
   else:
     raise ValueError("A Wrong plane was given.")
 
@@ -139,7 +139,7 @@ def find_R(Einv):
   Input : 
     1. theta : radian in shape (batch_size, seq_len)
   Output : 
-    1. R : rotation matrix from given radian in shape (batch_size, seq_len, 3, 3)
+    1. R : rotation matrix rotate to [x=1, z=0] in shape (batch_size, seq_len, 3, 3)
   '''
   cpos = Einv[..., 0:3, -1].cpu().numpy()
   c = cpos[..., [0, 2]] / (np.linalg.norm(cpos[..., [0, 2]], axis=-1, keepdims=True) + 1e-16)

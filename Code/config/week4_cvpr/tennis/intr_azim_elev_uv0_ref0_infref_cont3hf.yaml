@@ -7,7 +7,7 @@ env: 'unity'
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'CVPR_Week3_TracknetV1'
+wandb_tags: 'CVPR_Week4_Mocap_RayParams'
 wandb_name: 'intr_azim_elev_uv0_ref0_infref_cont3hf'
 
 # Checkpoint
