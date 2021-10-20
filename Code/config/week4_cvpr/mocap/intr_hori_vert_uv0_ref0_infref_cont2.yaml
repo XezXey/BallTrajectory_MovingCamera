@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_hf/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_hf/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -109,6 +109,6 @@ multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
-w: 1280
-h: 720
-fps: 30
+w: 1664
+h: 1088
+fps: 60
