@@ -95,7 +95,7 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict, latent_dict):
     # Variables
     len_ = input_dict['lengths']
     mask = input_dict['mask'][..., [0, 1, 2]]
-    if args.env == 'unity':
+    if args.env == 'unity' or args.env == 'mocap':
       gt = gt_dict['gt'][..., [0, 1, 2]]
     else:
       gt = None

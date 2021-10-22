@@ -1,7 +1,4 @@
 # Dataset
-#dataset_train_path: '../../Dataset/Single/train_set/'
-#dataset_val_path: '../../Dataset/Single/val_set/'
-
 dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1/bounce2_cont2_nowall/train_set/'
 dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1/bounce2_cont2_nowall/val_set/'
 trajectory_type: 'Mixed'
@@ -18,6 +15,9 @@ wandb_name: 'dt_dt_cl_b2c2_nowall_clean_recon'
 save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
+# Input variation
+input_variation: 'intr_azim_elev' # 'intr_azim_elev'
+
 # Training parameters
 batch_size: 512
 n_epochs: 100000
@@ -27,16 +27,15 @@ decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize: True
 noise: False 
-noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
 augment: null
 recon: 'noisy'
+optim_init_h: False
 
 # Visualization
 visualize: True
-#vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
 vis_path: '../../visualize_html/'
 
 # Model
@@ -53,6 +52,14 @@ pipeline:
     out_node: 1
     extra_in: []
     extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 'dt_all'
+    o_s: 'dt'
+    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    attn: False
+    noise_space: 'uv'
+    noise_sd: 0.0
 
   refinement:
     arch: 'lstm'
@@ -66,14 +73,20 @@ pipeline:
     out_node: 3
     extra_in: []
     extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 't'
+    o_s: 't'
+    attn: False
+    refine: 'xyz'
+    noise_space: null
+    noise_sd: 0.0
 
 # Weighted Combining
 si_pred_ramp: False
 
 # Features
 selected_features: []
-i_s: 'dt'  # Input space
-o_s: 'dt'  # Output space
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
@@ -81,3 +94,6 @@ multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
+w: 1664
+h: 1088
+fps: 60

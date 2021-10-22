@@ -33,7 +33,10 @@ annealing_gamma:  0.7
 
 # Visualization
 visualize: True
-visualization_path: '../visualize_html/'
+vis_path: '../../visualize_html/'
+
+# Input variation
+input_variation: 'intr_azim_elev' # 'intr_azim_elev'
 
 # Model
 pipeline:
@@ -49,15 +52,20 @@ pipeline:
     out_node: 1
     extra_in: []
     extra_out: []
-
+    latent_in: []
+    latent_out: []
+    i_s: 'dt_all'
+    o_s: 'dt'
+    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    attn: False
+    noise_space: 'uv'
+    noise_sd: 0.0
 
 # Weighted Combining
 si_pred_ramp: False
 
 # Features
 selected_features: []
-i_s: 'dt'  # Input space
-o_s: 'dt'  # Output space
 sc: ''  # azim(+1), elev(+1), both(+2)
 
 # Loss
@@ -65,3 +73,6 @@ multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
+w: 1664
+h: 1088
+fps: 60

@@ -565,16 +565,20 @@ def save_cam_traj(trajectory, cam_dict, n):
       pred.append(pred_tmp[j][:seq_len[j]])
       cpos.append(cpos_tmp[j][:seq_len[j]])
 
-      if gt is None or args.env != 'unity' and ('refinement' in args.pipeline):
+      if (gt is None) or (args.env == 'tennis') and ('refinement' in args.pipeline):
+        # Tennis
         json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
-                    "pred" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "pred" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
       else:
+        # Unity, Mocap, IPL
         json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
-                    "pred" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
+                    "pred" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),

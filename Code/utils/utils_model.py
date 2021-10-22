@@ -144,7 +144,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['flag']['i_s']
     o_s = args.pipeline['flag']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
-    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'])
+    pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
@@ -156,7 +156,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['height']['i_s']
     o_s = args.pipeline['height']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if (i_s == 'dt' and o_s == 'dt') else input_dict['lengths'])
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['h'] = pred_h
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
@@ -335,7 +335,7 @@ def input_manipulate(in_f, module, input_dict, h0=None):
   '''
   Prepare input to have correct space(t, dt, tdt), sin-cos
   Input : 
-    1. in_f : input features in shape (batch, seq_len, 5)
+    1. in_f : input features in shape (batch, seq_len, n_features)
   Output : 
     1. in_f : input features after change into specified space(t, dt, tdt) and sin-cos
   '''
@@ -357,12 +357,14 @@ def input_manipulate(in_f, module, input_dict, h0=None):
       elev_sc = pt.cat((pt.sin(in_f[..., [3]]), pt.cos(in_f[..., [3]])), axis=2)
       in_f = pt.cat((in_f[..., [0, 1, 2]], elev_sc, azim_sc), axis=2)
     
+  # Input space => (e.g. dt-dt, t-t, etc.)
   in_f_orig = in_f.clone()
   if args.input_variation == 'intr_azim_elev':
-    in_f = input_space_intr_az(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
+    in_f = input_space_intr_ae(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
   elif args.input_variation == 'intr_hori_vert':
     in_f = input_space_intr_hv(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
+  # Remove y=0 or z=0 of plane points
   if args.input_variation == 'intr_azim_elev':
     in_f = pt.cat((in_f[..., [0, 2]], in_f[..., 3:]), dim=2)  # Remove intr_y = 0
     in_f_orig = pt.cat((in_f_orig[..., [0, 2]], in_f_orig[..., 3:]), dim=2)  # Remove intr_y = 0
@@ -374,17 +376,22 @@ def input_manipulate(in_f, module, input_dict, h0=None):
 
   return in_f, in_f_orig
     
-def input_space_intr_az(in_f, i_s, o_s, lengths, h0):
+def input_space_intr_ae(in_f, i_s, o_s, lengths, h0):
   in_f_intr = in_f[..., [0, 1, 2]]
   in_f_azim_elev = in_f[..., 3:]
-  if i_s == 'dt':
-    if o_s == 'dt':
+  if o_s == 'dt':
+    if i_s == 'dt_intr':
+      # Displacmeent on only plane points
       dt = in_f_intr[:, 1:, :] - in_f_intr[:, :-1, :]
-    else:
-      raise NotImplemented
-    in_f = pt.cat((dt, in_f_azim_elev[:, :-1, :]), dim=2)
-  else: raise NotImplemented
-
+      in_f = pt.cat((dt, in_f_azim_elev[:, :-1, :]), dim=2)
+    elif i_s == 'dt_all':
+      # Displacement on all features
+      dt_intr = in_f_intr[:, 1:, :] - in_f_intr[:, :-1, :]
+      dt_ae = in_f_azim_elev[:, 1:, :] - in_f_azim_elev[:, :-1, :]
+      in_f = pt.cat((dt_intr, dt_ae), dim=2)
+  else:
+    raise NotImplemented
+  
   return in_f
 
 def input_space_intr_hv(in_f, i_s, o_s, lengths, h0):
@@ -440,7 +447,7 @@ def output_space(pred_h, lengths, module, search_h=None):
   if o_s == 't':
     height = pred_h
   elif o_s == 'dt' or 't_dt':
-    if i_s == 'dt':
+    if ((i_s == 'dt') or (i_s == 'dt_intr') or (i_s == 'dt_all')):
       dh = pred_h
     elif i_s == 't_dt' or i_s == 't':
       dh = pred_h[:, :-1, :]
@@ -532,8 +539,8 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     flag_loss = pt.tensor(0.).to(device)
   else:
     i_s = args.pipeline['flag']['i_s']
-    o_s = args.pipeline['flag']['i_s']
-    if i_s == 'dt' and o_s == 'dt':
+    o_s = args.pipeline['flag']['o_s']
+    if ((i_s == 'dt') or (i_s == 'dt_all') or (i_s == 'dt_intr')) and o_s == 'dt':
       pred_dict['flag'] = utils_func.pad_at_length(tensor=pred_dict['flag'], lengths=gt_dict['lengths']-1)
     m = utils_func.mask_from_lengths(lengths=gt_dict['lengths'], n_rmv=1, n_dim=1, retain_L=True)
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])

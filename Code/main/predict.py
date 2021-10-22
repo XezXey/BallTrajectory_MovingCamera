@@ -175,6 +175,7 @@ def evaluate(recon_traj_all):
   space = ['gt', 'xyz', 'xyz_refined'] if 'refinement' in args.pipeline else ['gt', 'xyz']
   trajectory = concat_traj(recon_traj_all, space)
 
+
   for s in space:
     if s == 'gt':
       continue
@@ -202,8 +203,8 @@ def evaluate(recon_traj_all):
       elif e_d == 'RMSE-DISTANCE' and (s == 'xyz' or s == 'xyz_refined'):
         rmse_distance_1 = np.mean(np.sqrt(np.sum(((gt - pred)**2), axis=-1)), axis=0)
         print("\tRMSE-DISTANCE-1 : ", rmse_distance_1)
-        #rmse_distance_2 = np.sqrt(np.mean(np.sum(((gt - pred)**2), axis=-1), axis=0))
-        #print("RMSE-DISTANCE-2 : ", rmse_distance_2)
+        rmse_distance_2 = np.sqrt(np.mean(np.sum(((gt - pred)**2), axis=-1), axis=0))
+        print("\tRMSE-DISTANCE-2 : ", rmse_distance_2)
 
     print("*"*100)
   return trajectory

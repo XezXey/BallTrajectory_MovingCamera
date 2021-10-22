@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { 
+        margin: 0; 
+        font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
+      } 
+      #control {
+        background: #414141;
+        width: 300px;
+        height: 100vh;
+        float: left;
+        padding: 10px;
+        display: none;
+      }
+		</style>
+	</head>
+	<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js" integrity="sha512-LF8ZB1iTwi4Qvkm4pekHG4a437Y9Af5ZuwbnW4GTbAWQeR2E4KW8WF+xH8b9psevV7wIlDMx1MH9YfPqgKhA/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <!--<script src="https://threejs.org/examples/jsm/webxr/VRButton.js"></script>-->
+    <script src="VRButton.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://threejs.org/examples/js/loaders/MTLLoader.js"></script>
+  <!--<script type="text/javascript" src="tennis_g1c1.json"></script>-->
+  <!--<script type="text/javascript" src="t2.json"></script>-->
+    <script src="utilities.js"></script>
+    <script src="court.js"></script>
+    <script src="trajectory.js"></script>
+		<script src="index.js">
+		</script>
+    <div id="control">
+      <input type="checkbox" id="showall" name="showall" checked>Show full trajectory
+    </div>
+	</body>
+</html>

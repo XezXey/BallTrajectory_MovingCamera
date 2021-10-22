@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { 
+        margin: 0; 
+        font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
+          background: #e6e6e6; 
+      } 
+      #control {
+        width: 300px;
+        height: 100vh;
+        padding: 0px;
+      }
+      #render {
+        background-color: black;
+        width: 1200px;
+        height: 900px;
+        border: 5px solid black;
+        position: absolute;
+        left: 300px;
+        top: 0;
+        margin: 5px;
+      }
+      #extra {
+        padding: 4px;
+        margin-top: 15px;
+      }
+		</style>
+	</head>
+	<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js" integrity="sha512-LF8ZB1iTwi4Qvkm4pekHG4a437Y9Af5ZuwbnW4GTbAWQeR2E4KW8WF+xH8b9psevV7wIlDMx1MH9YfPqgKhA/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://threejs.org/examples/jsm/webxr/VRButton.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pca-js@1.0.0/pca.min.js"></script>
+    <script src="Reflector.js"></script>
+    <!--<script src="https://threejs.org/examples/js/objects/Reflector.js"></script>-->
+  <!--<script type="text/javascript" src="tennis_g1c1.json"></script>-->
+  <!--<script type="text/javascript" src="t2.json"></script>-->
+    <script src="utilities.js"></script>
+    <script src="trajectory.js"></script>
+		<script src="checkerboard.js">
+		</script>
+    <div id="control">
+      <div id="extra">
+      <a id="savetopng" href="">Render to png</a><br>
+      <a id="download" href="">Download as png</a><br>
+      Use key up/down to change trajectory.
+      </div>
+    </div>
+    <div id="render"></div>
+	</body>
+</html>

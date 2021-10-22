@@ -27,17 +27,19 @@ decay_gamma: 0.7
 decay_cycle: 10000
 canonicalize: True
 noise: False
-noise_sd: -1
 annealing: False
 annealing_cycle: 1000
 annealing_gamma:  0.7
 augment: null
-recon: 'clean'
+recon: 'noisy'
+optim_init_h: False
 
 # Visualization
 visualize: True
-#vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
 vis_path: '../../visualize_html/'
+
+# Input variation
+input_variation: 'intr_azim_elev' # 'intr_azim_elev'
 
 # Model
 pipeline:
@@ -53,6 +55,14 @@ pipeline:
     out_node: 1
     extra_in: []
     extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 'dt_all'
+    o_s: 'dt'
+    constraint_y: null #'lrelu' # 'relu', 'softplus' or null
+    attn: False
+    noise_space: 'uv'
+    noise_sd: 0.0
 
   refinement:
     arch: 'lstm'
@@ -66,18 +76,82 @@ pipeline:
     out_node: 3
     extra_in: []
     extra_out: []
+    latent_in: []
+    latent_out: []
+    i_s: 't'
+    o_s: 't'
+    attn: False
+    refine: 'xyz'
+    noise_space: null
+    noise_sd: 0.0
 
 # Weighted Combining
 si_pred_ramp: False
 
 # Features
 selected_features: []
-i_s: 'dt'  # Input space
-o_s: 'dt'  # Output space
-sc: ''  # azim(+1), elev(+1), both(+2)
+sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []
 
 # Miscellaneous
 cuda_device_num: 0
+w: 1664
+h: 1088
+fps: 60
+
+#noise_sd: -1
+#annealing: False
+#annealing_cycle: 1000
+#annealing_gamma:  0.7
+#augment: null
+#recon: 'clean'
+#
+## Visualization
+#visualize: True
+##vis_path: '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/visualize_html/'
+#vis_path: '../../visualize_html/'
+#
+## Model
+#pipeline:
+#  height:
+#    arch: 'lstm'
+#    bidirectional: True
+#    trainable_init: True
+#    rnn_hidden: 64
+#    rnn_stack: 2
+#    mlp_hidden: 32
+#    mlp_stack: 2
+#    in_node: 5
+#    out_node: 1
+#    extra_in: []
+#    extra_out: []
+#
+#  refinement:
+#    arch: 'lstm'
+#    bidirectional: True
+#    trainable_init: True
+#    rnn_hidden: 64
+#    rnn_stack: 2
+#    mlp_hidden: 32
+#    mlp_stack: 2
+#    in_node: 3
+#    out_node: 3
+#    extra_in: []
+#    extra_out: []
+#
+## Weighted Combining
+#si_pred_ramp: False
+#
+## Features
+#selected_features: []
+#i_s: 'dt'  # Input space
+#o_s: 'dt'  # Output space
+#sc: ''  # azim(+1), elev(+1), both(+2)
+#
+## Loss
+#multiview_loss: []
+#
+## Miscellaneous
+#cuda_device_num: 0
