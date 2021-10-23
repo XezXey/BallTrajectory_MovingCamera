@@ -157,12 +157,23 @@ x, y, z, u, v, d, intr_x, intr_y, intr_z, ray_x, ray_y, ray_z, eot, cd, og, hw, 
 input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='height')
 
 def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, anneal_w):
+
+  # Random noise
+  noise_sd = args.pipeline['height']['noise_sd']
+  if type(noise_sd) == int:
+    noise_sd = float(noise_sd)
+  elif type(noise_sd) == str:
+    l, h = int(noise_sd.split('t')[0]), int(noise_sd.split('t')[-1])
+    noise_sd = np.random.uniform(low=l, high=h)
+  args.pipeline['height']['noise_sd_'] = noise_sd
+
   ####################################
   ############# Training #############
   ####################################
   utils_model.train_mode(model_dict=model_dict)
 
   latent_dict_train = {module:None for module in args.pipeline}
+
   pred_dict_train, in_train = utils_model.fw_pass(model_dict, input_dict=input_dict_train, cam_dict=cam_dict_train, gt_dict=gt_dict_train, latent_dict=latent_dict_train, set_='train')
 
   optimizer.zero_grad() # Clear existing gradients from previous epoch
@@ -178,7 +189,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   optimizer.step()
 
   ####################################
-  ############# Evaluate #############
+  ############ Validation ############
   ####################################
   # Evaluating mode
   utils_model.eval_mode(model_dict=model_dict)

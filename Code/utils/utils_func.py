@@ -445,7 +445,8 @@ def uv_noise(uv):
         1. Noisy-UV in shape = (batch, seq_len, 2)
     '''
     # Generate noise
-    noise_sd = args.pipeline['height']['noise_sd']
+    noise_sd = args.pipeline['height']['noise_sd_']
+
     noise_u = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [0]].shape)
     noise_v = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [1]].shape)
     noise_uv = pt.cat((noise_u, noise_v), axis=-1).to(device)

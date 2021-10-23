@@ -210,13 +210,19 @@ def evaluate(recon_traj_all):
   return trajectory
 
 def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=0.01):
-  # Testing RNN/LSTM model
-  # Run over each example
-  # Test a model
-  pred_dict_test = {}
+  # Random noise
+  noise_sd = args.pipeline['height']['noise_sd']
+  if type(noise_sd) == int:
+    noise_sd = float(noise_sd)
+  elif type(noise_sd) == str:
+    l, h = int(noise_sd.split('t')[0]), int(noise_sd.split('t')[-1])
+    noise_sd = np.random.uniform(low=l, high=h)
+  args.pipeline['height']['noise_sd_'] = noise_sd
+
   ####################################
   ############# Testing ##############
   ####################################
+  pred_dict_test = {}
   # Evaluating mode
   utils_model.eval_mode(model_dict=model_dict)
 

@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: 0.0
+    noise_sd: 5
 
   refinement:
     arch: 'lstm'
