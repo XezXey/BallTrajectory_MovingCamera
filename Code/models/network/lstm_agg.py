@@ -1,24 +1,26 @@
 from __future__ import print_function
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+import sys, os
 import numpy as np
 import torch as pt
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 from models.network.vanilla_mlp import Vanilla_MLP
+sys.path.append(os.path.realpath('../../'))
+from utils import utils_func as utils_func
 
-class LSTM_CELL(pt.nn.Module):
+class LSTM_Agg(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_stack, mlp_hidden,
                 trainable_init, is_bidirectional, batch_size):
-        super(LSTM_CELL, self).__init__()
+        super(LSTM_Agg, self).__init__()
         # Define the model parameters
-        self.in_node = in_node+1
+        self.in_node = in_node + 1
         self.out_node = out_node
         self.batch_size = batch_size
         self.rnn_hidden = rnn_hidden
-        self.rnn_stack = rnn_stack+1
+        self.rnn_stack = rnn_stack + 1
         self.mlp_hidden = mlp_hidden
-        self.mlp_stack = mlp_stack+1
+        self.mlp_stack = mlp_stack + 1
 
         self.is_bidirectional = is_bidirectional
         self.bidirectional = 2 if is_bidirectional else 1
@@ -45,21 +47,27 @@ class LSTM_CELL(pt.nn.Module):
         self.ls_bw = pt.nn.Sequential(*ls_bw)
 
         # Linear Layers
-        self.mlp = Vanilla_MLP(in_node=rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
+        self.mlp_fw = Vanilla_MLP(in_node=rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
 
-    def forward(self, in_f, lengths, search_h=None):
+        self.mlp_bw = Vanilla_MLP(in_node=rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
+            out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
+
+    def forward(self, in_f, lengths, mask, search_h=None):
         # Input for forward and backward
         in_f = in_f
-        in_f_rev = pt.flip(in_f, dims=[1])
-        fw = []
-        bw = []
+        in_f_rev = utils_func.reverse_seq_at_lengths(seq=in_f, lengths=lengths)
+
+        mask_h = mask[..., [0]].float()
+        mask_h_rev = utils_func.reverse_seq_at_lengths(seq=mask_h, lengths=lengths)
         h_fw = pt.squeeze(search_h['first_h'], dim=-1)
         h_bw = pt.squeeze(search_h['last_h'], dim=-1)
+        fw = [h_fw]
+        bw = [h_bw]
         # Iterate to each time-step
         for t in range(in_f.shape[1]):
             # Rnn layer
-            for idx, recurrent_block in enumerate(self.ls_fw):
+            for idx, _ in enumerate(self.ls_fw):
                 # initial h and c
                 if t == 0:
                     if self.trainable_init:
@@ -83,10 +91,13 @@ class LSTM_CELL(pt.nn.Module):
                     hs_bw, cs_bw = self.ls_bw[idx](hs_bw, (hs_bw, cs_bw))
 
             # Accumulator
-            pred_fw = self.mlp(hs_fw)
-            pred_bw = self.mlp(hs_bw)
-            h_fw = h_fw + pred_fw
-            h_bw = h_bw + pred_bw
+            pred_fw = self.mlp_fw(hs_fw)
+            pred_bw = self.mlp_bw(hs_bw)
+            h_fw = h_fw + (pred_fw * mask_h[:, t, :])
+            h_bw = h_bw + (pred_bw * mask_h_rev[:, t, :])
+            print(h_fw[0], h_bw[0])
+            print(h_fw[1], h_bw[1])
+            input()
 
             fw.append(h_fw)
             bw.append(h_fw)

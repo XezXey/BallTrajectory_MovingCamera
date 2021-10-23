@@ -16,7 +16,7 @@ import yaml
 import utils.transformation as utils_transform
 
 # Models
-from models.module.height_module import Height_Module
+from models.module.height_module import Height_Module, Height_Module_Agg
 from models.module.refinement_module import Refinement_Module
 from models.module.flag_module import Flag_Module
 
@@ -136,7 +136,7 @@ def get_model(args):
     arch = module['arch']                                                       # Architecture
 
     if module_name == 'height': 
-      model = Height_Module(in_node=in_node, out_node=out_node, 
+      model = Height_Module_Agg(in_node=in_node, out_node=out_node, 
                     batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                     is_bidirectional=module['bidirectional'], 
                     mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
@@ -185,32 +185,18 @@ def get_model(args):
 
   return model_dict, model_cfg
 
-def reverse_masked_seq(seq, lengths):
+def reverse_seq_at_lengths(seq, lengths):
   '''
   Flip #n elements according to given lengths
   eg. x = [1, 2, 3, 4 , 5], len = 5
-  pt.flip(x[:len], dims=[0]) ===> [5, 4, 3, 2, 1]
+      - pt.flip(x[:len], dims=[0]) ===> [5, 4, 3, 2, 1]
+  eg. y = [1, 2, 3, 4 , 5], len = 3
+      - pt.flip(y[:len], dims=[0]) ===> [3, 2, 1, 4, 5]
   '''
   seq_flip = seq.clone()
   for i in range(seq.shape[0]):
     seq_flip[i][:lengths[i]] = pt.flip(seq[i][:lengths[i], :], dims=[0])
   return seq_flip
-
-def construct_bipred_weight(weight, lengths):
-  weight_scaler = pt.nn.Sigmoid()
-  weight = weight_scaler(weight)
-  fw_weight = pt.cat((pt.ones(weight.shape[0], 1, 1).cuda(), weight), dim=1)
-  bw_weight = pt.cat((pt.zeros(weight.shape[0], 1, 1).cuda(), 1-weight), dim=1)
-  for i in range(weight.shape[0]):
-    # Forward prediction weight
-    fw_weight[i][lengths[i]] = 0.
-    # Bachward prediction weight
-    bw_weight[i][lengths[i]] = 1.
-    # print(pt.cat((fw_weight, bw_weight), dim=2)[i][:lengths[i]+20])
-    # exit()
-  # print(weight.shape, lengths.shape)
-
-  return pt.cat((fw_weight, bw_weight), dim=2)
 
 def construct_w_ramp(weight_template, lengths):
   '''
@@ -654,9 +640,9 @@ def aggregation(tensor, lengths, search_h, space='h'):
   # forward aggregate
   h_fw = cumsum(seq=tensor, t_0=first_h)
   # backward aggregate
-  pred_h_bw = reverse_masked_seq(seq=-tensor, lengths=lengths-1) # This fn required len(seq) of dt-space
+  pred_h_bw = reverse_seq_at_lengths(seq=-tensor, lengths=lengths-1) # This fn required len(seq) of dt-space
   h_bw = cumsum(seq=pred_h_bw, t_0=last_h)
-  h_bw = reverse_masked_seq(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
+  h_bw = reverse_seq_at_lengths(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
   height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
 
   return height

@@ -156,7 +156,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['height']['i_s']
     o_s = args.pipeline['height']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h)
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
     pred_dict['h'] = pred_h
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
@@ -468,9 +468,9 @@ def output_space(pred_h, lengths, module, search_h=None):
     # forward aggregate
     h_fw = utils_func.cumsum(seq=dh, t_0=first_h)
     # backward aggregate
-    pred_h_bw = utils_func.reverse_masked_seq(seq=-dh, lengths=lengths-1) # This fn required len(seq) of dt-space
+    pred_h_bw = utils_func.reverse_seq_at_lengths(seq=-dh, lengths=lengths-1) # This fn required len(seq) of dt-space
     h_bw = utils_func.cumsum(seq=pred_h_bw, t_0=last_h)
-    h_bw = utils_func.reverse_masked_seq(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
+    h_bw = utils_func.reverse_seq_at_lengths(seq=h_bw, lengths=lengths) # This fn required len(seq) of t-space(after cumsum)
     height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
 
     if o_s == 't_dt':
