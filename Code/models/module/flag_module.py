@@ -4,8 +4,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import torch as pt
 from torch.autograd import Variable
-from models.vanilla_mlp import Vanilla_MLP
-from models.trainable_lstm import Trainable_LSTM
+from models.network.vanilla_mlp import Vanilla_MLP
+from models.network.trainable_lstm import Trainable_LSTM
 
 class Flag_Module(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_hidden, mlp_stack, 

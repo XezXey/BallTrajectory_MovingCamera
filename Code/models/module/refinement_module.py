@@ -4,14 +4,14 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import torch as pt
 from torch.autograd import Variable
-from models.vanilla_mlp import Vanilla_MLP
-from models.self_attention import Self_Attention
-from models.trainable_lstm import Trainable_LSTM
+from models.network.vanilla_mlp import Vanilla_MLP
+from models.network.self_attention import Self_Attention
+from models.network.trainable_lstm import Trainable_LSTM
 
-class Height_Module(pt.nn.Module):
+class Refinement_Module(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_hidden, mlp_stack, 
                 trainable_init, is_bidirectional, batch_size, attn=False):
-        super(Height_Module, self).__init__()
+        super(Refinement_Module, self).__init__()
         bidirectional = 2 if is_bidirectional else 1
 
         self.rnn = Trainable_LSTM(in_node=in_node, hidden=rnn_hidden, stack=rnn_stack, 
@@ -29,3 +29,4 @@ class Height_Module(pt.nn.Module):
             out1 = self.attention(out1)
         out2 = self.mlp(out1)
         return out2, (h, c)
+

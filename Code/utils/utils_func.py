@@ -16,9 +16,9 @@ import yaml
 import utils.transformation as utils_transform
 
 # Models
-from models.height_module import Height_Module
-from models.refinement_module import Refinement_Module
-from models.flag_module import Flag_Module
+from models.module.height_module import Height_Module
+from models.module.refinement_module import Refinement_Module
+from models.module.flag_module import Flag_Module
 
 # GPU initialization
 if pt.cuda.is_available():

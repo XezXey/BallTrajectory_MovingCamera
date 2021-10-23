@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_og/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont2_og/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -26,7 +26,7 @@ noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
-augment: False
+augment: True
 recon: 'clean'
 optim_init_h: False
 
@@ -35,8 +35,8 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_azim_elev'
-#input_variation: 'intr_hori_vert'
+#input_variation: 'intr_azim_elev'
+input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:
@@ -55,7 +55,7 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt_all'
+    i_s: 'dt'
     o_s: 'dt'
 
   height:
@@ -72,7 +72,7 @@ pipeline:
     extra_out: []
     latent_in: []
     latent_out: []
-    i_s: 'dt_all'
+    i_s: 'dt'
     o_s: 'dt'
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False

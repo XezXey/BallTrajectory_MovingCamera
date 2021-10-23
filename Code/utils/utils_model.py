@@ -156,7 +156,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['height']['i_s']
     o_s = args.pipeline['height']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
+    pred_h, _ = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h)
     pred_dict['h'] = pred_h
 
   height = output_space(pred_h, lengths=input_dict['lengths'], search_h=search_h, module='height')
