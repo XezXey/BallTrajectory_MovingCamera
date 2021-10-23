@@ -46,24 +46,40 @@ class Height_Module_Agg(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_hidden, mlp_stack, 
                 trainable_init, is_bidirectional, batch_size, args, attn=False):
         super(Height_Module_Agg, self).__init__()
+        # Property
+        self.i_s = args.pipeline['height']['i_s']
+        self.o_s = args.pipeline['height']['o_s']
+        self.args = args
+
+        # Network
         bidirectional = 2 if is_bidirectional else 1
 
-        self.rnn_layer = LSTM_Agg(in_node=in_node, out_node=out_node, 
+        self.rnn = LSTM_Agg(in_node=in_node, out_node=out_node, 
             rnn_hidden=rnn_hidden, rnn_stack=rnn_stack, mlp_stack=mlp_stack, mlp_hidden=mlp_hidden, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.attn = attn
         if self.attn:
             self.attention = Self_Attention()
 
-        self.rnn_layer2 = Trainable_LSTM(in_node=1, hidden=rnn_hidden, stack=rnn_stack, 
+        self.rnn2 = Trainable_LSTM(in_node=2, hidden=rnn_hidden, stack=rnn_stack, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.mlp = Vanilla_MLP(in_node=bidirectional * rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
         
     def forward(self, in_f, lengths, h=None, c=None, search_h=None, mask=None):
-        h_fw, h_bw = self.rnn_layer(in_f, lengths, search_h=search_h, mask=mask)
-        w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
-        height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+
+        if 'net_agg':
+            h_fw, h_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
+            # Height <= Network aggregation
+            w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
+            height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+
+        elif 'o_s_agg':
+            # Height <= Predict "o_s" then aggregation
+            out1, (h, c) = self.rnn(in_f, lengths, search_h)
+            out2 = self.mlp(out1)
+            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args)
+
         return height
 
 def output_space(pred_h, lengths, module, args, search_h=None):

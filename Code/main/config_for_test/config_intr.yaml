@@ -35,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_azim_elev'
+input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:
@@ -73,6 +73,7 @@ pipeline:
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
+    agg: 'o_s_agg'
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'

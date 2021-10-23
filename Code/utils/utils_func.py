@@ -136,12 +136,21 @@ def get_model(args):
     arch = module['arch']                                                       # Architecture
 
     if module_name == 'height': 
-      model = Height_Module(in_node=in_node, out_node=out_node, 
-                    batch_size=args.batch_size, trainable_init=module['trainable_init'], 
-                    is_bidirectional=module['bidirectional'], 
-                    mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
-                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
-                    attn=module['attn'], args=args)
+      if 'agg' not in module.keys() or module['agg'] == False:
+        model = Height_Module(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'], args=args)
+      elif module['agg'] == 'o_s_agg' or module['agg'] == 'net_agg':
+        model = Height_Module_Agg(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'], args=args)
+
 
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],

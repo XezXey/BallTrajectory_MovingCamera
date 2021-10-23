@@ -146,6 +146,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
+    print(in_f_orig.shape, in_f.shape, pred_flag.shape)
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   ######################################
@@ -380,7 +381,7 @@ def input_space_intr_ae(in_f, i_s, o_s, lengths, h0):
   in_f_intr = in_f[..., [0, 1, 2]]
   in_f_azim_elev = in_f[..., 3:]
   if o_s == 'dt':
-    if i_s == 'dt_intr':
+    if i_s == 'dt_intr' or i_s == 'dt':
       # Displacmeent on only plane points
       dt = in_f_intr[:, 1:, :] - in_f_intr[:, :-1, :]
       in_f = pt.cat((dt, in_f_azim_elev[:, :-1, :]), dim=2)
