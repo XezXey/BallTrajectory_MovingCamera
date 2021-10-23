@@ -95,15 +95,13 @@ class LSTM_Agg(pt.nn.Module):
             pred_bw = self.mlp_bw(hs_bw)
             h_fw = h_fw + (pred_fw * mask_h[:, t, :])
             h_bw = h_bw + (pred_bw * mask_h_rev[:, t, :])
-            print(h_fw[0], h_bw[0])
-            print(h_fw[1], h_bw[1])
-            input()
 
             fw.append(h_fw)
             bw.append(h_fw)
         
         fw = pt.stack((fw), dim=1)
         bw = pt.stack((bw), dim=1)
+        bw = utils_func.reverse_seq_at_lengths(seq=bw, lengths=lengths+1)
 
         # Residual from recurrent block to FC
         return fw, bw
