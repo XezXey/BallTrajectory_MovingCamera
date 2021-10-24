@@ -64,12 +64,17 @@ class LSTM_Agg(pt.nn.Module):
         h_bw = pt.squeeze(search_h['last_h'], dim=-1)
         fw = [h_fw]
         bw = [h_bw]
+
+        # List of hidden/cell states : Shape = (n_stack, seq_len, hidden_size/cell_size)
+        hs_fw_list, cs_fw_list = [[]] * len(self.ls_fw), [[]] * len(self.ls_fw)
+        hs_bw_list, cs_bw_list = [[]] * len(self.ls_bw), [[]] * len(self.ls_bw)
+
         # Iterate to each time-step
         for t in range(in_f.shape[1]):
-            # Rnn layer
+            # Iterate on each stacked-LSTM
             for idx, _ in enumerate(self.ls_fw):
-                # initial h and c
                 if t == 0:
+                # 1st timestep : initial h and c
                     if self.trainable_init:
                         init_hs = self.hs.repeat(1, 1, self.batch_size, 1)[idx]
                         init_cs = self.cs.repeat(1, 1, self.batch_size, 1)[idx]
@@ -79,25 +84,40 @@ class LSTM_Agg(pt.nn.Module):
                     hs_fw, cs_fw = init_hs[0], init_cs[0]
                     hs_bw, cs_bw = init_hs[1], init_cs[1]
 
+                    # Start with a init-hidden/cell state
+                    hs_fw_list[idx].append(hs_fw)
+                    cs_fw_list[idx].append(cs_fw)
+                    hs_bw_list[idx].append(hs_bw)
+                    cs_bw_list[idx].append(cs_bw)
+
+                prev_hs_fw, prev_cs_fw = hs_fw_list[idx][t], cs_fw_list[idx][t]
+                prev_hs_bw, prev_cs_bw = hs_bw_list[idx][t], cs_bw_list[idx][t]
+                
                 if idx == 0:
                     # Forward direction
-                    hs_fw, cs_fw = self.ls_fw[idx](pt.cat((in_f[:, t, :], h_fw), dim=-1), (hs_fw, cs_fw))
+                    curr_hs_fw, curr_cs_fw = self.ls_fw[idx](pt.cat((in_f[:, t, :], h_fw), dim=-1), (prev_hs_fw, prev_cs_fw))
                     # Backward direction
-                    hs_bw, cs_bw = self.ls_bw[idx](pt.cat((in_f_rev[:, t, :], h_bw), dim=-1), (hs_bw, cs_bw))
+                    curr_hs_bw, curr_cs_bw = self.ls_bw[idx](pt.cat((in_f_rev[:, t, :], h_bw), dim=-1), (prev_hs_bw, prev_cs_bw))
                 else :
                     # Forward direction
-                    hs_fw, cs_fw = self.ls_fw[idx](hs_fw, (hs_fw, cs_fw))
+                    curr_hs_fw, curr_cs_fw = self.ls_fw[idx](curr_hs_fw, (prev_hs_fw, prev_cs_fw))
                     # Backward direction
-                    hs_bw, cs_bw = self.ls_bw[idx](hs_bw, (hs_bw, cs_bw))
+                    curr_hs_bw, curr_cs_bw = self.ls_bw[idx](curr_hs_bw, (prev_hs_bw, prev_cs_bw))
+
+                # Update current hidden/cell state
+                hs_fw_list[idx].append(curr_hs_fw)
+                cs_fw_list[idx].append(curr_cs_fw)
+                hs_bw_list[idx].append(curr_hs_bw)
+                cs_bw_list[idx].append(curr_cs_bw)
 
             # Accumulator
-            pred_fw = self.mlp_fw(hs_fw)
-            pred_bw = self.mlp_bw(hs_bw)
+            pred_fw = self.mlp_fw(hs_fw_list[-1][t])
+            pred_bw = self.mlp_bw(hs_fw_list[-1][t])
             h_fw = h_fw + (pred_fw * mask_h[:, t, :])
             h_bw = h_bw + (pred_bw * mask_h_rev[:, t, :])
 
             fw.append(h_fw)
-            bw.append(h_fw)
+            bw.append(h_bw)
         
         fw = pt.stack((fw), dim=1)
         bw = pt.stack((bw), dim=1)

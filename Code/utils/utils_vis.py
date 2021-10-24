@@ -32,8 +32,11 @@ def share_args(a):
 
 def visualize_layout_update(fig=None, n_vis=5):
   # Save to html file and use wandb to log the html and display (Plotly3D is not working)
+  x = 9.5 if args.env == 'tennis' else 10
+  y = 0
+  z = 17 if args.env == 'tennis' else 10
   for i in range(n_vis*2):
-    fig['layout']['scene{}'.format(i+1)].update(xaxis=dict(nticks=5, range=[-9.5, 9.5]), zaxis=dict(nticks=15, range=[-35, 35]), aspectmode='manual', aspectratio=dict(x=1, y=1, z=3))
+    fig['layout']['scene{}'.format(i+1)].update(xaxis=dict(nticks=5, range=[-x, x]), zaxis=dict(nticks=15, range=[-z, z]), aspectmode='manual', aspectratio=dict(x=1, y=1, z=3))
     #fig['layout']['scene{}'.format(i+1)].update(yaxis = dict(nticks=5, range=[-2, 6],),)
   return fig
 
@@ -61,12 +64,27 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     visualize_layout_update(fig=fig_traj, n_vis=n_vis)
 
     ####################################
+    ########## Canonicalize ############
+    ####################################
+    if args.canonicalize:
+      fig_canon = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
+      visualize_canonicalize(pred=pred_dict_train, gt=gt_dict_train['gt'][..., [0, 1, 2]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0, 1, 2]], fig=fig_canon, set='Train', vis_idx=train_vis_idx, col=1, cam_dict=cam_dict_train)
+      visualize_canonicalize(pred=pred_dict_val, gt=gt_dict_val['gt'][..., [0, 1, 2]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0, 1, 2]], fig=fig_canon, set='Validation', vis_idx=val_vis_idx, col=2, cam_dict=cam_dict_val)
+      visualize_layout_update(fig=fig_canon, n_vis=n_vis)
+
+    ####################################
     ############### Ray ################
     ####################################
-    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='horizontal')
-    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='horizontal')
-    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='vertical')
-    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='vertical')
+    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='horizontal', canonicalize=False)
+    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='horizontal', canonicalize=False)
+    visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1, plane='vertical', canonicalize=False)
+    visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_traj, set='Val', vis_idx=val_vis_idx, col=2, plane='vertical', canonicalize=False)
+
+    if args.canonicalize:
+      visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_canon, set='Train', vis_idx=train_vis_idx, col=1, plane='horizontal', canonicalize=True)
+      visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_canon, set='Val', vis_idx=val_vis_idx, col=2, plane='horizontal', canonicalize=True)
+      visualize_ray(cam_dict=cam_dict_train, input_dict=input_dict_train, fig=fig_canon, set='Train', vis_idx=train_vis_idx, col=1, plane='vertical', canonicalize=True)
+      visualize_ray(cam_dict=cam_dict_val, input_dict=input_dict_val, fig=fig_canon, set='Val', vis_idx=val_vis_idx, col=2, plane='vertical', canonicalize=True)
     ####################################
     ############### Flag ###############
     ####################################
@@ -81,6 +99,10 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
 
     fig_traj.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
     plotly.offline.plot(fig_traj, filename='{}/wandb_vis_traj.html'.format(args.vis_path), auto_open=False)
+    if args.canonicalize:
+      fig_canon.update_layout(height=1920, width=1500, autosize=True) # Adjust the layout/axis for pitch scale
+      plotly.offline.plot(fig_canon, filename='{}/wandb_vis_traj_canon.html'.format(args.vis_path), auto_open=False)
+
     try:
       wandb.log({'n_epochs':epoch, "Trajectory(Col1=Train, Col2=Val)":wandb.Html(open('{}/wandb_vis_traj.html'.format(args.vis_path)))})
     except ValueError:
@@ -126,14 +148,20 @@ def inference_vis(input_dict, gt_dict, pred_dict, cam_dict, latent_dict):
       visualize_flag(pred=pred_dict, gt=gt_dict, lengths=len_, mask=mask, fig=fig_flag, set='Test', vis_idx=vis_idx[n_vis//2:], col=2)
       plotly.offline.plot(fig_flag, filename='{}/pred_vis_flag.html'.format(args.vis_path), auto_open=False)
 
-
-
-def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizontal'):
+def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizontal', canonicalize=False):
   # Iterate to plot each trajectory
-  #ray = cam_dict['ray'].cpu().numpy()
   cpos = cam_dict['Einv'][..., 0:3, -1]
   ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
   intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane=plane)
+
+  if canonicalize:
+    # Canonicalize
+    cpos = utils_transform.canonicalize(pts=cpos, R=cam_dict['R'])
+    ray = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=cam_dict['R'])
+    intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane=plane)
+  else:
+    ray = ray
+    intr = intr
 
   cpos = cpos.cpu().numpy()
   ray = ray.cpu().numpy()
@@ -189,15 +217,53 @@ def visualize_ray(cam_dict, input_dict, fig, set, vis_idx, col, plane='horizonta
 
   return fig
 
+def visualize_canonicalize(pred, gt, lengths, mask, vis_idx, set, col, cam_dict, fig=None):
+  xyz = pred['xyz'][..., [0, 1, 2]]
+  if 'refinement' in args.pipeline:
+    xyz_refined = pred['xyz_refined'][..., [0, 1, 2]]
+    xyz_refnoise = pred['xyz_refnoise'][..., [0, 1, 2]]
+    xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=cam_dict['R']).cpu().detach().numpy()
+    xyz_refnoise = utils_transform.canonicalize(pts=xyz_refnoise, R=cam_dict['R']).cpu().detach().numpy()
+
+  gt = utils_transform.canonicalize(pts=gt, R=cam_dict['R'])
+  xyz = utils_transform.canonicalize(pts=xyz, R=cam_dict['R']).cpu().detach().numpy()
+
+  x = 9.5 if args.env == 'tennis' else 5
+  y = 0
+  z = 17 if args.env == 'tennis' else 5
+  field = np.array([[-x, 0, z], [x, 0, z], [x, 0, -z], [-x, 0, -z], [-x, 0, z]]) 
+
+  if gt is not None:
+    gt = gt.cpu().detach().numpy()
+  # Iterate to plot each trajectory
+  for idx, i in enumerate(vis_idx):
+    if gt is not None:
+      # No-gt
+      mse = utils_loss.TrajectoryLoss(pt.tensor(xyz_refined[i]).cuda() if 'refinement' in args.pipeline else pt.tensor(xyz[i]).cuda(), pt.tensor(gt[i]).cuda(), mask=mask[i])
+      fig.add_trace(go.Scatter3d(x=-gt[i][:lengths[i], 0], y=gt[i][:lengths[i], 1], z=gt[i][:lengths[i], 2], mode='markers+lines', 
+                                marker=marker_dict_gt, name="{}-Ground Truth Trajectory [{}], MSE={:3f}".format(set, i, mse)), row=idx+1, col=col)
+    if 'refinement' in args.pipeline:
+      # Refinement
+      fig.add_trace(go.Scatter3d(x=-xyz_refined[i][:lengths[i], 0], y=xyz_refined[i][:lengths[i], 1], z=xyz_refined[i][:lengths[i], 2], mode='markers+lines', 
+                                marker=marker_dict_refined, name="{}-Refined Trajectory [{}]".format(set, i)), row=idx+1, col=col)
+      fig.add_trace(go.Scatter3d(x=-xyz_refnoise[i][:lengths[i], 0], y=xyz_refnoise[i][:lengths[i], 1], z=xyz_refnoise[i][:lengths[i], 2], mode='markers+lines', 
+                                marker=marker_dict_in_refnoisy, name="{}-In-noisy ref Trajectory[{}]".format(set, i)), row=idx+1, col=col)
+
+    # Reconstructed (from height)
+    fig.add_trace(go.Scatter3d(x=-xyz[i][:lengths[i], 0], y=xyz[i][:lengths[i], 1], z=xyz[i][:lengths[i], 2], mode='markers+lines', 
+                              marker=marker_dict_pred, name="{}-Estimated Trajectory [{}]".format(set, i)), row=idx+1, col=col)
+  
+    fig.add_trace(go.Scatter3d(x=field[:, 0], y=field[:, 1], z=field[:, 2], mode='markers+lines', marker=marker_dict_field, name='Field'), row=idx+1, col=col)
+
 def visualize_trajectory(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
   xyz = pred['xyz'][..., [0, 1, 2]].cpu().detach().numpy()
   if 'refinement' in args.pipeline:
     xyz_refined = pred['xyz_refined'][..., [0, 1, 2]].cpu().detach().numpy()
     xyz_refnoise = pred['xyz_refnoise'][..., [0, 1, 2]].cpu().detach().numpy()
 
-  x = 9.5
+  x = 9.5 if args.env == 'tennis' else 5
   y = 0
-  z = 17
+  z = 17 if args.env == 'tennis' else 5
   field = np.array([[-x, 0, z], [x, 0, z], [x, 0, -z], [-x, 0, -z], [-x, 0, z]]) 
 
   if gt is not None:

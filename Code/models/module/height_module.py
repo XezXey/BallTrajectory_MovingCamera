@@ -62,7 +62,7 @@ class Height_Module_Agg(pt.nn.Module):
         if self.attn:
             self.attention = Self_Attention()
 
-        self.rnn2 = Trainable_LSTM(in_node=1, hidden=rnn_hidden, stack=rnn_stack, 
+        self.rnn2 = Trainable_LSTM(in_node=2, hidden=rnn_hidden, stack=rnn_stack, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.mlp = Vanilla_MLP(in_node=bidirectional * rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
@@ -78,10 +78,9 @@ class Height_Module_Agg(pt.nn.Module):
         elif self.agg == 'o_s_agg':
             # Height <= Predict "o_s" then aggregation
             in_f = pt.cat((h_fw, h_bw), dim=2)
-            in_f = h_fw
             out1, (h, c) = self.rnn2(in_f=in_f, lengths=lengths)
             out2 = self.mlp(out1)
-            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args)
+            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
 
         return height
 

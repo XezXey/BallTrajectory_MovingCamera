@@ -107,12 +107,24 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   pred_dict = {}
 
   in_f, ray, recon_dict = uv_to_input_features(cam_dict, set_)
+  c = 0
+  for i in range(cam_dict['cpos'].shape[0]):
+    tmp = np.unique(cam_dict['cpos'][i].cpu().numpy(), axis=0, return_counts=True)
+    c += tmp[0].shape[0]
+    print(tmp[0], tmp[0].shape[0])
+    print("*"*100)
+    if (tmp[0].shape[0] == 1) and (set_ == 'train'):
+      input()
+  print(c)
+  input()
 
   # Canonicalize
   if args.canonicalize:
     canon_dict, in_f = canonicalize_features(Einv=cam_dict['Einv'], ray=ray, in_f=in_f)
   else:
     canon_dict = {'cam_cl' : None, 'R' : None}
+  cam_dict.update(canon_dict)
+
 
   # Augmentation
   if set_ == 'train' or set_ == 'val':
@@ -146,7 +158,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
-    print(in_f_orig.shape, in_f.shape, pred_flag.shape)
     in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   ######################################
