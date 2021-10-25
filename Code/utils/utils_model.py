@@ -107,16 +107,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   pred_dict = {}
 
   in_f, ray, recon_dict = uv_to_input_features(cam_dict, set_)
-  c = 0
-  for i in range(cam_dict['cpos'].shape[0]):
-    tmp = np.unique(cam_dict['cpos'][i].cpu().numpy(), axis=0, return_counts=True)
-    c += tmp[0].shape[0]
-    print(tmp[0], tmp[0].shape[0])
-    print("*"*100)
-    if (tmp[0].shape[0] == 1) and (set_ == 'train'):
-      input()
-  print(c)
-  input()
 
   # Canonicalize
   if args.canonicalize:
@@ -127,7 +117,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
 
 
   # Augmentation
-  if set_ == 'train' or set_ == 'val':
+  if set_ == 'train' or set_ == 'val' or args.env == 'mocap':
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])

@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -21,7 +21,7 @@ lr: 0.001
 clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
-canonicalize: False
+canonicalize: True
 noise: True
 annealing: False
 annealing_cycle: 1
@@ -113,3 +113,6 @@ cuda_device_num: 0
 w: 1280
 h: 720
 fps: 30
+w: 1664
+h: 1088
+fps: 60

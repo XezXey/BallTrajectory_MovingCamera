@@ -76,8 +76,8 @@ class LSTM_Agg(pt.nn.Module):
                 if t == 0:
                 # 1st timestep : initial h and c
                     if self.trainable_init:
-                        init_hs = self.hs.repeat(1, 1, self.batch_size, 1)[idx]
-                        init_cs = self.cs.repeat(1, 1, self.batch_size, 1)[idx]
+                        init_hs = self.hs.repeat(1, 1, in_f.shape[0], 1)[idx]
+                        init_cs = self.cs.repeat(1, 1, in_f.shape[0], 1)[idx]
                     else:
                         init_hs, init_cs = self.initial_state()
 

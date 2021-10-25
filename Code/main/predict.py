@@ -243,7 +243,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
                 'xyz':pred_dict_test['xyz'].detach().cpu().numpy(), 
                 'xyz_refined':pred_dict_test['xyz_refined'].detach().cpu().numpy() if 'refinement' in args.pipeline else None,
                 'seq_len':gt_dict_test['lengths'].detach().cpu().numpy(), 
-                'cpos':cam_dict_test['cpos'].detach().cpu().numpy()}
+                'cam_dict':cam_dict_test}
 
   #utils_func.print_loss(loss_list=[test_loss_dict, test_loss], name='Testing')
 
@@ -391,6 +391,6 @@ if __name__ == '__main__':
   # Save prediction file
   if args.save_cam_traj is not None:
     utils_func.initialize_folder(args.save_cam_traj)
-    utils_func.save_cam_traj(trajectory=recon_traj_all, cam_dict=cam_dict_test, n=n_trajectory)
+    utils_func.save_cam_traj(trajectory=recon_traj_all, n=n_trajectory)
   print("[#] Done")
 

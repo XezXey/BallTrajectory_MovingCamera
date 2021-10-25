@@ -536,7 +536,7 @@ def generate_input(cam_dict):
 
   return in_f, ray
 
-def save_cam_traj(trajectory, cam_dict, n):
+def save_cam_traj(trajectory, n):
   save_path = '{}/tags_{}/{}'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name)
   initialize_folder(save_path)
 
@@ -551,15 +551,13 @@ def save_cam_traj(trajectory, cam_dict, n):
     pred_tmp =  trajectory[i]['xyz']
     pred_refined_tmp =  trajectory[i]['xyz_refined']
     seq_len = trajectory[i]['seq_len']
-    cpos_tmp = trajectory[i]['cpos']
-    E_tmp = cam_dict['E'].cpu().numpy()
-    I_tmp = cam_dict['I'].cpu().numpy()
-    uv_tmp = cam_dict['tracking'].cpu().numpy()
+    E_tmp = trajectory[i]['cam_dict']['E'].cpu().numpy()
+    I_tmp = trajectory[i]['cam_dict']['I'].cpu().numpy()
+    uv_tmp = trajectory[i]['cam_dict']['tracking'].cpu().numpy()
 
     for j in range(seq_len.shape[0]):
       # Each trajectory
       pred.append(pred_tmp[j][:seq_len[j]])
-      cpos.append(cpos_tmp[j][:seq_len[j]])
 
       if (gt is None) or (args.env == 'tennis') and ('refinement' in args.pipeline):
         # Tennis

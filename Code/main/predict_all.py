@@ -11,6 +11,7 @@ parser.add_argument('--env', type=str, required=True)
 parser.add_argument('--save_suffix', type=str, required=True)
 
 # MISC
+parser.add_argument('--batch_size', dest='batch_size', type=int, default=512)
 parser.add_argument('--noise', dest='is_noise', action='store_true')
 parser.add_argument('--no_noise', dest='is_noise', action='store_false')
 parser.add_argument('--augment', dest='is_augment', action='store_true')
@@ -41,9 +42,9 @@ else:
 for ckpt in ckpt_path:
     ckpt += '/config.yaml'
     cmd = """
-        python predict.py --dataset_test_path {} --load_ckpt {} --save_cam_traj {} --env {} {} {} {} --fps {} --recon {} --config {} --save_suffix {} > ../logs/log.txt
-        """.format(args.dataset_test_path, args.load_ckpt, args.save_cam_traj, args.env, 
-        noise, annealing, augment, args.fps, args.recon, ckpt, args.save_suffix, ckpt)
+        python predict.py --dataset_test_path {} --load_ckpt {} --save_cam_traj {} --env {} {} {} {} --fps {} --recon {} --config {} --save_suffix {} --batch_size {} > ../logs/log.txt
+        """.format(args.dataset_test_path, args.load_ckpt, args.save_cam_traj, args.env,
+        noise, annealing, augment, args.fps, args.recon, ckpt, args.save_suffix, args.batch_size)
     print(cmd)
     try:
         os.system(cmd)
