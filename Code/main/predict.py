@@ -228,7 +228,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
 
   latent_dict_test = {module:None for module in args.pipeline}
   if args.optim_init_h or args.optim_latent:
-    pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test)
+    pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
   else:
     pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
 
@@ -263,7 +263,7 @@ def collate_fn_padd(batch, set_):
     features_col = []
 
   # Padding batch of variable length
-  if args.augment and set_=='train':
+  if args.augment:
     batch = utils_func.augment(batch=batch)
 
   padding_value = -1000.0

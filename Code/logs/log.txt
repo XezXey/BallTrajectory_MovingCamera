@@ -1,18 +1,18 @@
 ****************************************************************************************************
 [%]GPU Enabled
 ===============================================Features===============================================
-Prediction = height, Environment = mocap
+Prediction = height, Environment = unity
 Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
-Selected features :  No features cols from real data
-1. input_col =  [u, v]
-2. gt_col =  [x, y, z] (if existed)
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
 ====================================================================================================
 [#]Testing : Trajectory Estimation
 ===============================Dataset shape===============================
-Mixed : (376,)
+Mixed : (2500,)
 ===========================================================================
 ===>Load ckpt with Optimizer state, Decay and Scheduler state
-[#] Loading ... ../model_checkpoints//CVPR_Week5_init_h/intr_hori_vert_uv10_cont2_uniqE/intr_hori_vert_uv10_cont2_uniqE_best_traj_ma.pth
+[#] Loading ... ../model_checkpoints//CVPR_Week5_init_h/intr_hori_vert_uv0_os_agg_noaug_mocap/intr_hori_vert_uv0_os_agg_noaug_mocap_best_traj_ma.pth
 ====================================================================================================
 [#] Model Parameters
 ===>  rnn.h torch.Size([3, 2, 1, 64])
@@ -49,32 +49,74 @@ Mixed : (376,)
 ===>  mlp.seq1.4.bias torch.Size([32])
 ===>  mlp.seq1.6.weight torch.Size([1, 32])
 ===>  mlp.seq1.6.bias torch.Size([1])
-===>  rnn.h torch.Size([3, 2, 1, 64])
-===>  rnn.c torch.Size([3, 2, 1, 64])
-===>  rnn.ls.0.weight_ih_l0 torch.Size([256, 5])
-===>  rnn.ls.0.weight_hh_l0 torch.Size([256, 64])
-===>  rnn.ls.0.bias_ih_l0 torch.Size([256])
-===>  rnn.ls.0.bias_hh_l0 torch.Size([256])
-===>  rnn.ls.0.weight_ih_l0_reverse torch.Size([256, 5])
-===>  rnn.ls.0.weight_hh_l0_reverse torch.Size([256, 64])
-===>  rnn.ls.0.bias_ih_l0_reverse torch.Size([256])
-===>  rnn.ls.0.bias_hh_l0_reverse torch.Size([256])
-===>  rnn.ls.1.weight_ih_l0 torch.Size([256, 128])
-===>  rnn.ls.1.weight_hh_l0 torch.Size([256, 64])
-===>  rnn.ls.1.bias_ih_l0 torch.Size([256])
-===>  rnn.ls.1.bias_hh_l0 torch.Size([256])
-===>  rnn.ls.1.weight_ih_l0_reverse torch.Size([256, 128])
-===>  rnn.ls.1.weight_hh_l0_reverse torch.Size([256, 64])
-===>  rnn.ls.1.bias_ih_l0_reverse torch.Size([256])
-===>  rnn.ls.1.bias_hh_l0_reverse torch.Size([256])
-===>  rnn.ls.2.weight_ih_l0 torch.Size([256, 128])
-===>  rnn.ls.2.weight_hh_l0 torch.Size([256, 64])
-===>  rnn.ls.2.bias_ih_l0 torch.Size([256])
-===>  rnn.ls.2.bias_hh_l0 torch.Size([256])
-===>  rnn.ls.2.weight_ih_l0_reverse torch.Size([256, 128])
-===>  rnn.ls.2.weight_hh_l0_reverse torch.Size([256, 64])
-===>  rnn.ls.2.bias_ih_l0_reverse torch.Size([256])
-===>  rnn.ls.2.bias_hh_l0_reverse torch.Size([256])
+===>  rnn.hs torch.Size([3, 2, 1, 64])
+===>  rnn.cs torch.Size([3, 2, 1, 64])
+===>  rnn.ls_fw.0.weight_ih torch.Size([256, 6])
+===>  rnn.ls_fw.0.weight_hh torch.Size([256, 64])
+===>  rnn.ls_fw.0.bias_ih torch.Size([256])
+===>  rnn.ls_fw.0.bias_hh torch.Size([256])
+===>  rnn.ls_fw.1.weight_ih torch.Size([256, 64])
+===>  rnn.ls_fw.1.weight_hh torch.Size([256, 64])
+===>  rnn.ls_fw.1.bias_ih torch.Size([256])
+===>  rnn.ls_fw.1.bias_hh torch.Size([256])
+===>  rnn.ls_fw.2.weight_ih torch.Size([256, 64])
+===>  rnn.ls_fw.2.weight_hh torch.Size([256, 64])
+===>  rnn.ls_fw.2.bias_ih torch.Size([256])
+===>  rnn.ls_fw.2.bias_hh torch.Size([256])
+===>  rnn.ls_bw.0.weight_ih torch.Size([256, 6])
+===>  rnn.ls_bw.0.weight_hh torch.Size([256, 64])
+===>  rnn.ls_bw.0.bias_ih torch.Size([256])
+===>  rnn.ls_bw.0.bias_hh torch.Size([256])
+===>  rnn.ls_bw.1.weight_ih torch.Size([256, 64])
+===>  rnn.ls_bw.1.weight_hh torch.Size([256, 64])
+===>  rnn.ls_bw.1.bias_ih torch.Size([256])
+===>  rnn.ls_bw.1.bias_hh torch.Size([256])
+===>  rnn.ls_bw.2.weight_ih torch.Size([256, 64])
+===>  rnn.ls_bw.2.weight_hh torch.Size([256, 64])
+===>  rnn.ls_bw.2.bias_ih torch.Size([256])
+===>  rnn.ls_bw.2.bias_hh torch.Size([256])
+===>  rnn.mlp_fw.seq1.0.weight torch.Size([32, 64])
+===>  rnn.mlp_fw.seq1.0.bias torch.Size([32])
+===>  rnn.mlp_fw.seq1.2.weight torch.Size([32, 32])
+===>  rnn.mlp_fw.seq1.2.bias torch.Size([32])
+===>  rnn.mlp_fw.seq1.4.weight torch.Size([32, 32])
+===>  rnn.mlp_fw.seq1.4.bias torch.Size([32])
+===>  rnn.mlp_fw.seq1.6.weight torch.Size([1, 32])
+===>  rnn.mlp_fw.seq1.6.bias torch.Size([1])
+===>  rnn.mlp_bw.seq1.0.weight torch.Size([32, 64])
+===>  rnn.mlp_bw.seq1.0.bias torch.Size([32])
+===>  rnn.mlp_bw.seq1.2.weight torch.Size([32, 32])
+===>  rnn.mlp_bw.seq1.2.bias torch.Size([32])
+===>  rnn.mlp_bw.seq1.4.weight torch.Size([32, 32])
+===>  rnn.mlp_bw.seq1.4.bias torch.Size([32])
+===>  rnn.mlp_bw.seq1.6.weight torch.Size([1, 32])
+===>  rnn.mlp_bw.seq1.6.bias torch.Size([1])
+===>  rnn2.h torch.Size([3, 2, 1, 64])
+===>  rnn2.c torch.Size([3, 2, 1, 64])
+===>  rnn2.ls.0.weight_ih_l0 torch.Size([256, 2])
+===>  rnn2.ls.0.weight_hh_l0 torch.Size([256, 64])
+===>  rnn2.ls.0.bias_ih_l0 torch.Size([256])
+===>  rnn2.ls.0.bias_hh_l0 torch.Size([256])
+===>  rnn2.ls.0.weight_ih_l0_reverse torch.Size([256, 2])
+===>  rnn2.ls.0.weight_hh_l0_reverse torch.Size([256, 64])
+===>  rnn2.ls.0.bias_ih_l0_reverse torch.Size([256])
+===>  rnn2.ls.0.bias_hh_l0_reverse torch.Size([256])
+===>  rnn2.ls.1.weight_ih_l0 torch.Size([256, 128])
+===>  rnn2.ls.1.weight_hh_l0 torch.Size([256, 64])
+===>  rnn2.ls.1.bias_ih_l0 torch.Size([256])
+===>  rnn2.ls.1.bias_hh_l0 torch.Size([256])
+===>  rnn2.ls.1.weight_ih_l0_reverse torch.Size([256, 128])
+===>  rnn2.ls.1.weight_hh_l0_reverse torch.Size([256, 64])
+===>  rnn2.ls.1.bias_ih_l0_reverse torch.Size([256])
+===>  rnn2.ls.1.bias_hh_l0_reverse torch.Size([256])
+===>  rnn2.ls.2.weight_ih_l0 torch.Size([256, 128])
+===>  rnn2.ls.2.weight_hh_l0 torch.Size([256, 64])
+===>  rnn2.ls.2.bias_ih_l0 torch.Size([256])
+===>  rnn2.ls.2.bias_hh_l0 torch.Size([256])
+===>  rnn2.ls.2.weight_ih_l0_reverse torch.Size([256, 128])
+===>  rnn2.ls.2.weight_hh_l0_reverse torch.Size([256, 64])
+===>  rnn2.ls.2.bias_ih_l0_reverse torch.Size([256])
+===>  rnn2.ls.2.bias_hh_l0_reverse torch.Size([256])
 ===>  mlp.seq1.0.weight torch.Size([32, 128])
 ===>  mlp.seq1.0.bias torch.Size([32])
 ===>  mlp.seq1.2.weight torch.Size([32, 32])
@@ -118,7 +160,7 @@ Mixed : (376,)
 ===>  mlp.seq1.6.weight torch.Size([1, 32])
 ===>  mlp.seq1.6.bias torch.Size([1])
 ====================================================================================================
-[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week5_init_h/intr_hori_vert_uv10_cont2_uniqE/intr_hori_vert_uv10_cont2_uniqE_best_traj_ma.pth
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week5_init_h/intr_hori_vert_uv0_os_agg_noaug_mocap/intr_hori_vert_uv0_os_agg_noaug_mocap_best_traj_ma.pth
 Module ===> flag.....Loaded!!!
 Module ===> height.....Loaded!!!
 Module ===> refinement.....Loaded!!!
@@ -147,10 +189,46 @@ Flag_Module(
   (sigmoid): Sigmoid()
 )
 ####### Model - height #######
-Height_Module(
-  (rnn): Trainable_LSTM(
+Height_Module_Agg(
+  (rnn): LSTM_Agg(
+    (ls_fw): Sequential(
+      (0): LSTMCell(6, 64)
+      (1): LSTMCell(64, 64)
+      (2): LSTMCell(64, 64)
+    )
+    (ls_bw): Sequential(
+      (0): LSTMCell(6, 64)
+      (1): LSTMCell(64, 64)
+      (2): LSTMCell(64, 64)
+    )
+    (mlp_fw): Vanilla_MLP(
+      (activation): LeakyReLU(negative_slope=0.01)
+      (seq1): Sequential(
+        (0): Linear(in_features=64, out_features=32, bias=True)
+        (1): LeakyReLU(negative_slope=0.01)
+        (2): Linear(in_features=32, out_features=32, bias=True)
+        (3): LeakyReLU(negative_slope=0.01)
+        (4): Linear(in_features=32, out_features=32, bias=True)
+        (5): LeakyReLU(negative_slope=0.01)
+        (6): Linear(in_features=32, out_features=1, bias=True)
+      )
+    )
+    (mlp_bw): Vanilla_MLP(
+      (activation): LeakyReLU(negative_slope=0.01)
+      (seq1): Sequential(
+        (0): Linear(in_features=64, out_features=32, bias=True)
+        (1): LeakyReLU(negative_slope=0.01)
+        (2): Linear(in_features=32, out_features=32, bias=True)
+        (3): LeakyReLU(negative_slope=0.01)
+        (4): Linear(in_features=32, out_features=32, bias=True)
+        (5): LeakyReLU(negative_slope=0.01)
+        (6): Linear(in_features=32, out_features=1, bias=True)
+      )
+    )
+  )
+  (rnn2): Trainable_LSTM(
     (ls): Sequential(
-      (0): LSTM(5, 64, batch_first=True, bidirectional=True)
+      (0): LSTM(2, 64, batch_first=True, bidirectional=True)
       (1): LSTM(128, 64, batch_first=True, bidirectional=True)
       (2): LSTM(128, 64, batch_first=True, bidirectional=True)
     )
@@ -190,3 +268,45 @@ Refinement_Module(
     )
   )
 )
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week5_init_h/intr_hori_vert_uv0_os_agg_noaug_mocap"
+[#]Data : "../../Dataset/Mocap/cont2_eot_uniqE/val_set/"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.1327 0.0816 0.1325]
+	SD :  [0.2084 0.1052 0.2122]
+===> Distance :  MSE
+	MEAN :  [0.061  0.0177 0.0625]
+	SD :  [0.3127 0.0562 0.3562]
+===> Distance :  RMSE
+	RMSE :  [0.2469 0.1331 0.2501]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.22055064
+	RMSE-DISTANCE-2 :  0.37599567
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0058 0.004  0.0057]
+	SD :  [0.0112 0.0113 0.0118]
+===> Distance :  MSE
+	MEAN :  [0.0002 0.0001 0.0002]
+	SD :  [0.0011 0.0034 0.0017]
+===> Distance :  RMSE
+	RMSE :  [0.0126 0.012  0.0131]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.009889534
+	RMSE-DISTANCE-2 :  0.02177984
+****************************************************************************************************
+[#] Runtime : 2.6875023576948376+-0.23779558117436853
+[#] Saving reconstruction to ../reconstructed/Mocap_week5//tags_CVPR_Week5_init_h/intr_hori_vert_uv0_os_agg_noaug_mocap
+[#] Done

@@ -33,6 +33,11 @@ def eval_mode(model_dict):
   for model in model_dict.keys():
     model_dict[model].eval()
 
+def freeze_weight(model_dict):
+  for k in model_dict.keys():
+    for param in model_dict[k].parameters():
+      param.requires_grad = False
+
 def uv_to_input_features(cam_dict, set_):
   '''
   Create the input features from uv-tracking
@@ -115,9 +120,8 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     canon_dict = {'cam_cl' : None, 'R' : None}
   cam_dict.update(canon_dict)
 
-
   # Augmentation
-  if set_ == 'train' or set_ == 'val' or args.env == 'mocap':
+  if set_ == 'train' or set_ == 'val':# or args.env == 'mocap' or set_ == 'test':
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
@@ -194,8 +198,8 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       height_refined = utils_func.aggregation(tensor=dh_refined, lengths=input_dict['lengths'], search_h=search_h)
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
     elif args.pipeline['refinement']['refine'] == 'infref_h':
-      xyz_, height_ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
-      height_ = pt.cat((height_, in_f_orig), dim=2)
+      xyz_refnoise, height_refnoise = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
+      height_ = pt.cat((height_refnoise, in_f_orig), dim=2)
       height_ = add_latent(in_f=height_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
       pred_refoff, _ = model_dict['refinement'](in_f=height_, lengths=input_dict['lengths'])
       pred_dict['refine_offset'] = pred_refoff
@@ -204,6 +208,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   
   else:
     xyz_refined = None
+    xyz_refnoise = None
     xyz_ = None
 
   # Decoanonicalize
@@ -211,15 +216,15 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     xyz = utils_transform.canonicalize(pts=xyz, R=canon_dict['R'], inv=True)
     if xyz_refined is not None:
       xyz_refined = utils_transform.canonicalize(pts=xyz_refined, R=canon_dict['R'], inv=True)
-      xyz_ = utils_transform.canonicalize(pts=xyz_, R=canon_dict['R'], inv=True)
+      xyz_refnoise = utils_transform.canonicalize(pts=xyz_refnoise, R=canon_dict['R'], inv=True)
 
   pred_dict['xyz'] = xyz
-  pred_dict['xyz_refnoise'] = xyz_
+  pred_dict['xyz_refnoise'] = xyz_refnoise
   pred_dict['xyz_refined'] = xyz_refined
 
   return pred_dict, in_f
 
-def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
+def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   '''
   Forward Pass with an optimization.
   '''
@@ -227,9 +232,10 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
   utils_func.random_seed() # Seeding the initial latent
   # Training mode to peserve the gradient
   train_mode(model_dict=model_dict)
+  freeze_weight(model_dict=model_dict)
   # Construct latent
   latent_dict = create_latent(latent_dict, input_dict, model_dict)
-  t = tqdm.trange(500, leave=True)
+  t = tqdm.trange(100, leave=True)
 
   patience = 10
   count = 0
@@ -240,7 +246,7 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
     #for name, param in latent_dict['height'].named_parameters():
     #  if param.requires_grad:
     #    t0[name] = param.data.clone()
-    pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict)
+    pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
     loss_dict, loss = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
     for name, optim in latent_dict.items():
       if optim is not None:
@@ -249,10 +255,6 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict):
           optim['last_h'](loss)
         else:
           optim(loss)
-          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]]), dim=-1))
-          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]], pred_dict['xyz_refined'][0][..., [1]]), dim=-1))
-          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz'][0][..., [1]], pred_dict['xyz_refined'][0][..., [1]], pred_dict['xyz'][0][..., [1]] + pred_dict['refine_offset'][0]), dim=-1)[:input_dict['lengths'][0]+1])
-          #print(pt.cat((pred_dict['refine_offset'][0], pred_dict['xyz_refined'][0]), dim=-1))
 
     txt_loss = ''
     for k, v in loss_dict.items():
@@ -451,12 +453,10 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
   #########################################################################
   traj_loss = utils_loss.TrajectoryLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
   bg_loss = utils_loss.BelowGroundLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-  reprj_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
   if 'refinement' in args.pipeline:
     bg_loss_refined = utils_loss.BelowGroundLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
     traj_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
-    reprj_loss_refined = utils_loss.ReprojectionLoss(pred=pred_dict['xyz_refined'], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict)
 
   ######################################
   ############### Flag #################
@@ -487,31 +487,32 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     # Annealing
     traj_loss_ = traj_loss + traj_loss_refined * anneal_w
     bg_loss_ = bg_loss + bg_loss_refined * anneal_w
-    reprj_loss_ = reprj_loss + reprj_loss_refined * anneal_w
   elif ('refinement' in args.pipeline):
     # No annealing
     traj_loss_ = traj_loss + traj_loss_refined
     bg_loss_ = bg_loss + bg_loss_refined
-    reprj_loss_ = reprj_loss + reprj_loss_refined
   else:
     # No refinement
     traj_loss_ = traj_loss
     bg_loss_ = bg_loss
-    reprj_loss_ = reprj_loss
 
   # Combined all losses term
-  loss = traj_loss_ + bg_loss_ + flag_loss + reprj_loss_ 
+  loss = traj_loss_ + bg_loss_ + flag_loss
   loss_dict = {"Trajectory Loss":traj_loss_.item(),
                "BelowGnd Loss":bg_loss_.item(),
                "Flag Loss":flag_loss.item(),
-               "Reprojection Loss":reprj_loss_.item(),}
-               #"ConsineSim Loss":cosinesim_loss.item(),
-               #}
+               }
 
   return loss_dict, loss
 
 def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   # Optimization loss term
+
+  #########################################################################
+  ############# Trajectory, Below GND, Gravity, Reprojection ##############
+  #########################################################################
+  traj_loss_refined = utils_loss.TrajectoryLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'])
+
   ######################################
   ############# Below GND ##############
   ######################################
@@ -541,7 +542,7 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   #else:                           
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
-  loss = reprojection_loss + below_ground_loss + gravity_loss #+ cosinesim_loss
+  loss = traj_loss_refined + gravity_loss + below_ground_loss  #+ reprojection_loss + below_ground_loss #+ cosinesim_loss
   loss_dict = {"BGnd Loss":below_ground_loss.item(), 
                "Grav Loss":gravity_loss.item(), 
                "Reproj Loss":reprojection_loss.item()}

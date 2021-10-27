@@ -8,11 +8,10 @@ class Optimization(pt.nn.Module):
     def __init__(self, shape, name):
         super(Optimization, self).__init__()
         
-        self.params = pt.nn.Parameter(data=pt.randn(size=shape).cuda(), requires_grad=True)
-        self.params_ = pt.nn.ParameterList()
-        self.params_.append(self.params)
-        self.optimizer = pt.optim.Adam(self.parameters(), lr=0.1)
+        self.params = pt.nn.Parameter(data=pt.rand(size=shape).cuda(), requires_grad=True)
+        self.optimizer = pt.optim.Adam(self.parameters(), lr=1)
         self.lr_scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, patience=10)
+        self.lrelu = pt.nn.LeakyReLU()
         self.name = name
         
     def forward(self, loss):
@@ -30,6 +29,9 @@ class Optimization(pt.nn.Module):
             #print(self.params)
             params_constrainted = self.params / (pt.sqrt(pt.sum(self.params**2, dim=-1, keepdims=True)) + 1e-16)
             #print(params_constrainted)
+            return params_constrainted
+        elif self.name == 'init_first_h' or self.name == 'init_last_h':
+            params_constrainted = self.params
             return params_constrainted
         else:
             return self.params

@@ -38,7 +38,7 @@ class Height_Module(pt.nn.Module):
             out1 = self.attention(out1)
         out2 = self.mlp(out1)
         
-        height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args)
+        height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
 
         return height
 
@@ -68,8 +68,8 @@ class Height_Module_Agg(pt.nn.Module):
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
         
     def forward(self, in_f, lengths, h=None, c=None, search_h=None, mask=None):
-        h_fw, h_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
 
+        h_fw, h_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
         if self.agg == 'net_agg':
             # Height <= Network aggregation
             w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)

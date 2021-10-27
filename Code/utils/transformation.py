@@ -41,7 +41,7 @@ def IE_array(trajectory, col):
   mat = np.squeeze(mat, axis=1)
   return mat
 
-def h_to_3d(intr, E, height, cam_pos=None):
+def h_to_3d(intr, Einv, height, canon_dict):
   '''
   [#] 3D reconstruction by get the position along the ray from a given height
   Input : (All torch.tensor dtype)
@@ -54,8 +54,10 @@ def h_to_3d(intr, E, height, cam_pos=None):
 
   ***Function need to have no detach() to prevent the c-graph discontinue***
   '''
-  if cam_pos is None:
-    cam_pos = pt.tensor(np.linalg.inv(E.cpu().numpy())[..., 0:3, -1]).to(device)
+  if args.canonicalize:
+    cam_pos = canon_dict['cam_cl']
+  else:
+    cam_pos = pt.tensor(Einv[..., 0:3, -1]).to(device)
 
   R = cam_pos - intr
   norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)
@@ -224,8 +226,8 @@ def reconstruct(height, cam_dict, recon_dict, canon_dict):
     intr_noisy = recon_dict['noisy']
 
   if args.recon == 'clean':
-    xyz = h_to_3d(height=height, intr=intr_clean, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
+    xyz = h_to_3d(height=height, intr=intr_clean, Einv=cam_dict['Einv'], canon_dict=canon_dict)
   elif args.recon == 'noisy':
-    xyz = h_to_3d(height=height, intr=intr_noisy, E=cam_dict['E'], cam_pos=canon_dict['cam_cl'])
+    xyz = h_to_3d(height=height, intr=intr_noisy, Einv=cam_dict['Einv'], canon_dict=canon_dict)
   
   return xyz

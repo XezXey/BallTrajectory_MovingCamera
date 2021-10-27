@@ -60,6 +60,17 @@ class LSTM_Agg(pt.nn.Module):
 
         mask_h = mask[..., [0]].float()
         mask_h_rev = utils_func.reverse_seq_at_lengths(seq=mask_h, lengths=lengths)
+
+        if search_h is None:
+            first_h = pt.zeros(size=(in_f.shape[0], 1, 1)).cuda()
+            last_h = pt.zeros(size=(in_f.shape[0], 1, 1)).cuda()
+            search_h = {}
+            search_h['first_h'] = first_h
+            search_h['last_h'] = last_h
+        else:
+            first_h = search_h['first_h']
+            last_h = search_h['last_h']
+
         h_fw = pt.squeeze(search_h['first_h'], dim=-1)
         h_bw = pt.squeeze(search_h['last_h'], dim=-1)
         fw = [h_fw]

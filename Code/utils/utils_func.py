@@ -542,8 +542,8 @@ def save_cam_traj(trajectory, n):
 
   pred = []
   gt = []
-  cpos = []
   traj_json = {}
+  count = 0
 
   for i in range(len(trajectory)):
     # Each batch
@@ -563,7 +563,7 @@ def save_cam_traj(trajectory, n):
         # Tennis
         json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
-                    "pred" : pred_refined_tmp[j][:seq_len[j]].tolist(),
+                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
@@ -572,19 +572,20 @@ def save_cam_traj(trajectory, n):
         # Unity, Mocap, IPL
         json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
                     "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
-                    "pred" : pred_refined_tmp[j][:seq_len[j]].tolist(),
+                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist() if 'refinement' in args.pipeline else np.zeros(pred_tmp[j][:seq_len[j]].shape).tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
 
-      traj_json[j] = json_dat
+      traj_json[count] = json_dat
+      count+=1
 
-    if args.save_suffix != '':
-      args.save_suffix = '_' + args.save_suffix
-    with open("{}/{}{}.json".format(save_path, args.wandb_name, args.save_suffix), "w") as file:
-      txt = "var data = " + str(traj_json)
-      file.write(txt)
+  if args.save_suffix != '':
+    args.save_suffix = '_' + args.save_suffix
+  with open("{}/{}{}.json".format(save_path, args.wandb_name, args.save_suffix), "w") as file:
+    txt = "var data = " + str(traj_json)
+    file.write(txt)
 
   print("[#] Saving reconstruction to {}".format(save_path))
 
@@ -618,13 +619,15 @@ def augment(batch):
 
   # Split by percentage
   perc = 25
-  perc = np.random.randint(low=perc, high=100, size=len(batch))[0]/100
+  #perc = np.random.randint(low=perc, high=100, size=len(batch))/100
+  perc /= 100
   len_aug = np.ceil(len_.copy() * perc).astype(int)
 
   for i in range(len(batch)):
     h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
     try :
-      start = np.random.randint(low=0, high=h, size=1)[0]
+      #start = np.random.randint(low=0, high=h, size=1)[0]
+      start = 30
     except ValueError:
       print("AUGMENT LENGTH FAILED : ", len_[i], len_aug[i])
       exit()
