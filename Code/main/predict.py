@@ -77,6 +77,7 @@ parser.add_argument('--no_augment', dest='augment', help='Apply an augmented tra
 # Optimization
 parser.add_argument('--optim_init_h', dest='optim_init_h', help='Optimize for initial height', action='store_true', default=None)
 parser.add_argument('--optim_latent', dest='optim_latent', help='Optimize for latent', action='store_true', default=None)
+parser.add_argument('--optim_analyse', dest='optim_analyse', help='Latent optimization analyse', action='store_true', default=False)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)
@@ -227,12 +228,12 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   latent_dict_test = {module:None for module in args.pipeline}
-  if args.optim_init_h or args.optim_latent:
+  if (args.optim_init_h or args.optim_latent) and args.optim_analyse:
+    pred_dict_test, in_test = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
+  elif (args.optim_init_h or args.optim_latent) and not args.optim_analyse:
     pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
   else:
     pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
-
-  test_loss_dict, test_loss = utils_model.training_loss(input_dict=input_dict_test, gt_dict=gt_dict_test, pred_dict=pred_dict_test, cam_dict=cam_dict_test, anneal_w=None) # Calculate the loss
 
   ###################################
   ############ Evaluation ###########

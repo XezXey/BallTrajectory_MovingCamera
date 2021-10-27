@@ -318,7 +318,7 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'wandb_resume', 'save_suffix']
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'optim_analyse', 'wandb_resume', 'save_suffix']
   for k in args_dict.keys():
     if k in exception:
       continue

@@ -6,10 +6,12 @@ import sys
 import os
 import time
 import tqdm
+from itertools import combinations, combinations_with_replacement, product
 sys.path.append(os.path.realpath('../..'))
 # Utils
 import utils.transformation as utils_transform
 import utils.utils_func as utils_func
+import utils.utils_vis as utils_vis
 import utils.loss as utils_loss
 # Models
 from models.optimization import Optimization
@@ -240,14 +242,12 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   patience = 10
   count = 0
   prev_loss = 2e16
-  for _ in t:
-    #t0 = {}
-    #for name, param in model_dict['refinement'].named_parameters():
-    #for name, param in latent_dict['height'].named_parameters():
-    #  if param.requires_grad:
-    #    t0[name] = param.data.clone()
+
+  for i in t:
+    # Optimization Loops
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
     loss_dict, loss = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
+
     for name, optim in latent_dict.items():
       if optim is not None:
         if name == 'init_h':
@@ -270,14 +270,48 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     prev_loss = loss.item()
     if count >= patience:
       break
-    #t1 = {}
-    #for name, param in latent_dict['height'].named_parameters():
-    #for name, param in model_dict['refinement'].named_parameters():
-    #  if param.requires_grad:
-    #    t1[name] = param.data
-    #for name in t1.keys():
-    #  print(t1[name] - t0[name])
 
+  return pred_dict, in_test
+
+def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
+  '''
+  Forward Pass with an optimization.
+  '''
+  
+  utils_func.random_seed() # Seeding the initial latent
+  # Training mode to peserve the gradient
+  train_mode(model_dict=model_dict)
+  freeze_weight(model_dict=model_dict)
+  # Construct latent
+  latent_dict = create_latent(latent_dict, input_dict, model_dict)
+
+  loss_landscape = {k:{} for k in latent_dict.keys()}
+  loss_landscape['init_h'] = {'first_h':[], 'last_h':[]}
+  loss_landscape['loss'] = {}
+
+  #init_h = combinations_with_replacement(np.linspace(0, 3, 25), r=2)
+  init_h = product(np.linspace(0, 2, 10), repeat=2)
+  for i, h in tqdm.tqdm(enumerate(init_h)):
+    # Optimization Loops
+    latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[h[0]]]]).to(device))
+    latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[h[1]]]]).to(device))
+    pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
+    loss_dict, _ = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
+    if i == 0:
+      loss_landscape['loss'] = {k:[] for k in loss_dict.keys()}
+
+    for name, optim in latent_dict.items():
+      if optim is not None:
+        if name == 'init_h':
+          loss_landscape[name]['first_h'].append(latent_dict['init_h']['first_h'].get_params().detach().cpu().numpy())
+          loss_landscape[name]['last_h'].append(latent_dict['init_h']['last_h'].get_params().detach().cpu().numpy())
+        else:
+          loss_landscape[name]['post_latent'] = optim.get_params()
+
+    for k in loss_dict.keys():
+      loss_landscape['loss'][k].append(loss_dict[k])
+
+  utils_vis.loss_landscape_plot(loss_landscape, gt_dict)
   return pred_dict, in_test
 
 def add_latent(in_f, module, input_dict, latent_dict):
@@ -542,10 +576,11 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
   #else:                           
   #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
 
-  loss = traj_loss_refined + gravity_loss + below_ground_loss  #+ reprojection_loss + below_ground_loss #+ cosinesim_loss
+  loss = gravity_loss + below_ground_loss  #+ reprojection_loss + below_ground_loss #+ cosinesim_loss
+  loss = traj_loss_refined
   loss_dict = {"BGnd Loss":below_ground_loss.item(), 
                "Grav Loss":gravity_loss.item(), 
-               "Reproj Loss":reprojection_loss.item()}
+               "Trajectory Loss":traj_loss_refined.item()}
                #"CosSim Loss":cosinesim_loss.item()}
 
   return loss_dict, loss

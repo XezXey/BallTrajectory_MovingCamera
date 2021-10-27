@@ -310,3 +310,27 @@ def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
 
     fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y[i][:l+1].reshape(-1,), mode='markers+lines', marker=marker_dict_in_refnoisy, name="{}-Y Predicted [{}]".format(set, i)), row=idx+1, col=col)
     fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=flag[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
+
+def loss_landscape_plot(loss_landscape, gt_dict):
+  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=2, specs=[[{'type':'surface'}, {'type':'scatter'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
+  for i, loss in enumerate(loss_landscape['loss'].keys()):
+    if isinstance(loss_landscape['init_h']['first_h'], list):
+      loss_landscape['init_h']['first_h'] = np.array(loss_landscape['init_h']['first_h']).reshape(-1)
+    if isinstance(loss_landscape['init_h']['last_h'], list):
+      loss_landscape['init_h']['last_h'] = np.array(loss_landscape['init_h']['last_h']).reshape(-1)
+
+    #x_grid, z_grid = np.meshgrid(loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h'])
+    #fig_loss_landscape.add_trace(go.Surface(x=x_grid, y=loss_landscape['loss'][loss], z=z_grid, name=loss), row=i+1, col=1)
+    if gt_dict is not None:
+      l = gt_dict['lengths']
+      gt = gt_dict['gt'][..., [0, 1, 2]].clone().detach().cpu().numpy()
+      fig_loss_landscape.add_trace(go.Scatter3d(x=gt[0, 0, [1]], y=loss_landscape['loss'][loss], z=gt[0, l[0]-1, [1]], name="Ground truth height"), row=i+1, col=1)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['first_h'], y=loss_landscape['loss'][loss], z=loss_landscape['init_h']['last_h'], name=loss), row=i+1, col=1)
+
+      fig_loss_landscape.update_xaxes(title_text="first_h (meter)", row=i+1, col=1)
+      fig_loss_landscape.update_yaxes(title_text="last_h (meter)", row=i+1, col=1)
+
+
+
+  plotly.offline.plot(fig_loss_landscape, filename='{}/wandb_vis_traj_loss_landscape.html'.format(args.vis_path), auto_open=False)
+  input()

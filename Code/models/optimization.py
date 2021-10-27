@@ -1,5 +1,7 @@
 from __future__ import print_function
 import warnings
+
+from numpy.lib.recfunctions import require_fields
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import torch as pt
@@ -35,6 +37,12 @@ class Optimization(pt.nn.Module):
             return params_constrainted
         else:
             return self.params
+
+    def set_params(self, params):
+        if list(self.params.shape) != list(params.shape):
+            raise Exception("Different params's shape assignment")
+        else:
+            self.params = pt.nn.Parameter(data=params, requires_grad=True)
 
     def get_name(self):
         return self.name
