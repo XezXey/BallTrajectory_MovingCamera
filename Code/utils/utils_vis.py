@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from scipy.interpolate import griddata
 import plotly.graph_objects as go
+from itertools import combinations, combinations_with_replacement, product
 import wandb
 import yaml
 import utils.utils_func as utils_func
@@ -312,26 +313,35 @@ def visualize_flag(pred, gt, lengths, mask, vis_idx, set, col, fig=None):
     fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=y[i][:l+1].reshape(-1,), mode='markers+lines', marker=marker_dict_in_refnoisy, name="{}-Y Predicted [{}]".format(set, i)), row=idx+1, col=col)
     fig.add_trace(go.Scatter(x=np.arange(lengths[i]), y=flag[i][:l].reshape(-1,), mode='markers+lines', marker=marker_dict_pred, name="{}-EOT Predicted [{}]".format(set, i)), row=idx+1, col=col)
 
-def loss_landscape_plot(loss_landscape, gt_dict):
-  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=2, specs=[[{'type':'surface'}, {'type':'scatter'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
+def loss_landscape_plot(loss_landscape, gt_dict, search_range):
+  marker_dict_gt_height = dict(color='rgba(0, 255, 0, 1)', size=7)
+  marker_dict_global_opt = dict(color='rgba(255, 0, 0, 1)', size=7)
+  marker_dict_loss = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=2, specs=[[{'type':'surface'}, {'type':'scatter3d'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
   for i, loss in enumerate(loss_landscape['loss'].keys()):
     if isinstance(loss_landscape['init_h']['first_h'], list):
       loss_landscape['init_h']['first_h'] = np.array(loss_landscape['init_h']['first_h']).reshape(-1)
     if isinstance(loss_landscape['init_h']['last_h'], list):
       loss_landscape['init_h']['last_h'] = np.array(loss_landscape['init_h']['last_h']).reshape(-1)
 
-    x_grid, z_grid = np.meshgrid(loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h'])
-    y_grid = griddata((loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h']), loss_landscape['loss'][loss],(x_grid, z_grid), method='cubic')
-    fig_loss_landscape.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, name=loss), row=i+1, col=1)
+    x, y = search_range, search_range
+    z = np.array(loss_landscape['loss'][loss]).reshape(search_range.shape[0], search_range.shape[0])
+    fig_loss_landscape.add_trace(go.Surface(x=x, y=y, z=z, name=loss, showscale=False), row=i+1, col=1)
+
+    global_min = np.where(np.isclose(z, np.min(z), rtol=1e-5))
+    x_min, y_min = global_min[0][0], global_min[1][0]
+
     if gt_dict is not None:
-      l = gt_dict['lengths']
-      gt = gt_dict['gt'][..., [0, 1, 2]].clone().detach().cpu().numpy()
-      fig_loss_landscape.add_trace(go.Scatter3d(x=gt[0, 0, [1]], y=loss_landscape['loss'][loss], z=gt[0, l[0]-1, [1]], name="Ground truth height", mode='markers'), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['first_h'], y=loss_landscape['loss'][loss], z=loss_landscape['init_h']['last_h'], mode='markers', name=loss), row=i+1, col=1)
+      fh, lh = loss_landscape['init_h']['gt_h'][0].detach().cpu().numpy(), loss_landscape['init_h']['gt_h'][1].detach().cpu().numpy()
+      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=1)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['last_h'], z=loss_landscape['loss'][loss], y=loss_landscape['init_h']['first_h'], mode='markers', marker=marker_dict_loss, name=loss), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=1)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=2)
 
-      fig_loss_landscape.update_xaxes(title_text="first_h (meter)", row=i+1, col=1)
-      fig_loss_landscape.update_yaxes(title_text="last_h (meter)", row=i+1, col=1)
-
+    fig_loss_landscape.update_scenes(xaxis_title_text="last_h (meter)", 
+                                    yaxis_title_text="first_h (meter)", 
+                                    zaxis_title_text="Loss")
 
 
   plotly.offline.plot(fig_loss_landscape, filename='{}/wandb_vis_traj_loss_landscape.html'.format(args.vis_path), auto_open=False)

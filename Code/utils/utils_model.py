@@ -289,8 +289,8 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
   loss_landscape['init_h'] = {'first_h':[], 'last_h':[]}
   loss_landscape['loss'] = {}
 
-  #init_h = combinations_with_replacement(np.linspace(0, 3, 25), r=2)
-  init_h = product(np.linspace(0, 2, 25), repeat=2)
+  search_range = np.linspace(0, 2, 15)
+  init_h = product(search_range, repeat=2)
   for i, h in tqdm.tqdm(enumerate(init_h)):
     # Optimization Loops
     latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[h[0]]]]).to(device))
@@ -311,7 +311,20 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     for k in loss_dict.keys():
       loss_landscape['loss'][k].append(loss_dict[k])
 
-  utils_vis.loss_landscape_plot(loss_landscape, gt_dict)
+
+  # Gt 
+  fh, lh = gt_dict['gt'][0, 0, 1], gt_dict['gt'][0, gt_dict['lengths'][0]-1, 1]
+  latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[fh]]]).to(device))
+  latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[lh]]]).to(device))
+  pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
+  loss_dict, _ = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
+
+  loss_landscape['init_h']['gt_h'] = [fh, lh]
+  loss_landscape['loss_gt'] = {k:[] for k in loss_dict.keys()}
+  for k in loss_dict.keys():
+    loss_landscape['loss_gt'][k].append(loss_dict[k])
+
+  utils_vis.loss_landscape_plot(loss_landscape, gt_dict, search_range)
   return pred_dict, in_test
 
 def add_latent(in_f, module, input_dict, latent_dict):
