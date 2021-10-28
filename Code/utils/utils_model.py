@@ -290,7 +290,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
   loss_landscape['loss'] = {}
 
   #init_h = combinations_with_replacement(np.linspace(0, 3, 25), r=2)
-  init_h = product(np.linspace(0, 2, 10), repeat=2)
+  init_h = product(np.linspace(0, 2, 25), repeat=2)
   for i, h in tqdm.tqdm(enumerate(init_h)):
     # Optimization Loops
     latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[h[0]]]]).to(device))

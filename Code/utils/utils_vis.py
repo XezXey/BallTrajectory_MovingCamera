@@ -7,6 +7,7 @@ import plotly
 import math
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
+from scipy.interpolate import griddata
 import plotly.graph_objects as go
 import wandb
 import yaml
@@ -319,13 +320,14 @@ def loss_landscape_plot(loss_landscape, gt_dict):
     if isinstance(loss_landscape['init_h']['last_h'], list):
       loss_landscape['init_h']['last_h'] = np.array(loss_landscape['init_h']['last_h']).reshape(-1)
 
-    #x_grid, z_grid = np.meshgrid(loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h'])
-    #fig_loss_landscape.add_trace(go.Surface(x=x_grid, y=loss_landscape['loss'][loss], z=z_grid, name=loss), row=i+1, col=1)
+    x_grid, z_grid = np.meshgrid(loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h'])
+    y_grid = griddata((loss_landscape['init_h']['first_h'], loss_landscape['init_h']['last_h']), loss_landscape['loss'][loss],(x_grid, z_grid), method='cubic')
+    fig_loss_landscape.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, name=loss), row=i+1, col=1)
     if gt_dict is not None:
       l = gt_dict['lengths']
       gt = gt_dict['gt'][..., [0, 1, 2]].clone().detach().cpu().numpy()
-      fig_loss_landscape.add_trace(go.Scatter3d(x=gt[0, 0, [1]], y=loss_landscape['loss'][loss], z=gt[0, l[0]-1, [1]], name="Ground truth height"), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['first_h'], y=loss_landscape['loss'][loss], z=loss_landscape['init_h']['last_h'], name=loss), row=i+1, col=1)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=gt[0, 0, [1]], y=loss_landscape['loss'][loss], z=gt[0, l[0]-1, [1]], name="Ground truth height", mode='markers'), row=i+1, col=1)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['first_h'], y=loss_landscape['loss'][loss], z=loss_landscape['init_h']['last_h'], mode='markers', name=loss), row=i+1, col=1)
 
       fig_loss_landscape.update_xaxes(title_text="first_h (meter)", row=i+1, col=1)
       fig_loss_landscape.update_yaxes(title_text="last_h (meter)", row=i+1, col=1)
