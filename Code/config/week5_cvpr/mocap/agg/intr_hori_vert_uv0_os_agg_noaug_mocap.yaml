@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week5_init_h'
-wandb_name: 'intr_hori_vert_uv0_os_agg_noaug_mocap'
+wandb_name: 'intr_hori_vert_uv0_os_agg_noaug_mocap_2'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -26,7 +26,7 @@ noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
-augment: True
+augment: False
 recon: 'clean'
 optim_init_h: False
 

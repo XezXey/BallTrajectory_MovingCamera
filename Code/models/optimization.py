@@ -11,7 +11,7 @@ class Optimization(pt.nn.Module):
         super(Optimization, self).__init__()
         
         self.params = pt.nn.Parameter(data=pt.rand(size=shape).cuda(), requires_grad=True)
-        self.optimizer = pt.optim.Adam(self.parameters(), lr=1)
+        self.optimizer = pt.optim.Adam(self.parameters(), lr=1e-1)
         self.lr_scheduler = pt.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, patience=10)
         self.lrelu = pt.nn.LeakyReLU()
         self.name = name

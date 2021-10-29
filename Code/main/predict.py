@@ -77,7 +77,7 @@ parser.add_argument('--no_augment', dest='augment', help='Apply an augmented tra
 # Optimization
 parser.add_argument('--optim_init_h', dest='optim_init_h', help='Optimize for initial height', action='store_true', default=None)
 parser.add_argument('--optim_latent', dest='optim_latent', help='Optimize for latent', action='store_true', default=None)
-parser.add_argument('--optim_analyse', dest='optim_analyse', help='Latent optimization analyse', action='store_true', default=False)
+parser.add_argument('--optim_analyse', dest='optim_analyse', help='Latent optimization analyse', type=str, default=None)
 
 # Visualization
 parser.add_argument('--visualize', dest='visualize', help='Visualize the trajectory', action='store_true', default=None)
@@ -210,7 +210,7 @@ def evaluate(recon_traj_all):
     print("*"*100)
   return trajectory
 
-def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=0.01):
+def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, tid, threshold=0.01):
   # Random noise
   noise_sd = args.pipeline['height']['noise_sd']
   if type(noise_sd) == int:
@@ -228,9 +228,9 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, threshold=
   utils_model.eval_mode(model_dict=model_dict)
 
   latent_dict_test = {module:None for module in args.pipeline}
-  if (args.optim_init_h or args.optim_latent) and args.optim_analyse:
-    pred_dict_test, in_test = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
-  elif (args.optim_init_h or args.optim_latent) and not args.optim_analyse:
+  if (args.optim_init_h or args.optim_latent) and (args.optim_analyse is not None):
+    pred_dict_test, in_test = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test', tid=tid)
+  elif (args.optim_init_h or args.optim_latent) and (args.optim_analyse is None):
     pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
   else:
     pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
@@ -367,6 +367,10 @@ if __name__ == '__main__':
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
+    #if batch_idx not in [0, 4, 32, 27, 30]:
+    if batch_idx not in [0]:
+      continue
+
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:
       gt_dict_test = None
@@ -378,7 +382,7 @@ if __name__ == '__main__':
     # Call function to test
     start_time = time.time()
     recon_traj = predict(input_dict_test=input_dict_test, gt_dict_test=gt_dict_test, 
-                                                           cam_dict_test=cam_dict_test, model_dict=model_dict)
+                                                           cam_dict_test=cam_dict_test, model_dict=model_dict, tid=batch_idx)
 
     recon_traj_all.append(recon_traj)
     n_trajectory += input_dict_test['input'].shape[0]
