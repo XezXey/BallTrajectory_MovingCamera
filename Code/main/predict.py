@@ -231,7 +231,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, tid, thres
   if (args.optim_init_h or args.optim_latent) and (args.optim_analyse is not None):
     pred_dict_test, in_test = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test', tid=tid)
   elif (args.optim_init_h or args.optim_latent) and (args.optim_analyse is None):
-    pred_dict_test, in_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
+    pred_dict_test, in_test, latent_dict_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
   else:
     pred_dict_test, in_test = utils_model.fw_pass(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
 
@@ -368,8 +368,7 @@ if __name__ == '__main__':
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
     #if batch_idx not in [0, 4, 32, 27, 30]:
-    if batch_idx not in [0]:
-      continue
+    #  continue
 
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:

@@ -137,13 +137,14 @@ def get_model(args):
 
     if module_name == 'height': 
       if 'agg' not in module.keys() or module['agg'] == False:
+        # Backward compatible for old model without 'agg' keys
         model = Height_Module(in_node=in_node, out_node=out_node, 
                       batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                       is_bidirectional=module['bidirectional'], 
                       mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
                       rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
                       attn=module['attn'], args=args)
-      elif module['agg'] == 'o_s_agg' or module['agg'] == 'net_agg':
+      elif module['agg'] in ['o_s_agg', 'net_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']:
         model = Height_Module_Agg(in_node=in_node, out_node=out_node, 
                       batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                       is_bidirectional=module['bidirectional'], 
@@ -618,16 +619,15 @@ def augment(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
 
   # Split by percentage
+  #perc /= 100
   perc = 25
-  #perc = np.random.randint(low=perc, high=100, size=len(batch))/100
-  perc /= 100
+  perc = np.random.randint(low=perc, high=100, size=len(batch))/100
   len_aug = np.ceil(len_.copy() * perc).astype(int)
 
   for i in range(len(batch)):
     h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
     try :
-      #start = np.random.randint(low=0, high=h, size=1)[0]
-      start = 30
+      start = np.random.randint(low=0, high=h, size=1)[0]
     except ValueError:
       print("AUGMENT LENGTH FAILED : ", len_[i], len_aug[i])
       exit()

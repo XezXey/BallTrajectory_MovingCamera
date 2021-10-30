@@ -123,7 +123,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   cam_dict.update(canon_dict)
 
   # Augmentation
-  if set_ == 'train' or set_ == 'val':# or args.env == 'mocap' or set_ == 'test':
+  if set_ == 'train' or set_ == 'val' or args.env == 'mocap' and (not args.optim_init_h):
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
@@ -237,7 +237,7 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   freeze_weight(model_dict=model_dict)
   # Construct latent
   latent_dict = create_latent(latent_dict, input_dict, model_dict)
-  t = tqdm.trange(10, leave=True)
+  t = tqdm.trange(100, leave=True)
 
   patience = 10
   count = 0
@@ -271,7 +271,7 @@ def fw_pass_optim(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     if count >= patience:
       break
 
-  return pred_dict, in_test
+  return pred_dict, in_test, latent_dict
 
 def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_, tid):
   '''
@@ -289,7 +289,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
   loss_landscape['init_h'] = {'first_h':[], 'last_h':[]}
   loss_landscape['loss'] = {}
 
-  search_range = np.linspace(0, 2, 3)
+  search_range = np.linspace(0, 2, 20)
   init_h = product(search_range, repeat=2)
   for i, h in tqdm.tqdm(enumerate(init_h)):
     # Optimization Loops
@@ -334,7 +334,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     for i in range(int(args.optim_analyse.split('@')[-1])):
       utils_func.random_seed() # Seeding the initial latent
       latent_dict = create_latent(latent_dict, input_dict, model_dict)
-      pred_dict, in_test = fw_pass_optim(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
+      pred_dict, in_test, latent_dict = fw_pass_optim(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
       loss_dict, _ = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
       all_pred_dict.append(pred_dict)
       all_loss_dict.append(loss_dict)
@@ -347,6 +347,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     # Visualize all optimized init_h
     all_opt = {'n_opt':int(args.optim_analyse.split('@')[-1]), 'init_h':{'first_h':[], 'last_h':[]}, 'loss':{k:[] for k in loss_dict.keys()}}
     for i in range(int(args.optim_analyse.split('@')[-1])):
+      print(all_latent_dict)
       all_opt['init_h']['first_h'].append(all_latent_dict[i]['init_h']['first_h'].get_params().detach().cpu().numpy().reshape(-1)[0])
       all_opt['init_h']['last_h'].append(all_latent_dict[i]['init_h']['last_h'].get_params().detach().cpu().numpy().reshape(-1)[0])
       for k in loss_dict.keys():
@@ -372,7 +373,6 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     return pred_dict, in_test
   else:
     raise NotImplemented
-
 
 def add_latent(in_f, module, input_dict, latent_dict):
   #print("[#] Module : ", module)
