@@ -318,7 +318,7 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
   marker_dict_global_opt = dict(color='rgba(255, 0, 0, 1)', size=7)
   marker_dict_opt = dict(color='rgba(255, 127, 14, 1)', size=7)
   marker_dict_loss = dict(color='rgba(0, 0, 255, 0.4)', size=4)
-  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=2, specs=[[{'type':'surface'}, {'type':'scatter3d'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
+  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=3, specs=[[{'type':'surface'}, {'type':'heatmap'}, {'type':'scatter3d'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
   for i, loss in enumerate(loss_landscape['loss'].keys()):
     if isinstance(loss_landscape['init_h']['first_h'], list):
       loss_landscape['init_h']['first_h'] = np.array(loss_landscape['init_h']['first_h']).reshape(-1)
@@ -328,23 +328,27 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
     x, y = search_range, search_range
     z = np.array(loss_landscape['loss'][loss]).reshape(search_range.shape[0], search_range.shape[0])
     global_min = np.where(np.isclose(z, np.min(z), rtol=1e-5))
-    print(global_min)
     x_min, y_min = global_min[0][0], global_min[1][0]
 
     fig_loss_landscape.add_trace(go.Surface(x=x, y=y, z=z, name=loss, showscale=False), row=i+1, col=1)
+    fig_loss_landscape.add_trace(go.Heatmap(x=x, y=y, z=z, name=loss, showscale=True), row=i+1, col=2)
+
     if gt_dict is not None:
       fh, lh = loss_landscape['init_h']['gt_h'][0].detach().cpu().numpy(), loss_landscape['init_h']['gt_h'][1].detach().cpu().numpy()
       fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=2)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['last_h'], z=loss_landscape['loss'][loss], y=loss_landscape['init_h']['first_h'], mode='markers', marker=marker_dict_loss, name=loss), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=3)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['last_h'], z=loss_landscape['loss'][loss], y=loss_landscape['init_h']['first_h'], mode='markers', marker=marker_dict_loss, name=loss), row=i+1, col=3)
       fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=3)
+
+      fig_loss_landscape.add_trace(go.Scatter(x=lh, y=fh, name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter(x=[search_range[y_min]], y=[search_range[x_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=2)
       
     if all_opt is not None:
       fh, lh = all_opt['init_h']['first_h'], all_opt['init_h']['last_h']
       z = all_opt['loss'][loss]
       fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=z, name="Optimize - {}".format(i), mode='markers', marker=marker_dict_opt), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=z, name="Optimize - {}".format(i), mode='markers', marker=marker_dict_opt), row=i+1, col=2)
+      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=z, name="Optimize - {}".format(i), mode='markers', marker=marker_dict_opt), row=i+1, col=3)
 
 
     fig_loss_landscape.update_scenes(xaxis_title_text="last_h (meter)", 

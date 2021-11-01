@@ -368,7 +368,8 @@ if __name__ == '__main__':
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
     #if batch_idx not in [0, 4, 32, 27, 30]:
-    #  continue
+    if batch_idx not in [0, 1]:
+      continue
 
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:

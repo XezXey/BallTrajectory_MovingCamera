@@ -123,7 +123,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   cam_dict.update(canon_dict)
 
   # Augmentation
-  if set_ == 'train' or set_ == 'val' or args.env == 'mocap' and (not args.optim_init_h):
+  if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)):
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
@@ -289,7 +289,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
   loss_landscape['init_h'] = {'first_h':[], 'last_h':[]}
   loss_landscape['loss'] = {}
 
-  search_range = np.linspace(0, 2, 20)
+  search_range = np.linspace(0, 2, 15)
   init_h = product(search_range, repeat=2)
   for i, h in tqdm.tqdm(enumerate(init_h)):
     # Optimization Loops
@@ -314,6 +314,9 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
 
   # Gt 
   fh, lh = gt_dict['gt'][0, 0, 1], gt_dict['gt'][0, gt_dict['lengths'][0]-1, 1]
+  if args.env == 'tennis':
+    fh *=  0
+    lh *= 0
   latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[fh]]]).to(device))
   latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[lh]]]).to(device))
   pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
@@ -347,7 +350,6 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     # Visualize all optimized init_h
     all_opt = {'n_opt':int(args.optim_analyse.split('@')[-1]), 'init_h':{'first_h':[], 'last_h':[]}, 'loss':{k:[] for k in loss_dict.keys()}}
     for i in range(int(args.optim_analyse.split('@')[-1])):
-      print(all_latent_dict)
       all_opt['init_h']['first_h'].append(all_latent_dict[i]['init_h']['first_h'].get_params().detach().cpu().numpy().reshape(-1)[0])
       all_opt['init_h']['last_h'].append(all_latent_dict[i]['init_h']['last_h'].get_params().detach().cpu().numpy().reshape(-1)[0])
       for k in loss_dict.keys():
