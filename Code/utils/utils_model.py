@@ -288,6 +288,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
   loss_landscape = {k:{} for k in latent_dict.keys()}
   loss_landscape['init_h'] = {'first_h':[], 'last_h':[]}
   loss_landscape['loss'] = {}
+  loss_landscape['pred_dict'] = []
 
   search_range = np.linspace(0, 2, 15)
   init_h = product(search_range, repeat=2)
@@ -296,6 +297,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[h[0]]]]).to(device))
     latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[h[1]]]]).to(device))
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
+    loss_landscape['pred_dict'].append(pred_dict)
     loss_dict, _ = optimization_loss(input_dict=input_dict, pred_dict=pred_dict, gt_dict=gt_dict, cam_dict=cam_dict, latent_dict=latent_dict)
     if i == 0:
       loss_landscape['loss'] = {k:[] for k in loss_dict.keys()}
@@ -314,7 +316,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
 
   # Gt 
   fh, lh = gt_dict['gt'][0, 0, 1], gt_dict['gt'][0, gt_dict['lengths'][0]-1, 1]
-  if args.env == 'tennis':
+  if (args.env == 'tennis') and (args.augment is False):
     fh *=  0
     lh *= 0
   latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[fh]]]).to(device))
@@ -359,13 +361,14 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     return final_pred_dict, in_test
 
   elif args.optim_analyse == 'global_opt':
-    z = np.array(loss_landscape['loss']['Grav Loss']).reshape(search_range.shape[0], search_range.shape[0])
+    z = np.array(loss_landscape['loss']['All Contact Loss']).reshape(search_range.shape[0], search_range.shape[0])
     global_min = np.where(np.isclose(z, np.min(z), rtol=1e-5))
     x_min, y_min = global_min[0][0], global_min[1][0]
     fh, lh = search_range[x_min], search_range[y_min]
     latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[fh]]]).to(device))
     latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[lh]]]).to(device))
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
+    #utils_vis.gravity_plot(pred_dict, gt_dict, tid)
     return pred_dict, in_test
   elif args.optim_analyse == 'gt':
     fh, lh = gt_dict['gt'][0, 0, 1], gt_dict['gt'][0, gt_dict['lengths'][0]-1, 1]
@@ -631,17 +634,29 @@ def optimization_loss(input_dict, pred_dict, cam_dict, gt_dict, latent_dict):
     reprojection_loss = utils_loss.ReprojectionLoss(pred=pred_dict['xyz'], mask=input_dict['mask'][..., [0, 1, 2]], lengths=input_dict['lengths'], cam_dict=cam_dict)
 
   ######################################
-  ########### Consine Sim ##############
+  ########## Contact Point #############
   ######################################
-  #if ('refinement' in args.pipeline):
-  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
-  #else:                           
-  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict, latent_dict=latent_dict)
+  if ('refinement' in args.pipeline):
+    contact_loss = utils_loss.ContactPointLoss(pred=pred_dict['xyz_refined'], mask=input_dict['mask'][..., [0, 1, 2]], lengths=input_dict['lengths'], cam_dict=cam_dict)
+  else:
+    contact_loss = utils_loss.ContactPointLoss(pred=pred_dict['xyz'], mask=input_dict['mask'][..., [0, 1, 2]], lengths=input_dict['lengths'], cam_dict=cam_dict)
 
-  loss = gravity_loss + below_ground_loss  #+ reprojection_loss + below_ground_loss #+ cosinesim_loss
+
+  ######################################
+  ######## All Contact Point ###########
+  ######################################
+  if ('refinement' in args.pipeline):
+    all_contact_loss = utils_loss.AllContactPointLoss(pred=pred_dict['xyz_refined'], mask=input_dict['mask'][..., [0, 1, 2]], lengths=input_dict['lengths'], cam_dict=cam_dict)
+  else:
+    all_contact_loss = utils_loss.AllContactPointLoss(pred=pred_dict['xyz'], mask=input_dict['mask'][..., [0, 1, 2]], lengths=input_dict['lengths'], cam_dict=cam_dict)
+
+
+  loss = gravity_loss + below_ground_loss
   loss_dict = {"BGnd Loss":below_ground_loss.item(), 
                "Grav Loss":gravity_loss.item(), 
-               "Trajectory Loss":traj_loss_refined.item()}
+               "Contact Loss":contact_loss.item(),
+               "All Contact Loss":all_contact_loss.item(),
+               "Trajectory Loss":traj_loss_refined.item(),}
                #"CosSim Loss":cosinesim_loss.item()}
 
   return loss_dict, loss

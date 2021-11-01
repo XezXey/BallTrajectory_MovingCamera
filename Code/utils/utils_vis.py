@@ -1,4 +1,5 @@
 import os, sys, time
+from typing import Sequence
 sys.path.append(os.path.realpath('../'))
 import numpy as np
 import torch as pt
@@ -317,8 +318,13 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
   marker_dict_gt_height = dict(color='rgba(0, 255, 0, 1)', size=7)
   marker_dict_global_opt = dict(color='rgba(255, 0, 0, 1)', size=7)
   marker_dict_opt = dict(color='rgba(255, 127, 14, 1)', size=7)
-  marker_dict_loss = dict(color='rgba(0, 0, 255, 0.4)', size=4)
-  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=3, specs=[[{'type':'surface'}, {'type':'heatmap'}, {'type':'scatter3d'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
+  # Gravity marker
+  marker_dict_pred_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  marker_dict_mean_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  marker_dict_std_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  marker_dict_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=3, specs=[[{'type':'surface'}, {'type':'heatmap'}, {'type':'scatter'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
+  time_scale = (1/args.fps)**2
   for i, loss in enumerate(loss_landscape['loss'].keys()):
     if isinstance(loss_landscape['init_h']['first_h'], list):
       loss_landscape['init_h']['first_h'] = np.array(loss_landscape['init_h']['first_h']).reshape(-1)
@@ -331,18 +337,31 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
     x_min, y_min = global_min[0][0], global_min[1][0]
 
     fig_loss_landscape.add_trace(go.Surface(x=x, y=y, z=z, name=loss, showscale=False), row=i+1, col=1)
-    fig_loss_landscape.add_trace(go.Heatmap(x=x, y=y, z=z, name=loss, showscale=True), row=i+1, col=2)
+    fig_loss_landscape.add_trace(go.Heatmap(x=x, y=y, z=z, name=loss, showscale=False), row=i+1, col=2)
 
     if gt_dict is not None:
       fh, lh = loss_landscape['init_h']['gt_h'][0].detach().cpu().numpy(), loss_landscape['init_h']['gt_h'][1].detach().cpu().numpy()
       fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=3)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['last_h'], z=loss_landscape['loss'][loss], y=loss_landscape['init_h']['first_h'], mode='markers', marker=marker_dict_loss, name=loss), row=i+1, col=3)
+      #fig_loss_landscape.add_trace(go.Scatter3d(x=lh, y=fh, z=loss_landscape['loss_gt'][loss], name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=4)
+      #fig_loss_landscape.add_trace(go.Scatter3d(x=loss_landscape['init_h']['last_h'], z=loss_landscape['loss'][loss], y=loss_landscape['init_h']['first_h'], mode='markers', marker=marker_dict_loss, name=loss), row=i+1, col=4)
       fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=1)
-      fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=3)
+      #fig_loss_landscape.add_trace(go.Scatter3d(x=[search_range[y_min]], y=[search_range[x_min]], z=[z[x_min, y_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=4)
 
       fig_loss_landscape.add_trace(go.Scatter(x=lh, y=fh, name="Ground truth height", mode='markers', marker=marker_dict_gt_height), row=i+1, col=2)
       fig_loss_landscape.add_trace(go.Scatter(x=[search_range[y_min]], y=[search_range[x_min]], name="{} - Global Optimum".format(loss), mode='markers', marker=marker_dict_global_opt), row=i+1, col=2)
+
+    # Visualize gravity along the diagonal
+    c = len(search_range)
+    for r in search_range:
+      idx = int((c * r) + r)
+      pred = loss_landscape['pred_dict'][idx]['xyz_refined'].detach().cpu().numpy()
+      pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
+      pred_accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
+      pred_accel = pred_accel[..., [1]] / time_scale
+      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=pred_accel.reshape(-1), name="Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_pred_g), row=i+1, col=3)
+      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.mean(pred_accel)] * pred_accel.shape[1], name="Mean Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_mean_g), row=i+1, col=3)
+      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.std(pred_accel)] * pred_accel.shape[1], name="STD Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_std_g), row=i+1, col=3)
+    fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[-9.81] * pred_accel.shape[1], name="Gravity", mode='markers+lines'), row=i+1, col=3)
       
     if all_opt is not None:
       fh, lh = all_opt['init_h']['first_h'], all_opt['init_h']['last_h']
@@ -359,3 +378,28 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
   save_path = "{}_{}".format(args.config_yaml.split('/')[-2], args.save_suffix)
   utils_func.initialize_folder(path="{}/loss_landscape/{}/".format(args.vis_path, save_path))
   plotly.offline.plot(fig_loss_landscape, filename='{}/loss_landscape/{}/wandb_vis_traj_loss_landscape_{}.html'.format(args.vis_path, save_path, tid), auto_open=False)
+
+
+def gravity_plot(pred_dict, gt_dict, tid):
+  pred = pred_dict['xyz_refined']
+  time_scale = (1/args.fps)**2
+
+  # Finite diff 2 times : ds/dt -> dv/dt -> a
+  pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
+  #pred_1st_fd = gt[:, 1:, :] - gt[:, :-1, :]
+  pred_accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
+
+  gt = gt_dict['gt']
+  # Finite diff 2 times : ds/dt -> dv/dt -> a
+  gt_1st_fd = gt[:, 1:, :] - gt[:, :-1, :]
+  #pred_1st_fd = gt[:, 1:, :] - gt[:, :-1, :]
+  gt_accel = gt_1st_fd[:, 1:, :] - gt_1st_fd[:, :-1, :]
+
+  fig_grav = go.Figure()
+  fig_grav.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=(pred_accel[..., [1]]/time_scale).detach().cpu().numpy().reshape(-1), name="Computed Gravity", mode='markers+lines'))
+  fig_grav.add_trace(go.Scatter(x=np.arange(gt_accel.shape[1]), y=(gt_accel[..., [1]]/time_scale).detach().cpu().numpy().reshape(-1), name="Groundtruth Gravity", mode='markers+lines'))
+  fig_grav.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[-9.81] * pred_accel.shape[1], name="Gravity", mode='markers+lines'))
+
+  save_path = "{}_{}".format(args.config_yaml.split('/')[-2], args.save_suffix)
+  utils_func.initialize_folder(path="{}/loss_landscape/{}/".format(args.vis_path, save_path))
+  plotly.offline.plot(fig_grav, filename='{}/loss_landscape/{}/gravity_loss_landscape_{}.html'.format(args.vis_path, save_path, tid), auto_open=False)

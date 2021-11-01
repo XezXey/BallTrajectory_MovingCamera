@@ -37,7 +37,31 @@ def ReprojectionLoss(pred, mask, lengths, cam_dict):
   reprojection_loss = u_reprojection_loss + v_reprojection_loss
   return reprojection_loss
 
-def GravityLoss(pred, mask, lengths, gt=None):
+def ContactPointLoss(pred, mask, lengths, cam_dict):
+  '''
+  Force at least 1 contact points y = 0
+  '''
+  contact_h = pt.min(pred[..., [1]])
+  contact_loss = contact_h**2
+  return contact_loss
+
+def AllContactPointLoss(pred, mask, lengths, cam_dict):
+  # Finite diff 2 times : ds/dt -> dv/dt -> a
+  time_scale = (1/args.fps)**2
+  pred_1st_fd = pred[:, 1:, :] - pred[:, :-1, :]
+  accel = pred_1st_fd[:, 1:, :] - pred_1st_fd[:, :-1, :]
+  accel_threshold = 50
+  accel = accel[..., [1]] / time_scale
+  contact_h = pt.where(accel > accel_threshold)[1] + 1
+  if contact_h.shape[0] < 1:
+    all_contact_h_loss = pred[:, [0], [1]]**2 + pred[:, [-1], [1]]**2
+  else:
+    all_contact_h_loss = pt.sum(pred[:, contact_h, [1]] ** 2)
+  
+  return all_contact_h_loss
+
+
+def GravityLoss(pred, mask, lengths, gt=None, print_=False):
   '''
   Gravity constraint
   '''
