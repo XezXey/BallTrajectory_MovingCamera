@@ -319,10 +319,10 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
   marker_dict_global_opt = dict(color='rgba(255, 0, 0, 1)', size=7)
   marker_dict_opt = dict(color='rgba(255, 127, 14, 1)', size=7)
   # Gravity marker
-  marker_dict_pred_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
-  marker_dict_mean_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
-  marker_dict_std_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
-  marker_dict_g = dict(color='rgba(0, 0, 255, 0.4)', size=4)
+  marker_dict_pred_g = dict(color='rgba(0, 0, 255, 1)', size=4)
+  marker_dict_mean_g = dict(color='rgba(255, 0, 0, 1)', size=4)
+  marker_dict_std_g = dict(color='rgba(127, 0, 255, 1)', size=4)
+  marker_dict_g = dict(color='rgba(0, 255, 0, 1.0)', size=4)
   fig_loss_landscape = make_subplots(rows=len(loss_landscape['loss'].keys()), cols=3, specs=[[{'type':'surface'}, {'type':'heatmap'}, {'type':'scatter'}]] * len(loss_landscape['loss'].keys()), horizontal_spacing=0.05, vertical_spacing=0.01)
   time_scale = (1/args.fps)**2
   for i, loss in enumerate(loss_landscape['loss'].keys()):
@@ -360,8 +360,9 @@ def loss_landscape_plot(loss_landscape, gt_dict, search_range, tid, all_opt=None
       pred_accel = pred_accel[..., [1]] / time_scale
       fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=pred_accel.reshape(-1), name="Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_pred_g), row=i+1, col=3)
       fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.mean(pred_accel)] * pred_accel.shape[1], name="Mean Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_mean_g), row=i+1, col=3)
-      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.std(pred_accel)] * pred_accel.shape[1], name="STD Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_std_g), row=i+1, col=3)
-    fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[-9.81] * pred_accel.shape[1], name="Gravity", mode='markers+lines'), row=i+1, col=3)
+      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.mean(pred_accel) + np.std(pred_accel)] * pred_accel.shape[1], name="STD Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_std_g), row=i+1, col=3)
+      fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[np.mean(pred_accel) - np.std(pred_accel)] * pred_accel.shape[1], name="STD Predicted Gravity", mode='markers+lines', legendgroup=int(idx), marker=marker_dict_std_g), row=i+1, col=3)
+    fig_loss_landscape.add_trace(go.Scatter(x=np.arange(pred_accel.shape[1]), y=[-9.81] * pred_accel.shape[1], name="Gravity", mode='markers+lines', marker=marker_dict_g), row=i+1, col=3)
       
     if all_opt is not None:
       fh, lh = all_opt['init_h']['first_h'], all_opt['init_h']['last_h']
