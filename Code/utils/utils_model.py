@@ -123,7 +123,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   cam_dict.update(canon_dict)
 
   # Augmentation
-  if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)):
+  if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)) or (args.env == 'tennis_unity'):
     search_h = {}
     search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
     search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
@@ -164,7 +164,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['height']['i_s']
     o_s = args.pipeline['height']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='height')
-    pred_h = model_dict['height'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
+    pred_h = model_dict['height'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
     pred_dict['h'] = pred_h
 
   height = pred_h
@@ -358,7 +358,7 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
         all_opt['loss'][k].append(all_loss_dict[i][k])
 
     utils_vis.loss_landscape_plot(loss_landscape=loss_landscape, gt_dict=gt_dict, search_range=search_range, tid=tid, all_opt=all_opt)
-    return final_pred_dict, in_test
+    return final_pred_dict, in_test, loss_landscape
 
   elif args.optim_analyse == 'global_opt':
     z = np.array(loss_landscape['loss']['All Contact Loss']).reshape(search_range.shape[0], search_range.shape[0])
@@ -369,13 +369,13 @@ def fw_pass_optim_analyse(model_dict, input_dict, cam_dict, gt_dict, latent_dict
     latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[lh]]]).to(device))
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
     #utils_vis.gravity_plot(pred_dict, gt_dict, tid)
-    return pred_dict, in_test
+    return pred_dict, in_test, loss_landscape
   elif args.optim_analyse == 'gt':
     fh, lh = gt_dict['gt'][0, 0, 1], gt_dict['gt'][0, gt_dict['lengths'][0]-1, 1]
     latent_dict['init_h']['first_h'].set_params(params=pt.tensor([[[fh]]]).to(device))
     latent_dict['init_h']['last_h'].set_params(params=pt.tensor([[[lh]]]).to(device))
     pred_dict, in_test = fw_pass(model_dict=model_dict, input_dict=input_dict, cam_dict=cam_dict, gt_dict=gt_dict, latent_dict=latent_dict, set_=set_)
-    return pred_dict, in_test
+    return pred_dict, in_test, loss_landscape
   else:
     raise NotImplemented
 

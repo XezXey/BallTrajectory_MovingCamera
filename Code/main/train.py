@@ -218,7 +218,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
 def collate_fn_padd(batch, set_):
   # Padding batch of variable length
   if args.augment and set_ == 'train':
-    batch = utils_func.augment(batch=batch)
+    batch = utils_func.augment_train(batch=batch)
 
   padding_value = -1000.0
   ## Get sequence lengths

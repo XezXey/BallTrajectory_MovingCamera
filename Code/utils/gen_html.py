@@ -5,6 +5,7 @@ import glob, os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--json_path', type=str, required=True)
+parser.add_argument('--vis_tool', type=str, default='')
 args = parser.parse_args()
 
 def button():
@@ -60,17 +61,17 @@ def button():
 if __name__ == '__main__':
     '''
     Create html page for results visualization
-    Input : 
+    Input :
         1. Folder-session
     Output :
         1. Link to tennis/checkerboard visualization
     '''
 
-    visualizer = '/Code/vis_tools/tennis_visualizer/'
+    visualizer = '/Code/vis_tools/tennis_visualizer{}/'.format(args.vis_tool)
     chk_url = '{}/checkerboard.html'.format(visualizer)
     tennis_url = '{}/index.html'.format(visualizer)
 
-    file = glob.glob('{}/**/*.json'.format(args.json_path), recursive=True)
+    file = sorted(glob.glob('{}/**/*.json'.format(args.json_path), recursive=True))
     tag = [f.split('/')[-3] for f in file]
     run = [f.split('/')[-2] for f in file]
     session = {}

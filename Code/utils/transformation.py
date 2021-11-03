@@ -57,7 +57,7 @@ def h_to_3d(intr, Einv, height, canon_dict):
   if args.canonicalize:
     cam_pos = canon_dict['cam_cl']
   else:
-    cam_pos = pt.tensor(Einv[..., 0:3, -1]).to(device)
+    cam_pos = Einv[..., 0:3, -1]
 
   R = cam_pos - intr
   norm_R = R / (pt.sqrt(pt.sum(R**2, dim=2, keepdims=True)) + 1e-16)

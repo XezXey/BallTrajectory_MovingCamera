@@ -31,7 +31,7 @@ class Height_Module(pt.nn.Module):
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
 
         
-    def forward(self, in_f, lengths, h=None, c=None, search_h=None, mask=None):
+    def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None):
         out1, (h, c) = self.rnn(in_f, lengths)
         # Time-attention
         if self.attn:
@@ -68,21 +68,42 @@ class Height_Module_Agg(pt.nn.Module):
           self.in_rnn2 = 7
         elif self.agg == 'o_s_cat_h_agg':
           self.in_rnn2 = 9
-        else: self.in_rnn2 = 1
-
+        elif self.agg == 'net_h_agg':
+          self.in_rnn2 = 1
+        elif self.agg == 'net_cat_h_agg':
+          self.in_rnn2 = 1 + 4
+        else: # Dummy to compat with old model
+          self.in_rnn2 = 2
 
         self.rnn2 = Trainable_LSTM(in_node=self.in_rnn2, hidden=rnn_hidden, stack=rnn_stack, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.mlp = Vanilla_MLP(in_node=bidirectional * rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
         
-    def forward(self, in_f, lengths, h=None, c=None, search_h=None, mask=None):
+    def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None):
 
         h_fw, h_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
         if self.agg == 'net_agg':
             # Height <= Network aggregation
             w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
             height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+
+        elif self.agg == 'net_h_agg':
+            # Height <= MLP + LSTM <= Height <= Network aggregation
+            w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
+            height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+            out1, _ = self.rnn2(in_f=height, lengths=lengths+1)
+            out2 = self.mlp(out1)
+            height = out2
+
+        elif self.agg == 'net_cat_h_agg':
+            # Height <= MLP + LSTM <= Height <= Network aggregation
+            w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
+            height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+            in_f_ = pt.cat((height, in_f_orig), dim=2)
+            out1, _ = self.rnn2(in_f=in_f_, lengths=lengths+1)
+            out2 = self.mlp(out1)
+            height = out2
 
         elif self.agg == 'o_s_agg':
             # Height <= Predict "o_s" then aggregation

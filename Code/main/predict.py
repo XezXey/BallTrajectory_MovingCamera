@@ -61,18 +61,23 @@ parser.add_argument('--clip', dest='clip', type=float, help='Clipping gradients 
 parser.add_argument('--decay_gamma', help='Gamma (Decay rate)', type=float, default=None)
 parser.add_argument('--decay_cycle', help='Decay cycle', type=int, default=None)
 parser.add_argument('--canonicalize', dest='canonicalize', default=None)
+
 ## Annealing
 parser.add_argument('--annealing', dest='annealing', help='Apply annealing', action='store_true', default=None)
 parser.add_argument('--no_annealing', dest='annealing', help='Apply annealing', action='store_false', default=None)
 parser.add_argument('--annealing_cycle', dest='annealing_cycle', type=int, help='Apply annealing every n epochs', default=None)
 parser.add_argument('--annealing_gamma', dest='annealing_gamma', type=float, help='Apply annealing every n epochs', default=None)
 parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction selection (noisy/clean)', default=None)
+
 ## Noise
 parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true', default=None)
 parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false', default=None)
+
 ## Augment
 parser.add_argument('--augment', dest='augment', help='Apply an augmented training', action='store_true', default=None)
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
+parser.add_argument('--augment_perc', dest='augment_perc', help='Augmented percentage length', type=float, default=1.0)
+parser.add_argument('--augment_start', dest='augment_start', help='Augmented start', type=int, default=0)
 
 # Optimization
 parser.add_argument('--optim_init_h', dest='optim_init_h', help='Optimize for initial height', action='store_true', default=None)
@@ -229,7 +234,8 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, tid, thres
 
   latent_dict_test = {module:None for module in args.pipeline}
   if (args.optim_init_h or args.optim_latent) and (args.optim_analyse is not None):
-    pred_dict_test, in_test = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test', tid=tid)
+    pred_dict_test, in_test, loss_landscape = utils_model.fw_pass_optim_analyse(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test', tid=tid)
+    utils_func.save_gridsearch(loss_landscape, gt_dict=gt_dict_test, cam_dict=cam_dict_test, tid=tid)
   elif (args.optim_init_h or args.optim_latent) and (args.optim_analyse is None):
     pred_dict_test, in_test, latent_dict_test = utils_model.fw_pass_optim(model_dict, input_dict=input_dict_test, cam_dict=cam_dict_test, gt_dict=gt_dict_test, latent_dict=latent_dict_test, set_='test')
   else:
@@ -255,7 +261,7 @@ def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, tid, thres
   return recon_traj
 
 def collate_fn_padd(batch, set_):
-  if args.env != 'unity':
+  if 'unity' not in args.env:
     global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
     u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
     global input_col, gt_col, features_col
@@ -265,7 +271,7 @@ def collate_fn_padd(batch, set_):
 
   # Padding batch of variable length
   if args.augment:
-    batch = utils_func.augment(batch=batch)
+    batch = utils_func.augment_pred(batch=batch)
 
   padding_value = -1000.0
   ## Get sequence lengths
@@ -367,9 +373,10 @@ if __name__ == '__main__':
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
-    #if batch_idx not in [0, 4, 32, 27, 30]:
-    if batch_idx not in [0, 1, 2, 3, 4]:
+    if batch_idx in [27, 32, 33, 34, 35, 36] + list(range(39, 61)) and args.env == 'tennis':
       continue
+    if batch_idx >= 30 and args.env == 'mocap':
+      break
 
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:

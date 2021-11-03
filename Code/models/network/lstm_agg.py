@@ -106,9 +106,9 @@ class LSTM_Agg(pt.nn.Module):
                 
                 if idx == 0:
                     # Forward direction
-                    curr_hs_fw, curr_cs_fw = self.ls_fw[idx](pt.cat((in_f[:, t, :], h_fw), dim=-1), (prev_hs_fw, prev_cs_fw))
+                    curr_hs_fw, curr_cs_fw = self.ls_fw[idx](pt.cat((in_f[:, t, :], fw[t]), dim=-1), (prev_hs_fw, prev_cs_fw))
                     # Backward direction
-                    curr_hs_bw, curr_cs_bw = self.ls_bw[idx](pt.cat((in_f_rev[:, t, :], h_bw), dim=-1), (prev_hs_bw, prev_cs_bw))
+                    curr_hs_bw, curr_cs_bw = self.ls_bw[idx](pt.cat((in_f_rev[:, t, :], bw[t]), dim=-1), (prev_hs_bw, prev_cs_bw))
                 else :
                     # Forward direction
                     curr_hs_fw, curr_cs_fw = self.ls_fw[idx](curr_hs_fw, (prev_hs_fw, prev_cs_fw))
@@ -122,10 +122,11 @@ class LSTM_Agg(pt.nn.Module):
                 cs_bw_list[idx].append(curr_cs_bw)
 
             # Accumulator
+            # -1 is take the last stack of LSTM fed into MLP
             pred_fw = self.mlp_fw(hs_fw_list[-1][t])
-            pred_bw = self.mlp_bw(hs_fw_list[-1][t])
-            h_fw = h_fw + (pred_fw * mask_h[:, t, :])
-            h_bw = h_bw + (pred_bw * mask_h_rev[:, t, :])
+            pred_bw = self.mlp_bw(hs_bw_list[-1][t])
+            h_fw = fw[t] + (pred_fw * mask_h[:, t, :])
+            h_bw = bw[t] + (pred_bw * mask_h_rev[:, t, :])
 
             fw.append(h_fw)
             bw.append(h_bw)
@@ -134,7 +135,6 @@ class LSTM_Agg(pt.nn.Module):
         bw = pt.stack((bw), dim=1)
         bw = utils_func.reverse_seq_at_lengths(seq=bw, lengths=lengths+1)
 
-        # Residual from recurrent block to FC
         return fw, bw
 
     def initial_state(self):

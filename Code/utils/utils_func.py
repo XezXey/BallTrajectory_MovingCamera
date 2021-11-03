@@ -1,6 +1,5 @@
 # Libs
 import os, sys, time
-from numpy.lib.npyio import save
 sys.path.append(os.path.realpath('../'))
 import numpy as np
 import torch as pt
@@ -85,7 +84,7 @@ def get_selected_cols(args, pred):
   if 'fz_norm' in args.selected_features:
     features_col.append(fz_norm)
 
-  if pred=='height' and args.env=='unity':
+  if pred=='height' and ('unity' in args.env):
     input_col = [intr_x, intr_y, intr_z, elevation, azimuth]
     gt_col = [x, y, z]
     features_col = features_col
@@ -144,7 +143,7 @@ def get_model(args):
                       mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
                       rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
                       attn=module['attn'], args=args)
-      elif module['agg'] in ['o_s_agg', 'net_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']:
+      elif module['agg'] in ['o_s_agg', 'net_agg', 'net_h_agg', 'net_cat_h_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']:
         model = Height_Module_Agg(in_node=in_node, out_node=out_node, 
                       batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                       is_bidirectional=module['bidirectional'], 
@@ -319,7 +318,7 @@ def yaml_to_args(args):
     config = yaml.load(file, Loader=yaml.FullLoader)
   
   args_dict = vars(args)
-  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'optim_analyse', 'wandb_resume', 'save_suffix']
+  exception = ['load_ckpt', 'wandb_mode', 'dataset_test_path', 'save_cam_traj', 'optim_init_h', 'optim_latent', 'optim_analyse', 'wandb_resume', 'save_suffix', 'augment_start', 'augment_perc']
   for k in args_dict.keys():
     if k in exception:
       continue
@@ -446,7 +445,7 @@ def uv_noise(uv):
         1. Noisy-UV in shape = (batch, seq_len, 2)
     '''
     # Generate noise
-    noise_sd = args.pipeline['height']['noise_sd_']
+    noise_sd = args.pipeline['height']['noise_sd_'] + 1e-16
 
     noise_u = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [0]].shape)
     noise_v = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [1]].shape)
@@ -537,6 +536,42 @@ def generate_input(cam_dict):
 
   return in_f, ray
 
+def save_gridsearch(loss_landscape, gt_dict, cam_dict, tid):
+  if args.save_suffix != '':
+    save_suffix = '_' + args.save_suffix
+  if args.augment:
+    save_path = '{}/tags_{}/{}/gridsearch_{}_start{}_perc{}/'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name, save_suffix, args.augment_start, args.augment_perc)
+  else:
+    save_path = '{}/tags_{}/{}/gridsearch_{}/'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name, save_suffix)
+
+  initialize_folder(save_path)
+  traj_json = {}
+  gid = 0
+  for each_pred in loss_landscape['pred_dict']:
+    gt_tmp =  gt_dict['gt']
+    pred_tmp =  each_pred['xyz']
+    pred_refined_tmp =  each_pred['xyz_refined']
+    seq_len = pred_refined_tmp.shape[1]
+    E_tmp = cam_dict['E'].cpu().numpy()
+    I_tmp = cam_dict['I'].cpu().numpy()
+    uv_tmp = cam_dict['tracking'].cpu().numpy()
+
+    json_dat = {"gt" : gt_tmp[:seq_len][0].tolist(),
+                "pred_unrefined" : pred_tmp[:seq_len][0].tolist(),
+                "pred" : pred_refined_tmp[:seq_len][0].tolist(),
+                "uv" : uv_tmp[:seq_len][0].tolist(),
+                "E" : E_tmp[:seq_len][0].tolist(),
+                "I" : I_tmp[:seq_len][0].tolist(),}
+
+    traj_json[gid] = json_dat
+    gid+=1
+
+  with open("{}/{}{}_tid{}_gridsearch.json".format(save_path, args.wandb_name, save_suffix, tid), "w") as file:
+    txt = "var data = " + str(traj_json)
+    file.write(txt)
+
+  print("[#] Saving gridsearch reconstruction to {}".format(save_path))
+
 def save_cam_traj(trajectory, n):
   save_path = '{}/tags_{}/{}'.format(args.save_cam_traj, args.wandb_tags, args.wandb_name)
   initialize_folder(save_path)
@@ -544,7 +579,7 @@ def save_cam_traj(trajectory, n):
   pred = []
   gt = []
   traj_json = {}
-  count = 0
+  tid = 0
 
   for i in range(len(trajectory)):
     # Each batch
@@ -579,8 +614,8 @@ def save_cam_traj(trajectory, n):
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
 
-      traj_json[count] = json_dat
-      count+=1
+      traj_json[tid] = json_dat
+      tid+=1
 
   if args.save_suffix != '':
     args.save_suffix = '_' + args.save_suffix
@@ -615,7 +650,7 @@ def mask_from_lengths(lengths, n_rmv, n_dim=1, retain_L=False):
 
   return mask_
 
-def augment(batch):
+def augment_train(batch):
   len_ = np.array([trajectory.shape[0] for trajectory in batch])
 
   # Split by percentage
@@ -628,6 +663,28 @@ def augment(batch):
     h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
     try :
       start = np.random.randint(low=0, high=h, size=1)[0]
+    except ValueError:
+      print("AUGMENT LENGTH FAILED : ", len_[i], len_aug[i])
+      exit()
+    end = start + len_aug[i]
+    batch[i] = batch[i][start:end]
+
+  return batch 
+
+def augment_pred(batch):
+  len_ = np.array([trajectory.shape[0] for trajectory in batch])
+
+  # Split by percentage
+  #perc /= 100
+  perc = args.augment_perc
+  #perc = np.random.randint(low=perc, high=100, size=len(batch))/100
+  len_aug = np.ceil(len_.copy() * perc).astype(int)
+
+  for i in range(len(batch)):
+    h = len_[i] - len_aug[i] if len_[i] != len_aug[i] else 1
+    try :
+      #start = np.random.randint(low=0, high=h, size=1)[0]
+      start = args.augment_start
     except ValueError:
       print("AUGMENT LENGTH FAILED : ", len_[i], len_aug[i])
       exit()
