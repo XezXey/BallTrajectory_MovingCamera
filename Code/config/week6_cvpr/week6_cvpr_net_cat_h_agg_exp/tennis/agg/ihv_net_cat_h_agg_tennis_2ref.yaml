@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week6_finalize_method'
-wandb_name: 'ihv_net_cat_h_agg_tennis'
+wandb_name: 'ihv_net_cat_h_agg_tennis_2ref'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -77,7 +77,7 @@ pipeline:
     attn: False
     noise_space: 'uv'
     noise_sd: 0.0
-    agg: 'net_cat_h_bw_agg'
+    agg: 'net_cat_h_agg'
 
   refinement:
     arch: 'lstm'
@@ -99,6 +99,7 @@ pipeline:
     refine: 'infref_h' # refinement space ('xyz', 'h')
     noise_space: null # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
+    n_refinement: 2
 
 
 # Features

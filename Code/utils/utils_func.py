@@ -16,7 +16,7 @@ import utils.transformation as utils_transform
 
 # Models
 from models.module.height_module import Height_Module, Height_Module_Agg
-from models.module.refinement_module import Refinement_Module
+from models.module.refinement_module import Refinement_Module, Stack_Refinement_Module
 from models.module.flag_module import Flag_Module
 
 # GPU initialization
@@ -159,12 +159,20 @@ def get_model(args):
                       'attn':module['attn']}
 
     elif module_name == 'refinement': 
-      model = Refinement_Module(in_node=in_node, out_node=out_node, 
-                    batch_size=args.batch_size, trainable_init=module['trainable_init'], 
-                    is_bidirectional=module['bidirectional'], 
-                    mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
-                    rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
-                    attn=module['attn'])
+      if 'n_refinement' in module.keys():
+        model = Stack_Refinement_Module(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'], n_refinement=module['n_refinement'])
+      else:
+        model = Refinement_Module(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'])
 
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
