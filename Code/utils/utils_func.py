@@ -126,6 +126,7 @@ def get_model(args):
 
   model_dict = {}
   model_cfg = {}
+  agg_list = ['o_s_agg', 'net_agg', 'net_agg_h_fw', 'net_agg_h_bw', 'net_agg', 'net_h_agg', 'net_cat_h_fw_agg', 'net_cat_h_bw_agg', 'net_cat_h_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']
   for module_name in args.pipeline:
     model = None
     module = args.pipeline[module_name]                                         # Module
@@ -143,7 +144,7 @@ def get_model(args):
                       mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
                       rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
                       attn=module['attn'], args=args)
-      elif module['agg'] in ['o_s_agg', 'net_agg', 'net_h_agg', 'net_cat_h_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']:
+      elif module['agg'] in agg_list:
         model = Height_Module_Agg(in_node=in_node, out_node=out_node, 
                       batch_size=args.batch_size, trainable_init=module['trainable_init'], 
                       is_bidirectional=module['bidirectional'], 
