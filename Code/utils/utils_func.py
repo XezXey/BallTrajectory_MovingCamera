@@ -604,11 +604,11 @@ def save_cam_traj(trajectory, n):
       # Each trajectory
       pred.append(pred_tmp[j][:seq_len[j]])
 
-      if (gt is None) or (args.env == 'tennis') and ('refinement' in args.pipeline):
+      if (gt is None) or (args.env == 'tennis'):
         # Tennis
-        json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist(),
+        json_dat = {"gt" : pred_refined_tmp[j][:seq_len[j]].tolist() if ('refinement' in args.pipeline) else pred_tmp[j][:seq_len[j]].tolist(),
                     "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
-                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist(),
+                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist() if ('refinement' in args.pipeline) else pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
@@ -617,7 +617,7 @@ def save_cam_traj(trajectory, n):
         # Unity, Mocap, IPL
         json_dat = {"gt" : gt_tmp[j][:seq_len[j]].tolist(),
                     "pred_unrefined" : pred_tmp[j][:seq_len[j]].tolist(),
-                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist() if 'refinement' in args.pipeline else np.zeros(pred_tmp[j][:seq_len[j]].shape).tolist(),
+                    "pred_refined" : pred_refined_tmp[j][:seq_len[j]].tolist() if ('refinement' in args.pipeline) else pred_tmp[j][:seq_len[j]].tolist(),
                     "uv" : uv_tmp[j][:seq_len[j]].tolist(),
                     "E" : E_tmp[j][:seq_len[j]].tolist(),
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
@@ -631,6 +631,9 @@ def save_cam_traj(trajectory, n):
   with open("{}/{}{}.json".format(save_path, args.wandb_name, args.save_suffix), "w") as file:
     txt = "var data = " + str(traj_json)
     file.write(txt)
+
+  npy_file = "{}/{}{}.npy".format(save_path, args.wandb_name, args.save_suffix)
+  np.save(npy_file, arr=traj_json)
 
   print("[#] Saving reconstruction to {}".format(save_path))
 

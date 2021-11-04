@@ -373,7 +373,7 @@ if __name__ == '__main__':
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
-    if batch_idx in [27, 32, 33, 34, 35, 36] + list(range(39, 61)) and args.env == 'tennis':
+    if batch_idx in [27, 32, 33, 34, 35, 36] + list(range(39, 61)) and args.env == 'tennis_unity':
       continue
     if batch_idx >= 30 and args.env == 'mocap':
       break

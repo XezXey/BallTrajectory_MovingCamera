@@ -130,33 +130,33 @@ class Height_Module_Agg(pt.nn.Module):
           height = out2
 
         elif self.agg == 'o_s_agg':
-            # Height <= Predict "o_s" then aggregation
-            in_f = pt.cat((h_fw, h_bw), dim=2)
-            out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
-            out2 = self.mlp(out1)
-            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
+          # Height <= Predict "o_s" then aggregation
+          in_f = pt.cat((h_fw, h_bw), dim=2)
+          out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
+          out2 = self.mlp(out1)
+          height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
 
         elif self.agg == 'o_s_cat_agg':
-            # Height <= Predict "o_s" then aggregation
-            # Used dt-h-fw/dt-h-bw as an input
-            dt_h_fw = h_fw[:, 1:, :] - h_fw[:, :-1, :]
-            dt_h_bw = h_bw[:, 1:, :] - h_bw[:, :-1, :]
-            in_f = pt.cat((dt_h_fw, dt_h_bw, in_f), dim=2)
-            out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
-            out2 = self.mlp(out1)
-            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
+          # Height <= Predict "o_s" then aggregation
+          # Used dt-h-fw/dt-h-bw as an input
+          dt_h_fw = h_fw[:, 1:, :] - h_fw[:, :-1, :]
+          dt_h_bw = h_bw[:, 1:, :] - h_bw[:, :-1, :]
+          in_f = pt.cat((dt_h_fw, dt_h_bw, in_f), dim=2)
+          out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
+          out2 = self.mlp(out1)
+          height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
 
         elif self.agg == 'o_s_cat_h_agg':
-            # Height <= Predict "o_s" then aggregation
-            # Used h_fw, h_bw, dt_h_fw/dt_h_bw as an input
-            dt_h_fw = h_fw[:, 1:, :] - h_fw[:, :-1, :]
-            dt_h_bw = h_bw[:, 1:, :] - h_bw[:, :-1, :]
-            h_fw = h_fw[:, :-1, :]
-            h_bw = h_bw[:, 1:, :]
-            in_f = pt.cat((h_fw, h_bw, dt_h_fw, dt_h_bw, in_f), dim=2)
-            out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
-            out2 = self.mlp(out1)
-            height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
+          # Height <= Predict "o_s" then aggregation
+          # Used h_fw, h_bw, dt_h_fw/dt_h_bw as an input
+          dt_h_fw = h_fw[:, 1:, :] - h_fw[:, :-1, :]
+          dt_h_bw = h_bw[:, 1:, :] - h_bw[:, :-1, :]
+          h_fw = h_fw[:, :-1, :]
+          h_bw = h_bw[:, 1:, :]
+          in_f = pt.cat((h_fw, h_bw, dt_h_fw, dt_h_bw, in_f), dim=2)
+          out1, _ = self.rnn2(in_f=in_f, lengths=lengths)
+          out2 = self.mlp(out1)
+          height = output_space(pred_h=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='height', args=self.args, search_h=search_h)
 
         return height
 
