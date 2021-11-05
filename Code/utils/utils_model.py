@@ -154,7 +154,11 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
-    in_f = pt.cat((in_f, pred_flag), dim=-1)
+    if args.pipeline['height']['i_s'] == 't' and args.pipeline['height']['o_s'] == 't':
+      pred_flag = pt.cat((pt.zeros(pred_flag.shape[0], 1, 1).to(device), pred_flag), dim=1)
+      in_f = pt.cat((in_f, pred_flag), dim=-1)
+    else:
+      in_f = pt.cat((in_f, pred_flag), dim=-1)
 
   ######################################
   ############### Height ###############
