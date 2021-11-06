@@ -64,6 +64,37 @@ def uv_to_input_features(cam_dict, set_):
   recon_dict = {'clean' : in_f_raw[..., [0, 1, 2]], 'noisy': in_f_noisy[..., [0, 1, 2]]}
   return in_f, ray, recon_dict
 
+def uv_as_input_features(cam_dict, set_):
+  noisy_uv = utils_func.uv_noise(uv=cam_dict['tracking'])
+  raw_uv = cam_dict['tracking']
+
+  if args.input_variation == 'uv':
+    if args.noise and set_ == 'train':
+      in_f = noisy_uv
+    else:
+      in_f = raw_uv
+  
+  elif args.input_variation == 'uv_rt':
+    r = cam_dict['Einv'][:, :, 0:3, 0:3].flatten(start_dim=2, end_dim=3)
+    t = cam_dict['Einv'][:, :, 0:3, -1]
+    if args.noise and set_ == 'train':
+      in_f = pt.cat((noisy_uv, r, t), dim=2)
+    else:
+      in_f = pt.cat((raw_uv, r, t), dim=2)
+  
+  else: raise NotImplementedError
+    
+  # Reconstruction stuff
+  # Add noise & generate input
+  in_f_noisy, _ = utils_func.add_noise(cam_dict=cam_dict)
+  # Generate input
+  in_f_raw, _ = utils_func.generate_input(cam_dict=cam_dict)
+  # Recon dict for a reconstruction stuff
+  recon_dict = {'clean' : in_f_raw[..., [0, 1, 2]], 'noisy': in_f_noisy[..., [0, 1, 2]]}
+
+  return in_f, recon_dict
+    
+
 def canonicalize_features(Einv, ray, in_f):
   '''
   Canonicalize all features
@@ -94,6 +125,7 @@ def canonicalize_features(Einv, ray, in_f):
 
   return canon_dict, in_f
 
+
 def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   '''
   Forward Pass to the whole pipeline
@@ -106,14 +138,20 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       1. pred_dict : prediction of each moduel and reconstructed xyz
       2. in_f : in case of we used noisy (u, v) 
   '''
-
   # Input
   in_f = input_dict['input']
 
   # Prediction dict
   pred_dict = {}
 
-  in_f, ray, recon_dict = uv_to_input_features(cam_dict, set_)
+  # Input features computation
+  plane_intr = ['intr_hori_vert', 'intr_azim_elev']
+  pixel = ['uv', 'uv_rt']
+  if args.input_variation in plane_intr:
+    in_f, ray, recon_dict = uv_to_input_features(cam_dict, set_)
+  elif args.input_variation in pixel:
+    in_f, recon_dict = uv_as_input_features(cam_dict, set_)
+  else: raise NotImplementedError
 
   # Canonicalize
   if args.canonicalize:
@@ -171,9 +209,28 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     pred_h = model_dict['height'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
     pred_dict['h'] = pred_h
 
-  height = pred_h
+    height = pred_h
 
-  xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+    xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+
+  ######################################
+  ################# XYZ ################
+  ######################################
+  elif 'xyz' in args.pipeline:
+    #print("HEIGHT : ", in_f.shape)
+    i_s = args.pipeline['height']['i_s']
+    o_s = args.pipeline['height']['o_s']
+    in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='xyz')
+    pred_h = model_dict['height'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
+    pred_dict['h'] = pred_h
+
+    height = pred_h
+
+    xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
+
+
+
+  
 
   ######################################
   ############# Refinement #############
@@ -470,6 +527,8 @@ def input_manipulate(in_f, module, input_dict, h0=None):
     in_f = input_space_intr_ae(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
   elif args.input_variation == 'intr_hori_vert':
     in_f = input_space_intr_hv(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
+  elif args.input_variation in ['uv', 'uv_rt']:
+    in_f = input_space_uv(in_f, i_s, o_s, lengths=input_dict['lengths'], h0=h0)
 
   # Remove y=0 or z=0 of plane points
   if args.input_variation == 'intr_azim_elev':
@@ -478,6 +537,9 @@ def input_manipulate(in_f, module, input_dict, h0=None):
   elif args.input_variation == 'intr_hori_vert':
     in_f = in_f[..., [0, 2, 3, 4]]  # Remove intr_y = 0 and intr_z = 0
     in_f_orig = in_f_orig[..., [0, 2, 3 ,4]]  # Remove intr_y = 0
+  elif args.input_variation in ['uv', 'uv_rt']:
+    in_f = in_f
+    in_f_orig = in_f_orig
   else :
     raise ValueError("Input variation is wrong.")
 
@@ -537,6 +599,36 @@ def input_space_intr_hv(in_f, i_s, o_s, lengths, h0):
 
   return in_f
 
+def input_space_uv(in_f, i_s, o_s, lengths, h0):
+  '''
+  Input : 
+    1. in_f : input features(t-space) in shape (batch, seq_len, f_dim) -> e.g. f_dim = (u, v, r, t) or (u, v)
+  Output :
+    1. in_f : input features in t/dt/t_dt-space in shape(batch, seq_len, _)
+  '''
+
+  if args.input_variation == 'uv':
+    in_f_uv = in_f[..., [0, 1]]
+    if o_s == 'dt':
+      if i_s == 'dt':
+        dt = in_f_uv[:, 1:, :] - in_f_uv[:, :-1, :]
+        in_f = dt
+      else: raise NotImplementedError
+    else: raise NotImplementedError
+
+  elif args.input_variation == 'uv_rt':
+    in_f_uv = in_f[..., [0, 1]]
+    in_f_rt = in_f[..., 2:]
+    if o_s == 'dt':
+      if i_s == 'dt':
+        # Displacmeent on only pixels
+        dt = in_f_uv[:, 1:, :] - in_f_uv[:, :-1, :]
+        in_f = pt.cat((dt, in_f_rt[:, :-1, :]), dim=2)
+  
+  else: raise NotImplementedError
+
+  return in_f
+
 def aux_space(aux, i_s, lengths):
   if i_s == 'dt':
     aux = aux[:, :-1, :]
@@ -575,15 +667,6 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     flag_loss = utils_loss.EndOfTrajectoryLoss(pred=pred_dict['flag'], gt=input_dict['aux'][..., [0]], mask=m, lengths=gt_dict['lengths'])
 
   ######################################
-  ########### Consine Sim ##############
-  ######################################
-  #if ('refinement' in args.pipeline):
-  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz_refined'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
-  #else:                           
-  #  cosinesim_loss = utils_loss.CosineSimLoss(pred=pred_dict['xyz'], gt=gt_dict['gt'][..., [0, 1, 2]], mask=gt_dict['mask'][..., [0, 1, 2]], lengths=gt_dict['lengths'], cam_dict=cam_dict, input_dict=input_dict)
-
-
-  ######################################
   ############# Annealing ##############
   ######################################
   if (args.annealing) and ('refinement' in args.pipeline):
@@ -600,11 +683,20 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
     bg_loss_ = bg_loss
 
   # Combined all losses term
-  loss = traj_loss_ + bg_loss_ + flag_loss
+  loss = 0
+  if (args.loss_list is None) or ('all' in args.loss_list):
+    loss = traj_loss_ + bg_loss_ + flag_loss
+  else:
+    if 'trajectory' in args.loss_list:
+      loss = loss + traj_loss_
+    if 'bg' in args.loss_list:
+      loss = loss + bg_loss_
+    if 'eot' in args.loss_list:
+      loss = loss + flag_loss
+
   loss_dict = {"Trajectory Loss":traj_loss_.item(),
                "BelowGnd Loss":bg_loss_.item(),
-               "Flag Loss":flag_loss.item(),
-               }
+               "Flag Loss":flag_loss.item(),}
 
   return loss_dict, loss
 

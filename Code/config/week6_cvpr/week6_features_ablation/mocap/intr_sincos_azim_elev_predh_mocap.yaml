@@ -1,16 +1,14 @@
 # Dataset
-#dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/train_set/'
-#dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/val_set/'
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'TracknetV1_SimTennis'
-wandb_name: 'tennis_test'
+wandb_tags: 'CVPR_Week6_features_ablation'
+wandb_name: 'intr_sincos_azim_elev_predh_mocap'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -20,15 +18,15 @@ load_ckpt: null # Lastest or Best
 batch_size: 512
 n_epochs: 100000
 lr: 0.001
-clip: 10
+clip: 1
 decay_gamma: 0.7
-decay_cycle: 10000
+decay_cycle: 1000
 canonicalize: True
 noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
-augment: False
+augment: True
 recon: 'clean'
 optim_init_h: False
 
@@ -37,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_hori_vert'
+input_variation: 'intr_azim_elev'
 
 # Model
 pipeline:
@@ -52,7 +50,7 @@ pipeline:
     mlp_stack: 2
     in_node: 4
     out_node: 1
-    extra_in: []
+    extra_in: [2]
     extra_out: []
     latent_in: []
     latent_out: []
@@ -69,17 +67,17 @@ pipeline:
     mlp_stack: 2
     in_node: 4
     out_node: 1
-    extra_in: [1]
+    extra_in: [1, 2]
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
-    agg: 'o_s_cat_agg'
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
     noise_sd: 0.0
+    agg: 'net_cat_h_agg'
 
   refinement:
     arch: 'lstm'
@@ -91,7 +89,7 @@ pipeline:
     mlp_stack: 2
     in_node: 1
     out_node: 1
-    extra_in: [4]
+    extra_in: [4, 2]
     extra_out: []
     latent_in: []
     latent_out: []
@@ -99,20 +97,19 @@ pipeline:
     o_s: 't'
     attn: False
     refine: 'infref_h' # refinement space ('xyz', 'h')
-    noise_space: null # adding noise space ('dh', 'h', 'xyz', 'dxyz', 'const_h')
+    noise_space: null # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
-
 
 # Features
 selected_features: [eot]
-sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
+sc: 'both'  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []
-loss_list: ['trajectory', 'bg', 'eot']
+loss_list: ['all']
 
 # Miscellaneous
 cuda_device_num: 0
 w: 1664
 h: 1088
-fps: 30
+fps: 60

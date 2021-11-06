@@ -10,14 +10,14 @@ from models.network.self_attention import Self_Attention
 from models.network.trainable_lstm import Trainable_LSTM
 from models.network.lstm_agg import LSTM_Agg
 
-class Height_Module(pt.nn.Module):
+class XYZ_Module(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_hidden, mlp_stack, 
                 trainable_init, is_bidirectional, batch_size, args, attn=False):
-        super(Height_Module, self).__init__()
+        super(XYZ_Module, self).__init__()
 
         # Property
-        self.i_s = args.pipeline['height']['i_s']
-        self.o_s = args.pipeline['height']['o_s']
+        self.i_s = args.pipeline['xyz']['i_s']
+        self.o_s = args.pipeline['xyz']['o_s']
         self.args = args
 
         # Network
@@ -30,7 +30,6 @@ class Height_Module(pt.nn.Module):
         self.mlp = Vanilla_MLP(in_node=bidirectional*rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
 
-        
     def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None):
         out1, _ = self.rnn(in_f, lengths)
         # Time-attention
@@ -42,14 +41,14 @@ class Height_Module(pt.nn.Module):
 
         return height
 
-class Height_Module_Agg(pt.nn.Module):
+class XYZ_Module_Agg(pt.nn.Module):
     def __init__(self, in_node, out_node, rnn_hidden, rnn_stack, mlp_hidden, mlp_stack, 
                 trainable_init, is_bidirectional, batch_size, args, attn=False):
-        super(Height_Module_Agg, self).__init__()
+        super(XYZ_Module_Agg, self).__init__()
         # Property
-        self.i_s = args.pipeline['height']['i_s']
-        self.o_s = args.pipeline['height']['o_s']
-        self.agg = args.pipeline['height']['agg']
+        self.i_s = args.pipeline['xyz']['i_s']
+        self.o_s = args.pipeline['xyz']['o_s']
+        self.agg = args.pipeline['xyz']['agg']
         self.args = args
 
         # Network

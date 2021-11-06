@@ -16,6 +16,7 @@ import utils.transformation as utils_transform
 
 # Models
 from models.module.height_module import Height_Module, Height_Module_Agg
+from models.module.xyz_module import XYZ_Module, XYZ_Module_Agg
 from models.module.refinement_module import Refinement_Module, Stack_Refinement_Module
 from models.module.flag_module import Flag_Module
 
@@ -152,6 +153,27 @@ def get_model(args):
                       rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
                       attn=module['attn'], args=args)
 
+      model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
+                      'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
+                      'rnn_hidden':module['rnn_hidden'], 'rnn_stack':module['rnn_stack'],
+                      'attn':module['attn']}
+
+    elif module_name == 'xyz':
+      if 'agg' not in module.keys() or module['agg'] == False:
+        # Backward compatible for old model without 'agg' keys
+        model = XYZ_Module(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'], args=args)
+      elif module['agg'] in agg_list:
+        model = XYZ_Module_Agg(in_node=in_node, out_node=out_node, 
+                      batch_size=args.batch_size, trainable_init=module['trainable_init'], 
+                      is_bidirectional=module['bidirectional'], 
+                      mlp_hidden=module['mlp_hidden'], mlp_stack=module['mlp_stack'],
+                      rnn_hidden=module['rnn_hidden'], rnn_stack=module['rnn_stack'],
+                      attn=module['attn'], args=args)
 
       model_cfg[module_name] = {'in_node':in_node, 'out_node':out_node,
                       'mlp_hidden':module['mlp_hidden'], 'mlp_stack':module['mlp_stack'],
@@ -339,7 +361,8 @@ def yaml_to_args(args):
       args_dict[k] = config[k]
     else:
       print("[#] Config \"{}\" is missing...!".format(k))
-      exit()
+      input()
+
   return args
 
 def show_dataset_info(dataloader, set):
@@ -454,7 +477,8 @@ def uv_noise(uv):
         1. Noisy-UV in shape = (batch, seq_len, 2)
     '''
     # Generate noise
-    noise_sd = args.pipeline['height']['noise_sd_'] + 1e-16
+    main_module = 'height' if 'height' in args.pipeline.keys() else 'xyz'
+    noise_sd = args.pipeline[main_module]['noise_sd_'] + 1e-16
 
     noise_u = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [0]].shape)
     noise_v = pt.normal(mean=0.0, std=noise_sd, size=uv[..., [1]].shape)
@@ -508,6 +532,8 @@ def add_noise(cam_dict):
     noisy_in_f = pt.cat((noisy_intr_hori, noisy_elev, noisy_azim), axis=-1)
   elif args.input_variation == 'intr_hori_vert':
     noisy_in_f = pt.cat((noisy_intr_hori, noisy_intr_vert), axis=-1)
+  elif args.input_variation in ['uv', 'uv_rt']:
+    noisy_in_f = noisy_intr_hori
   else:
     raise ValueError("Input variation is wrong.")
 
@@ -540,6 +566,8 @@ def generate_input(cam_dict):
     in_f = pt.cat((intr_hori, elev, azim), axis=-1)
   elif args.input_variation == 'intr_hori_vert':
     in_f = pt.cat((intr_hori, intr_vert), axis=-1)
+  elif args.input_variation in ['uv', 'uv_rt']:
+    in_f = intr_hori
   else:
     raise ValueError("Input variation is wrong.")
 

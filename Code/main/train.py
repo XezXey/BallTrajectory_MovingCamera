@@ -73,7 +73,6 @@ parser.add_argument('--recon', dest='recon', type=str, help='Reconstruction sele
 parser.add_argument('--noise', dest='noise', help='Noise on the fly', action='store_true', default=None)
 parser.add_argument('--no_noise', dest='noise', help='Noise on the fly', action='store_false', default=None)
 
-
 ## Augment
 parser.add_argument('--augment', dest='augment', help='Apply an augmented training', action='store_true', default=None)
 parser.add_argument('--no_augment', dest='augment', help='Apply an augmented training', action='store_false', default=None)
@@ -92,7 +91,7 @@ parser.add_argument('--input_variation', dest='input_variation', type=str, help=
 parser.add_argument('--pipeline', dest='pipeline', help='Pipeline', nargs='+', default=None)
 
 # Loss
-parser.add_argument('--multiview_loss', dest='multiview_loss', help='Use Multiview loss', nargs='+', default=None)
+parser.add_argument('--loss_list', dest='loss_list', help='Loss selection for loss ablation', nargs='+', default=None)
 
 # Features
 parser.add_argument('--selected_features', dest='selected_features', help='Specify the selected features columns(eot, og, ', nargs='+', default=None)
@@ -159,13 +158,14 @@ input_col, gt_col, features_col = utils_func.get_selected_cols(args=args, pred='
 def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict_train, cam_dict_val, model_dict, epoch, optimizer, anneal_w):
 
   # Random noise
-  noise_sd = args.pipeline['height']['noise_sd']
+  main_module = 'height' if 'height' in args.pipeline.keys() else 'xyz'
+  noise_sd = args.pipeline[main_module]['noise_sd']
   if type(noise_sd) == int:
     noise_sd = float(noise_sd)
   elif type(noise_sd) == str:
     l, h = int(noise_sd.split('t')[0]), int(noise_sd.split('t')[-1])
     noise_sd = np.random.uniform(low=l, high=h)
-  args.pipeline['height']['noise_sd_'] = noise_sd
+  args.pipeline[main_module]['noise_sd_'] = noise_sd
 
   ####################################
   ############# Training #############
