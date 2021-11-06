@@ -55,7 +55,7 @@ class Height_Module_Agg(pt.nn.Module):
         # Network
         bidirectional = 2 if is_bidirectional else 1
 
-        self.rnn = LSTM_Agg(in_node=in_node, out_node=out_node, 
+        self.rnn = LSTM_Agg(in_node=in_node+1, out_node=out_node, 
             rnn_hidden=rnn_hidden, rnn_stack=rnn_stack, mlp_stack=mlp_stack, mlp_hidden=mlp_hidden, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
         self.attn = attn

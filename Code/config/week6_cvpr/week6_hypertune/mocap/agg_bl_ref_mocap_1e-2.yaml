@@ -1,16 +1,14 @@
 # Dataset
-#dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/train_set/'
-#dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/val_set/'
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE_defC/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE_defC/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'Mocap'
-wandb_name: 'mocap_test'
+wandb_tags: 'CVPR_Week6_hypertune'
+wandb_name: 'agg_bl_ref_mocap_1e-2'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -19,16 +17,16 @@ load_ckpt: null # Lastest or Best
 # Training parameters
 batch_size: 512
 n_epochs: 100000
-lr: 0.001
-clip: 10
+lr: 0.01
+clip: 1
 decay_gamma: 0.7
-decay_cycle: 10000
-canonicalize: False 
+decay_cycle: 100000
+canonicalize: True
 noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
-augment: False
+augment: True
 recon: 'clean'
 optim_init_h: False
 
@@ -37,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'uv_rt'
+input_variation: 'intr_hori_vert' # 'intr_azim_elev'
 
 # Model
 pipeline:
@@ -50,7 +48,7 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 14
+    in_node: 4
     out_node: 1
     extra_in: []
     extra_out: []
@@ -59,7 +57,7 @@ pipeline:
     i_s: 'dt'
     o_s: 'dt'
 
-  xyz:
+  height:
     arch: 'lstm'
     bidirectional: True
     trainable_init: True
@@ -67,19 +65,19 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 14
-    out_node: 3
+    in_node: 4
+    out_node: 1
     extra_in: [1]
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
-    agg: 'net_cat_h_agg'
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
     noise_sd: 0.0
+    agg: 'net_cat_h_agg'
 
   refinement:
     arch: 'lstm'
@@ -89,19 +87,18 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 3
-    out_node: 3
-    extra_in: [14]
+    in_node: 1
+    out_node: 1
+    extra_in: [4]
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 't'
     o_s: 't'
     attn: False
-    refine: 'infref_xyz' # refinement space ('xyz', 'h')
-    noise_space: null # adding noise space ('dh', 'h', 'xyz', 'dxyz', 'const_h')
+    refine: 'infref_h' # refinement space ('xyz', 'h')
+    noise_space: null # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
-
 
 # Features
 selected_features: [eot]
@@ -115,4 +112,4 @@ loss_list: ['all']
 cuda_device_num: 0
 w: 1664
 h: 1088
-fps: 30
+fps: 60

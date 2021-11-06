@@ -160,27 +160,50 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     canon_dict = {'cam_cl' : None, 'R' : None}
   cam_dict.update(canon_dict)
 
+  main_module = 'height' if 'height' in args.pipeline else 'xyz'
   # Augmentation
-  if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)) or (args.env == 'tennis_unity'):
-    search_h = {}
-    search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
-    search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
-    search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
-    search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
-    h0 = search_h['first_h']
-  elif args.optim_init_h:
-    search_h = {}
-    search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
-    search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
-    h0 = latent_dict['init_h']['first_h'].get_params()
-  elif args.env == 'no_gt' or args.env == 'tennis':
-    search_h = None
-    h0 = pt.zeros(size=(in_f.shape[0], 1, 1)).to(device)
-  else: 
-    search_h = None
-    h0 = gt_dict['gt'][:, [0], [1]]
+  if main_module == 'height':
+    if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)) or (args.env == 'tennis_unity'):
+      search_h = {}
+      search_h['first_h'] = gt_dict['gt'][:, [0], [1]]
+      search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [1]] for i in range(gt_dict['gt'].shape[0])])
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+      h0 = search_h['first_h']
+    elif args.optim_init_h:
+      search_h = {}
+      search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
+      search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
+      h0 = latent_dict['init_h']['first_h'].get_params()
+    elif args.env == 'no_gt' or args.env == 'tennis':
+      search_h = None
+      h0 = pt.zeros(size=(in_f.shape[0], 1, 1)).to(device)
+    else: 
+      search_h = None
+      h0 = gt_dict['gt'][:, [0], [1]]
 
-  in_f, in_f_orig = input_manipulate(in_f=in_f, module='height', input_dict=input_dict, h0=h0)
+  elif main_module == 'xyz':
+    if set_ == 'train' or set_ == 'val' or (args.env == 'mocap' and (not args.optim_init_h)) or (args.env == 'tennis_unity'):
+      search_h = {}
+      search_h['first_h'] = gt_dict['gt'][:, [0], [0, 1, 2]]
+      search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [0, 1, 2]] for i in range(gt_dict['gt'].shape[0])])
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+      h0 = search_h['first_h']
+    elif args.optim_init_h:
+      search_h = {}
+      search_h['first_h'] = latent_dict['init_h']['first_h'].get_params()
+      search_h['last_h'] = latent_dict['init_h']['last_h'].get_params()
+      h0 = latent_dict['init_h']['first_h'].get_params()
+    elif args.env == 'no_gt' or args.env == 'tennis':
+      search_h = None
+      h0 = pt.zeros(size=(in_f.shape[0], 1, 3)).to(device)
+    else: 
+      search_h = None
+      h0 = gt_dict['gt'][:, [0], [0, 1, 2]]
+
+
+  in_f, in_f_orig = input_manipulate(in_f=in_f, module=main_module, input_dict=input_dict, h0=h0)
   
   ######################################
   ################ Flag ################
@@ -192,7 +215,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='flag')
     pred_flag, _ = model_dict['flag'](in_f=in_f, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'])
     pred_dict['flag'] = pred_flag
-    if args.pipeline['height']['i_s'] == 't' and args.pipeline['height']['o_s'] == 't':
+    if args.pipeline[main_module]['i_s'] == 't' and args.pipeline[main_module]['o_s'] == 't':
       pred_flag = pt.cat((pt.zeros(pred_flag.shape[0], 1, 1).to(device), pred_flag), dim=1)
       in_f = pt.cat((in_f, pred_flag), dim=-1)
     else:
@@ -218,30 +241,33 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
   ######################################
   elif 'xyz' in args.pipeline:
     #print("HEIGHT : ", in_f.shape)
-    i_s = args.pipeline['height']['i_s']
-    o_s = args.pipeline['height']['o_s']
+    i_s = args.pipeline['xyz']['i_s']
+    o_s = args.pipeline['xyz']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='xyz')
-    pred_h = model_dict['height'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
-    pred_dict['h'] = pred_h
-
-    height = pred_h
-
-    xyz = utils_transform.reconstruct(height, cam_dict, recon_dict, canon_dict)
-
-
-
-  
+    pred_xyz = model_dict['xyz'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
+    height = pred_xyz[..., [1]]
+    xyz = pred_xyz
 
   ######################################
   ############# Refinement #############
   ######################################
   if 'refinement' in args.pipeline:
-    if args.pipeline['refinement']['refine'] == 'xyz':
-      xyz_, _ = utils_func.refinement_noise(height, xyz, cam_dict, recon_dict, canon_dict, input_dict, set_)
-      xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
-      pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
-      pred_dict['refine_offset'] = pred_refoff
-      xyz_refined = xyz_ + pred_refoff
+    if args.pipeline['refinement']['refine'] == 'infref_xyz':
+      if 'height' in args.pipeline:
+        xyz_ = pt.cat((xyz, in_f_orig), dim=2)
+        xyz_, _ = utils_func.refinement_noise(height, xyz_, cam_dict, recon_dict, canon_dict, input_dict, set_)
+        xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+        pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
+        pred_dict['refine_offset'] = pred_refoff
+        xyz_refined = xyz_[..., [0, 1, 2]] + pred_refoff
+      elif 'xyz' in args.pipeline:
+        xyz_ = pt.cat((xyz, in_f_orig), dim=2)
+        xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+        xyz_refnoise = xyz[..., [0, 1, 2]]
+        pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
+        pred_dict['refine_offset'] = pred_refoff
+        xyz_refined = xyz[..., [0, 1, 2]] + pred_refoff
+
     elif args.pipeline['refinement']['refine'] == 'dxyz':
       raise NotImplemented
     elif args.pipeline['refinement']['refine'] == 'h':

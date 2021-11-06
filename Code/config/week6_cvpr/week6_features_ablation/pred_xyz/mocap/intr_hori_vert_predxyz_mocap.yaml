@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_hf/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/TracknetV1_SimTennis/cont3_hf/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week6_features_ablation'
-wandb_name: 'intr_sincos_azim_elev_predh_tennis'
+wandb_name: 'intr_hori_vert_predxyz_mocap'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -21,7 +21,7 @@ lr: 0.001
 clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
-canonicalize: False
+canonicalize: True
 noise: True
 annealing: False
 annealing_cycle: 1
@@ -35,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_azim_elev'
+input_variation: 'intr_hori_vert'
 
 # Model
 pipeline:
@@ -50,14 +50,14 @@ pipeline:
     mlp_stack: 2
     in_node: 4
     out_node: 1
-    extra_in: [2]
+    extra_in: []
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 'dt'
     o_s: 'dt'
 
-  height:
+  xyz:
     arch: 'lstm'
     bidirectional: True
     trainable_init: True
@@ -66,8 +66,8 @@ pipeline:
     mlp_hidden: 32
     mlp_stack: 2
     in_node: 4
-    out_node: 1
-    extra_in: [1, 2]
+    out_node: 3
+    extra_in: [1]
     extra_out: []
     latent_in: []
     latent_out: []
@@ -87,28 +87,29 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 1
-    out_node: 1
-    extra_in: [4, 2]
+    in_node: 3
+    out_node: 3
+    extra_in: [4]
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 't'
     o_s: 't'
     attn: False
-    refine: 'infref_h' # refinement space ('xyz', 'h')
+    refine: 'infref_xyz' # refinement space ('xyz', 'h')
     noise_space: null # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
 
 # Features
 selected_features: [eot]
-sc: 'both'  # ''(+0), azim(+1), elev(+1), both(+2)
+sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []
+loss_list: ['all']
 
 # Miscellaneous
 cuda_device_num: 0
-w: 1280
-h: 720
-fps: 30
+w: 1664
+h: 1088
+fps: 60

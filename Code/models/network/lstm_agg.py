@@ -14,7 +14,7 @@ class LSTM_Agg(pt.nn.Module):
                 trainable_init, is_bidirectional, batch_size):
         super(LSTM_Agg, self).__init__()
         # Define the model parameters
-        self.in_node = in_node + 1
+        self.in_node = in_node
         self.out_node = out_node
         self.batch_size = batch_size
         self.rnn_hidden = rnn_hidden
