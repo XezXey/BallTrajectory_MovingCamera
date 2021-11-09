@@ -21,7 +21,7 @@ lr: 0.001
 clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
-canonicalize: True
+canonicalize: False
 noise: True
 annealing: False
 annealing_cycle: 1

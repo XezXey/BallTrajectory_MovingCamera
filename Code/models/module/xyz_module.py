@@ -1,10 +1,12 @@
 from __future__ import print_function
+from re import search
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import torch as pt
 from torch.autograd import Variable
 from utils import utils_func as utils_func
+from utils import transformation as utils_transform
 from models.network.vanilla_mlp import Vanilla_MLP
 from models.network.self_attention import Self_Attention
 from models.network.trainable_lstm import Trainable_LSTM
@@ -99,7 +101,10 @@ class XYZ_Module_Agg(pt.nn.Module):
         self.mlp = Vanilla_MLP(in_node=bidirectional * rnn_hidden, hidden=mlp_hidden, stack=mlp_stack, 
             out_node=out_node, batch_size=batch_size, lrelu_slope=0.01)
         
-    def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None):
+    def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None, cam_dict=None):
+
+        if self.args.env == 'tennis':
+          search_h = self.search_h_from_intr(in_f_orig, lengths+1, cam_dict)
 
         xyz_fw, xyz_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
         if self.agg == 'net_agg':
@@ -178,6 +183,34 @@ class XYZ_Module_Agg(pt.nn.Module):
           xyz = output_space(pred_xyz=out2, lengths=lengths+1 if ((self.i_s == 'dt' or self.i_s == 'dt_intr' or self.i_s == 'dt_all') and self.o_s == 'dt') else lengths, module='xyz', args=self.args, search_h=search_h)
 
         return xyz
+
+    def search_h_from_intr(self, in_f_orig, lengths, cam_dict):
+      if self.args.input_variation in ['uv', 'uv_rt']:
+        cpos = cam_dict['Einv'][..., 0:3, -1]
+        ray = utils_transform.cast_ray(uv=cam_dict['tracking'], I=cam_dict['I'], E=cam_dict['E'], cpos=cpos)
+        intr_hori = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane='horizontal')
+
+        #if self.args.canonicalize:
+        #  # Canonicalize
+        #  cpos = utils_transform.canonicalize(pts=cpos, R=cam_dict['R'])
+        #  ray = utils_transform.canonicalize(pts=ray[..., [0, 1, 2]], R=cam_dict['R'])
+        #  intr = utils_transform.ray_to_plane(ray=ray, cpos=cpos, plane='horizontal')
+        #else:
+        #  ray = ray
+        #  intr = intr
+
+      elif self.args.input_variation in ['intr_hori_vert', 'intr_azim_elev']:
+        intr_hori = pt.cat((in_f_orig[..., [0]], pt.zeros((in_f_orig.shape[0], in_f_orig.shape[1], 1)).cuda(), in_f_orig[..., [1]]), dim=-1)
+      
+      else : raise NotImplementedError
+
+      search_h = {}
+      search_h['first_h'] = intr_hori[:, [0], [0, 1, 2]]
+      search_h['last_h'] = pt.stack([intr_hori[i, [lengths[i]-1], [0, 1, 2]] for i in range(lengths.shape[0])], dim=0)
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+      return search_h
+    
 
 def output_space(pred_xyz, lengths, module, args, search_h=None):
   '''

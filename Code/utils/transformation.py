@@ -143,10 +143,14 @@ def find_R(Einv):
   Output : 
     1. R : rotation matrix rotate to [x=1, z=0] in shape (batch_size, seq_len, 3, 3)
   '''
+  # Canonicalize using camera position
   cpos = Einv[..., 0:3, -1].cpu().numpy()
   c = cpos[..., [0, 2]] / (np.linalg.norm(cpos[..., [0, 2]], axis=-1, keepdims=True) + 1e-16)
   sin = c[..., 0]
   cos = c[..., 1]
+
+  # Canonicalize using viewing angle (Lookat)
+
   zeros = np.zeros(sin.shape)
   ones = np.ones(sin.shape)
   R = np.array([[cos, zeros, -sin], 

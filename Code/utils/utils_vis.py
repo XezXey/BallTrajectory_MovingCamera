@@ -64,7 +64,7 @@ def wandb_vis(input_dict_train, gt_dict_train, pred_dict_train, cam_dict_train,
     fig_traj = make_subplots(rows=n_vis, cols=2, specs=[[{'type':'scatter3d'}, {'type':'scatter3d'}]]*n_vis, horizontal_spacing=0.05, vertical_spacing=0.01)
     visualize_trajectory(pred=pred_dict_train, gt=gt_dict_train['gt'][..., [0, 1, 2]], lengths=gt_dict_train['lengths'], mask=gt_dict_train['mask'][..., [0, 1, 2]], fig=fig_traj, set='Train', vis_idx=train_vis_idx, col=1)
     visualize_trajectory(pred=pred_dict_val, gt=gt_dict_val['gt'][..., [0, 1, 2]], lengths=gt_dict_val['lengths'], mask=gt_dict_val['mask'][..., [0, 1, 2]], fig=fig_traj, set='Validation', vis_idx=val_vis_idx, col=2)
-    visualize_layout_update(fig=fig_traj, n_vis=n_vis)
+    #visualize_layout_update(fig=fig_traj, n_vis=n_vis)
 
     ####################################
     ########## Canonicalize ############

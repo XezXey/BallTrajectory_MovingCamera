@@ -244,7 +244,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
     i_s = args.pipeline['xyz']['i_s']
     o_s = args.pipeline['xyz']['o_s']
     in_f = add_latent(in_f=in_f, input_dict=input_dict, latent_dict=latent_dict, module='xyz')
-    pred_xyz = model_dict['xyz'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'])
+    pred_xyz = model_dict['xyz'](in_f=in_f, in_f_orig=in_f_orig, lengths=input_dict['lengths']-1 if ((i_s == 'dt' or i_s == 'dt_intr' or i_s == 'dt_all') and o_s == 'dt') else input_dict['lengths'], search_h=search_h, mask=input_dict['mask'], cam_dict=cam_dict)
     height = pred_xyz[..., [1]]
     xyz = pred_xyz
 
@@ -719,8 +719,15 @@ def training_loss(input_dict, gt_dict, pred_dict, cam_dict, anneal_w):
       loss = loss + bg_loss_
     if 'eot' in args.loss_list:
       loss = loss + flag_loss
+    if 'height' in args.loss_list and 'trajectory' not in args.loss_list:
+      loss = loss + traj_loss
+      traj_loss_ = traj_loss
+    if 'refinement' in args.loss_list and 'trajectory' not in args.loss_list:
+      loss = loss + traj_loss_refined
+      traj_loss_ = traj_loss_refined
 
   loss_dict = {"Trajectory Loss":traj_loss_.item(),
+               "Trajectory Loss (noref)":traj_loss.item(),
                "BelowGnd Loss":bg_loss_.item(),
                "Flag Loss":flag_loss.item(),}
 

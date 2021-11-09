@@ -217,13 +217,14 @@ def evaluate(recon_traj_all):
 
 def predict(input_dict_test, gt_dict_test, cam_dict_test, model_dict, tid, threshold=0.01):
   # Random noise
-  noise_sd = args.pipeline['height']['noise_sd']
+  main_module = 'height' if 'height' in args.pipeline.keys() else 'xyz'
+  noise_sd = args.pipeline[main_module]['noise_sd']
   if type(noise_sd) == int:
     noise_sd = float(noise_sd)
   elif type(noise_sd) == str:
     l, h = int(noise_sd.split('t')[0]), int(noise_sd.split('t')[-1])
     noise_sd = np.random.uniform(low=l, high=h)
-  args.pipeline['height']['noise_sd_'] = noise_sd
+  args.pipeline[main_module]['noise_sd_'] = noise_sd
 
   ####################################
   ############# Testing ##############
@@ -373,10 +374,6 @@ if __name__ == '__main__':
   n_trajectory = 0
   for batch_idx, batch_test in tqdm(enumerate(dataloader_test), disable=True):
     print("[#]Batch-{}".format(batch_idx))
-    if batch_idx in [27, 32, 33, 34, 35, 36] + list(range(39, 61)) and args.env == 'tennis_unity':
-      continue
-    if batch_idx >= 30 and args.env == 'mocap':
-      break
 
     input_dict_test = {'input':batch_test['input'][0].to(device), 'aux':batch_test['input'][1].to(device), 'lengths':batch_test['input'][2].to(device), 'mask':batch_test['input'][3].to(device)}
     if args.no_gt:
