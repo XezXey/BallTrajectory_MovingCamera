@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_eot_uniqE_defC/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/IPL/IPLc5c6/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/IPL/IPLc5c6/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -8,7 +8,7 @@ env: 'unity'
 wandb_dir: '../'
 wandb_notes: null
 wandb_tags: 'CVPR_Week6_noise_ablation'
-wandb_name: 'agg_bl_ref_mocap_0t7'
+wandb_name: 'agg_bl_ref_iplc5c6_0t10'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -21,7 +21,7 @@ lr: 0.001
 clip: 1
 decay_gamma: 0.7
 decay_cycle: 1000
-canonicalize: True
+canonicalize: False
 noise: True
 annealing: False
 annealing_cycle: 1
@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: '0t7'
+    noise_sd: '0t10'
     agg: 'net_cat_h_agg'
 
   refinement:
@@ -110,6 +110,6 @@ loss_list: ['all']
 
 # Miscellaneous
 cuda_device_num: 0
-w: 1664
-h: 1088
-fps: 60
+w: 1920
+h: 1080
+fps: 25

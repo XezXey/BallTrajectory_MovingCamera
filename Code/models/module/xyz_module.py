@@ -103,7 +103,7 @@ class XYZ_Module_Agg(pt.nn.Module):
         
     def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None, cam_dict=None):
 
-        if self.args.env == 'tennis':
+        if self.args.env == 'tennis' or self.args.env == 'unity':
           search_h = self.search_h_from_intr(in_f_orig, lengths+1, cam_dict)
 
         xyz_fw, xyz_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)

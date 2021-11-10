@@ -256,6 +256,7 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       if 'height' in args.pipeline:
         xyz_ = pt.cat((xyz, in_f_orig), dim=2)
         xyz_, _ = utils_func.refinement_noise(height, xyz_, cam_dict, recon_dict, canon_dict, input_dict, set_)
+        xyz_refnoise = xyz_[..., [0, 1, 2]]
         xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
         pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
         pred_dict['refine_offset'] = pred_refoff
