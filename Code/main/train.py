@@ -204,7 +204,7 @@ def train(input_dict_train, gt_dict_train, input_dict_val, gt_dict_val, cam_dict
   utils_func.print_loss(loss_list=[val_loss_dict, val_loss], name='Validating')
   wandb.log({'Train Loss':train_loss.item(), 'Validation Loss':val_loss.item()})
 
-  if args.visualize and (epoch % 500 == 0 or epoch == 1):
+  if args.visualize and (epoch % 1000 == 0 or epoch == 1):
     utils_vis.wandb_vis(input_dict_train=input_dict_train, gt_dict_train=gt_dict_train, 
                         pred_dict_train=pred_dict_train, cam_dict_train=cam_dict_train, 
                         input_dict_val=input_dict_val, gt_dict_val=gt_dict_val, 

@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -106,6 +106,7 @@ sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
 multiview_loss: []
+loss_list: ['all']
 
 # Miscellaneous
 cuda_device_num: 0

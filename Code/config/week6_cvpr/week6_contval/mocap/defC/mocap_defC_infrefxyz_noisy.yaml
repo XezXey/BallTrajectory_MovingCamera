@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_uniqE_defC_contval/train_set/'
-dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_uniqE_defC_contval/val_set/'
+dataset_train_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_uniqE_defC_valcont/train_set/'
+dataset_val_path : '/home2/mint/UnityDataset/RealWorld/Unity/MovingCamera/Mocap/cont2_uniqE_defC_valcont/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 

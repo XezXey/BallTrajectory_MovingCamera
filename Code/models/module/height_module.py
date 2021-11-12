@@ -70,7 +70,7 @@ class Height_Module_Agg(pt.nn.Module):
           self.in_rnn2 = 9
         elif self.agg == 'net_h_agg':
           self.in_rnn2 = 1
-        elif self.agg in ['net_cat_h_agg', 'net_cat_h_fw_agg', 'net_cat_h_bw_agg']:
+        elif self.agg in ['net_cat_h_agg', 'net_cat_h_fw_agg', 'net_cat_h_bw_agg', 'net_cat_h_agg_dh']:
           self.in_rnn2 = 1 + 4
         else: # Dummy to compat with old model
           self.in_rnn2 = 2
@@ -87,7 +87,6 @@ class Height_Module_Agg(pt.nn.Module):
           self.in_rnn2 = 1 + 2
         elif self.args.input_variation == 'uv_rt':
           self.in_rnn2 = 1 + 14
-
 
         self.rnn2 = Trainable_LSTM(in_node=self.in_rnn2, hidden=rnn_hidden, stack=rnn_stack, 
             trainable_init=trainable_init, is_bidirectional=is_bidirectional, batch_size=batch_size)
@@ -126,6 +125,16 @@ class Height_Module_Agg(pt.nn.Module):
           out1, _ = self.rnn2(in_f=in_f_, lengths=lengths+1)
           out2 = self.mlp(out1)
           height = out2
+
+        elif self.agg == 'net_cat_h_agg_dh':
+          # Height <= MLP + LSTM <= Height <= Network aggregation
+          w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 1)), lengths=lengths+1)
+          height = pt.sum(pt.cat((h_fw, h_bw), dim=2) * w_ramp, dim=2, keepdims=True)
+          in_f_ = pt.cat((height, in_f_orig), dim=2)
+          out1, _ = self.rnn2(in_f=in_f_, lengths=lengths+1)
+          out2 = self.mlp(out1)
+          height = height + out2
+
 
         elif self.agg == 'net_cat_h_fw_agg':
           # Height <= MLP + LSTM <= Height <= Network aggregation

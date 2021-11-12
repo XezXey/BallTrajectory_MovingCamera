@@ -7,8 +7,8 @@ env: 'unity'
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'CVPR_Week6_noise_ablation'
-wandb_name: 'agg_bl_ref_iplc5c6_0t5'
+wandb_tags: 'CVPR_Week6_features_ablation'
+wandb_name: 'uv_predxyz_iplc5c6'
 
 # Checkpoint
 save_ckpt: '../model_checkpoints/'
@@ -35,7 +35,7 @@ visualize: True
 vis_path: '../../visualize_html/'
 
 # Input variation
-input_variation: 'intr_hori_vert' # 'intr_azim_elev'
+input_variation: 'uv'
 
 # Model
 pipeline:
@@ -48,7 +48,7 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 4
+    in_node: 2
     out_node: 1
     extra_in: []
     extra_out: []
@@ -57,7 +57,7 @@ pipeline:
     i_s: 'dt'
     o_s: 'dt'
 
-  height:
+  xyz:
     arch: 'lstm'
     bidirectional: True
     trainable_init: True
@@ -65,8 +65,8 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 4
-    out_node: 1
+    in_node: 2
+    out_node: 3
     extra_in: [1]
     extra_out: []
     latent_in: []
@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: '0t5'
+    noise_sd: 0.0
     agg: 'net_cat_h_agg'
 
   refinement:
@@ -87,16 +87,16 @@ pipeline:
     rnn_stack: 2
     mlp_hidden: 32
     mlp_stack: 2
-    in_node: 1
-    out_node: 1
-    extra_in: [4]
+    in_node: 3
+    out_node: 3
+    extra_in: [2]
     extra_out: []
     latent_in: []
     latent_out: []
     i_s: 't'
     o_s: 't'
     attn: False
-    refine: 'infref_h' # refinement space ('xyz', 'h')
+    refine: 'infref_xyz' # refinement space ('xyz', 'h')
     noise_space: null # adding noise space ('dh', 'h', 'xyz')
     noise_sd: 0.0
 

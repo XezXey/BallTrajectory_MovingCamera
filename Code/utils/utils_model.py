@@ -187,8 +187,8 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       search_h = {}
       search_h['first_h'] = gt_dict['gt'][:, [0], [0, 1, 2]]
       search_h['last_h'] = pt.stack([gt_dict['gt'][i, [input_dict['lengths'][i]-1], [0, 1, 2]] for i in range(gt_dict['gt'].shape[0])])
-      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1)
-      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1)
+      search_h['first_h'] = pt.unsqueeze(search_h['first_h'], dim=-1) # Shape (B, L, 1)
+      search_h['last_h'] = pt.unsqueeze(search_h['last_h'], dim=-1) # Shape (B, L, 1)
       h0 = search_h['first_h']
     elif args.optim_init_h:
       search_h = {}
@@ -268,7 +268,6 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
         pred_refoff, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
         pred_dict['refine_offset'] = pred_refoff
         xyz_refined = xyz[..., [0, 1, 2]] + pred_refoff
-
     elif args.pipeline['refinement']['refine'] == 'dxyz':
       raise NotImplemented
     elif args.pipeline['refinement']['refine'] == 'h':
@@ -295,13 +294,21 @@ def fw_pass(model_dict, input_dict, cam_dict, gt_dict, latent_dict, set_):
       pred_dict['refine_offset'] = pred_refoff
       height_refined = height_[..., [0]] + pred_refoff
       xyz_refined = utils_transform.reconstruct(height_refined, cam_dict, recon_dict, canon_dict)
-  
+    elif args.pipeline['refinement']['refine'] == 'infref_xyz_to_xyz':
+        xyz_ = pt.cat((xyz, in_f_orig), dim=2)
+        xyz_, _ = utils_func.refinement_noise(height, xyz_, cam_dict, recon_dict, canon_dict, input_dict, set_)
+        xyz_refnoise = xyz_[..., [0, 1, 2]]
+        xyz_ = add_latent(in_f=xyz_, input_dict=input_dict, latent_dict=latent_dict, module='refinement')
+        xyz_refined, _ = model_dict['refinement'](in_f=xyz_, lengths=input_dict['lengths'])
+    else:
+      raise NotImplementedError
+
   else:
     xyz_refined = None
     xyz_refnoise = None
     xyz_ = None
 
-  # Decoanonicalize
+  # Decanonicalize
   if args.canonicalize:
     xyz = utils_transform.canonicalize(pts=xyz, R=canon_dict['R'], inv=True)
     if xyz_refined is not None:

@@ -127,7 +127,7 @@ def get_model(args):
 
   model_dict = {}
   model_cfg = {}
-  agg_list = ['o_s_agg', 'net_agg', 'net_agg_h_fw', 'net_agg_h_bw', 'net_agg', 'net_h_agg', 'net_cat_h_fw_agg', 'net_cat_h_bw_agg', 'net_cat_h_agg', 'o_s_cat_agg', 'o_s_cat_h_agg']
+  agg_list = ['o_s_agg', 'net_agg', 'net_agg_h_fw', 'net_agg_h_bw', 'net_agg', 'net_h_agg', 'net_cat_h_fw_agg', 'net_cat_h_bw_agg', 'net_cat_h_agg', 'net_cat_h_agg_dh', 'o_s_cat_agg', 'o_s_cat_h_agg']
   for module_name in args.pipeline:
     model = None
     module = args.pipeline[module_name]                                         # Module
