@@ -1,8 +1,10 @@
 # Dataset
 #dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/train_set/'
 #dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/TracknetV1_SimTennis/cont3_hf/val_set/'
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE_defC/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Mocap/cont2_eot_uniqE_defC/val_set/'
+#dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/Mocap/cont2_eot_uniqE_defC/train_set/'
+#dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/Mocap/cont2_eot_uniqE_defC/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/IPL/IPLc1c2/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/Simulation/IPL/IPLc1c2/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 
@@ -28,7 +30,7 @@ noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
-augment: False
+augment: True
 recon: 'clean'
 optim_init_h: False
 
@@ -113,6 +115,6 @@ loss_list: ['all']
 
 # Miscellaneous
 cuda_device_num: 0
-w: 1664
-h: 1088
+w: 1920
+h: 1080
 fps: 30

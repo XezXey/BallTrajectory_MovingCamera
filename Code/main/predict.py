@@ -362,10 +362,10 @@ if __name__ == '__main__':
     print('[#] Loading ... {}'.format(ckpt))
     model_dict = utils_func.load_ckpt_predict(model_dict, ckpt)
 
-  print('[#]Model Architecture')
-  for model in model_cfg.keys():
-    print('####### Model - {} #######'.format(model))
-    print(model_dict[model])
+  #print('[#]Model Architecture')
+  #for model in model_cfg.keys():
+  #  print('####### Model - {} #######'.format(model))
+  #  print(model_dict[model])
 
   # Test a model iterate over dataloader to get each batch and pass to predict function
   run_time = []

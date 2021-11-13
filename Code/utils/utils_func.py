@@ -309,11 +309,11 @@ def load_ckpt_train(model_dict, optimizer, lr_scheduler):
 
 def load_ckpt_predict(model_dict, ckpt):
   print("="*100)
-  print("[#] Model Parameters")
-  for model in model_dict.keys():
-    for k, v in model_dict[model].named_parameters():
-      print("===> ", k, v.shape)
-  print("="*100)
+  #print("[#] Model Parameters")
+  #for model in model_dict.keys():
+  #  for k, v in model_dict[model].named_parameters():
+  #    print("===> ", k, v.shape)
+  #print("="*100)
   if os.path.isfile(ckpt):
     print("[#] Found the ckpt ===> {}".format(ckpt))
     ckpt = pt.load(ckpt, map_location='cuda:0')

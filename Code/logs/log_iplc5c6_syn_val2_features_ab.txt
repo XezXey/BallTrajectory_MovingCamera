@@ -1,0 +1,171 @@
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_hori_vert_predxyz_iplc5c6/intr_hori_vert_predxyz_iplc5c6_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_hori_vert_predxyz_iplc5c6/intr_hori_vert_predxyz_iplc5c6_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_hori_vert_predxyz_iplc5c6"
+[#]Data : "../../Dataset/Simulation/IPL/IPLc5c6/val2_set/"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.1316 0.0876 0.3536]
+	SD :  [0.1403 0.318  1.2631]
+===> Distance :  MSE
+	MEAN :  [0.037  0.1088 1.7204]
+	SD :  [ 0.14    0.9919 16.2995]
+===> Distance :  RMSE
+	RMSE :  [0.1923 0.3298 1.3116]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.4244731
+	RMSE-DISTANCE-2 :  1.3661351
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.1247 0.0831 0.2366]
+	SD :  [0.1325 0.305  0.9717]
+===> Distance :  MSE
+	MEAN :  [0.0331 0.0999 1.0001]
+	SD :  [ 0.1405  0.9237 10.8959]
+===> Distance :  RMSE
+	RMSE :  [0.1819 0.3161 1.    ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.3150528
+	RMSE-DISTANCE-2 :  1.0644904
+****************************************************************************************************
+[#] Runtime : 2.401188373565674+-0.14146957140188945
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_iplc5c6/intr_sincos_azim_elev_predxyz_iplc5c6_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_iplc5c6/intr_sincos_azim_elev_predxyz_iplc5c6_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_iplc5c6"
+[#]Data : "../../Dataset/Simulation/IPL/IPLc5c6/val2_set/"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.268  0.115  0.5853]
+	SD :  [0.2035 0.3338 1.2411]
+===> Distance :  MSE
+	MEAN :  [0.1132 0.1246 1.8829]
+	SD :  [ 0.46    1.2402 18.4251]
+===> Distance :  RMSE
+	RMSE :  [0.3365 0.3531 1.3722]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.7003596
+	RMSE-DISTANCE-2 :  1.4562958
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.2207 0.0786 0.3562]
+	SD :  [0.1484 0.3107 1.1344]
+===> Distance :  MSE
+	MEAN :  [0.0707 0.1027 1.4139]
+	SD :  [ 0.2698  1.1354 16.3171]
+===> Distance :  RMSE
+	RMSE :  [0.266  0.3205 1.1891]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.46585312
+	RMSE-DISTANCE-2 :  1.2599145
+****************************************************************************************************
+[#] Runtime : 2.5307925224304197+-0.1838104370125137
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predxyz_iplc5c6/intr_azim_elev_predxyz_iplc5c6_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predxyz_iplc5c6/intr_azim_elev_predxyz_iplc5c6_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_azim_elev_predxyz_iplc5c6"
+[#]Data : "../../Dataset/Simulation/IPL/IPLc5c6/val2_set/"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0961 0.0496 0.1327]
+	SD :  [0.0755 0.0903 0.4201]
+===> Distance :  MSE
+	MEAN :  [0.0149 0.0106 0.1941]
+	SD :  [0.11   0.1107 3.0169]
+===> Distance :  RMSE
+	RMSE :  [0.1222 0.103  0.4405]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.19166842
+	RMSE-DISTANCE-2 :  0.4686599
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.024  0.0228 0.0438]
+	SD :  [0.0436 0.0627 0.2634]
+===> Distance :  MSE
+	MEAN :  [0.0025 0.0045 0.0713]
+	SD :  [0.0378 0.0809 1.7236]
+===> Distance :  RMSE
+	RMSE :  [0.0498 0.0667 0.267 ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.06304407
+	RMSE-DISTANCE-2 :  0.27970323
+****************************************************************************************************
+[#] Runtime : 2.5006736755371093+-0.19618627589489004
+[#] Done

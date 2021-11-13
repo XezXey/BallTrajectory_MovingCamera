@@ -103,7 +103,7 @@ class XYZ_Module_Agg(pt.nn.Module):
         
     def forward(self, in_f, in_f_orig, lengths, h=None, c=None, search_h=None, mask=None, cam_dict=None):
 
-        if self.args.env == 'tennis' or self.args.env == 'unity':
+        if (self.args.env == 'tennis' or self.args.env == 'unity') and (search_h is None):
           search_h = self.search_h_from_intr(in_f_orig, lengths+1, cam_dict)
 
         xyz_fw, xyz_bw = self.rnn(in_f, lengths, search_h=search_h, mask=mask)
@@ -121,12 +121,12 @@ class XYZ_Module_Agg(pt.nn.Module):
           xyz = xyz_bw
 
         elif self.agg == 'net_h_agg':
-            # xyz <= MLP + LSTM <= xyz <= Network aggregation
-            w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 3)), lengths=lengths+1)
-            xyz = xyz_fw * w_ramp[..., [0, 1, 2]] + xyz_bw * w_ramp[..., [3, 4, 5]]
-            out1, _ = self.rnn2(in_f=xyz, lengths=lengths+1)
-            out2 = self.mlp(out1)
-            xyz = out2
+          # xyz <= MLP + LSTM <= xyz <= Network aggregation
+          w_ramp = utils_func.construct_w_ramp(weight_template=pt.zeros(size=(in_f.shape[0], in_f.shape[1]+1, 3)), lengths=lengths+1)
+          xyz = xyz_fw * w_ramp[..., [0, 1, 2]] + xyz_bw * w_ramp[..., [3, 4, 5]]
+          out1, _ = self.rnn2(in_f=xyz, lengths=lengths+1)
+          out2 = self.mlp(out1)
+          xyz = out2
 
         elif self.agg == 'net_cat_h_agg':
           # xyz <= MLP + LSTM <= xyz <= Network aggregation

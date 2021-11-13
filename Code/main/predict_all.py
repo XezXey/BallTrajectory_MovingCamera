@@ -18,6 +18,7 @@ parser.add_argument('--augment', dest='is_augment', action='store_true')
 parser.add_argument('--no_augment', dest='is_augment', action='store_false')
 parser.add_argument('--annealing', dest='is_annealing', action='store_true')
 parser.add_argument('--no_annealing', dest='is_annealing', action='store_false')
+parser.add_argument('--specific_dat', dest='specific_dat', type=str)
 parser.add_argument('--fps', type=int, required=True)
 
 args = parser.parse_args()
@@ -41,6 +42,8 @@ else:
 
 for ckpt in ckpt_path:
     ckpt += '/config.yaml'
+    if args.specific_dat not in ckpt:
+        continue
     cmd = """
         python predict.py --dataset_test_path {} --load_ckpt {} --save_cam_traj {} --env {} {} {} {} --fps {} --recon {} --config {} --save_suffix {} --batch_size {} > ../logs/log.txt
         """.format(args.dataset_test_path, args.load_ckpt, args.save_cam_traj, args.env,

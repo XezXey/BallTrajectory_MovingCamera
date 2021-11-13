@@ -1,0 +1,168 @@
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = mocap
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  No features cols from real data
+1. input_col =  [u, v]
+2. gt_col =  [x, y, z] (if existed)
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (344,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_eot_traj/fp_mocap_eot_traj_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_eot_traj/fp_mocap_eot_traj_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_loss_ablation/fp_mocap_eot_traj"
+[#]Data : "../../Dataset/Mocap_cvpr_paper/all"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0187 0.019  0.0171]
+	SD :  [0.025  0.0171 0.0216]
+===> Distance :  MSE
+	MEAN :  [0.001  0.0007 0.0008]
+	SD :  [0.0078 0.0035 0.0048]
+===> Distance :  RMSE
+	RMSE :  [0.0312 0.0256 0.0276]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.03388938
+	RMSE-DISTANCE-2 :  0.04886614
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0177 0.0182 0.0164]
+	SD :  [0.0176 0.0133 0.0147]
+===> Distance :  MSE
+	MEAN :  [0.0006 0.0005 0.0005]
+	SD :  [0.0033 0.0024 0.0017]
+===> Distance :  RMSE
+	RMSE :  [0.025  0.0226 0.022 ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.03238477
+	RMSE-DISTANCE-2 :  0.04021734
+****************************************************************************************************
+[#] Runtime : 2.72410249710083+-0.21150786216830333
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = mocap
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  No features cols from real data
+1. input_col =  [u, v]
+2. gt_col =  [x, y, z] (if existed)
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (344,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_bg_traj/fp_mocap_bg_traj_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_bg_traj/fp_mocap_bg_traj_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_loss_ablation/fp_mocap_bg_traj"
+[#]Data : "../../Dataset/Mocap_cvpr_paper/all"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0176 0.0181 0.016 ]
+	SD :  [0.0199 0.0135 0.0162]
+===> Distance :  MSE
+	MEAN :  [0.0007 0.0005 0.0005]
+	SD :  [0.0047 0.0024 0.0024]
+===> Distance :  RMSE
+	RMSE :  [0.0265 0.0226 0.0228]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.031935774
+	RMSE-DISTANCE-2 :  0.041661114
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0173 0.0177 0.0159]
+	SD :  [0.0172 0.0126 0.0141]
+===> Distance :  MSE
+	MEAN :  [0.0006 0.0005 0.0005]
+	SD :  [0.0025 0.0021 0.0012]
+===> Distance :  RMSE
+	RMSE :  [0.0244 0.0217 0.0212]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.03154133
+	RMSE-DISTANCE-2 :  0.038951192
+****************************************************************************************************
+[#] Runtime : 2.6116417050361633+-0.255004470191147
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = mocap
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  No features cols from real data
+1. input_col =  [u, v]
+2. gt_col =  [x, y, z] (if existed)
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (344,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_traj/fp_mocap_traj_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_loss_ablation/fp_mocap_traj/fp_mocap_traj_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_loss_ablation/fp_mocap_traj"
+[#]Data : "../../Dataset/Mocap_cvpr_paper/all"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0187 0.0192 0.017 ]
+	SD :  [0.0213 0.0164 0.018 ]
+===> Distance :  MSE
+	MEAN :  [0.0008 0.0006 0.0006]
+	SD :  [0.0046 0.0055 0.0029]
+===> Distance :  RMSE
+	RMSE :  [0.0284 0.0253 0.0247]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.03398527
+	RMSE-DISTANCE-2 :  0.04532865
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0185 0.0193 0.0168]
+	SD :  [0.0187 0.0151 0.015 ]
+===> Distance :  MSE
+	MEAN :  [0.0007 0.0006 0.0005]
+	SD :  [0.0032 0.0051 0.0015]
+===> Distance :  RMSE
+	RMSE :  [0.0263 0.0245 0.0225]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.033809256
+	RMSE-DISTANCE-2 :  0.042428926
+****************************************************************************************************
+[#] Runtime : 2.5580209493637085+-0.21597219146074967
+[#] Done

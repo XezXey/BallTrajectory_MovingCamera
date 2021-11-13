@@ -1,0 +1,741 @@
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_tennis/intr_sincos_azim_elev_predxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_tennis/intr_sincos_azim_elev_predxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_sincos_azim_elev_predxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0272 0.0384 0.1344]
+	SD :  [0.0277 0.0321 0.1204]
+===> Distance :  MSE
+	MEAN :  [0.0015 0.0025 0.0325]
+	SD :  [0.0051 0.0049 0.0758]
+===> Distance :  RMSE
+	RMSE :  [0.0388 0.0501 0.1804]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.14958952
+	RMSE-DISTANCE-2 :  0.1912108
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0132 0.0252 0.094 ]
+	SD :  [0.0148 0.0237 0.0968]
+===> Distance :  MSE
+	MEAN :  [0.0004 0.0012 0.0182]
+	SD :  [0.0016 0.0027 0.0523]
+===> Distance :  RMSE
+	RMSE :  [0.0199 0.0345 0.1349]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.10138499
+	RMSE-DISTANCE-2 :  0.1406698
+****************************************************************************************************
+[#] Runtime : 1.4722285270690918+-0.1480251560000071
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predxyz_tennis/intr_azim_elev_predxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predxyz_tennis/intr_azim_elev_predxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_azim_elev_predxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0304 0.0376 0.1168]
+	SD :  [0.028  0.0323 0.1172]
+===> Distance :  MSE
+	MEAN :  [0.0017 0.0025 0.0274]
+	SD :  [0.0045 0.0048 0.0797]
+===> Distance :  RMSE
+	RMSE :  [0.0413 0.0495 0.1655]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.1350466
+	RMSE-DISTANCE-2 :  0.17757413
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0131 0.0233 0.0874]
+	SD :  [0.0147 0.0223 0.0961]
+===> Distance :  MSE
+	MEAN :  [0.0004 0.001  0.0169]
+	SD :  [0.0015 0.0026 0.0631]
+===> Distance :  RMSE
+	RMSE :  [0.0196 0.0322 0.1298]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.09443508
+	RMSE-DISTANCE-2 :  0.13521172
+****************************************************************************************************
+[#] Runtime : 1.5016483783721923+-0.1510498719593065
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predh_tennis/intr_sincos_azim_elev_predh_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_sincos_azim_elev_predh_tennis/intr_sincos_azim_elev_predh_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_sincos_azim_elev_predh_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0066 0.019  0.0891]
+	SD :  [0.0086 0.0166 0.0831]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0148]
+	SD :  [0.0005 0.0016 0.043 ]
+===> Distance :  RMSE
+	RMSE :  [0.0108 0.0253 0.1218]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.09157377
+	RMSE-DISTANCE-2 :  0.124874055
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0063 0.0182 0.0849]
+	SD :  [0.009  0.0179 0.0878]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0007 0.0149]
+	SD :  [0.0006 0.0017 0.0463]
+===> Distance :  RMSE
+	RMSE :  [0.011  0.0255 0.1222]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.0873485
+	RMSE-DISTANCE-2 :  0.12528083
+****************************************************************************************************
+[#] Runtime : 1.4939760208129882+-0.15148551660304105
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/uv_predxyz_tennis/uv_predxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/uv_predxyz_tennis/uv_predxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/uv_predxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0506 0.0444 0.1225]
+	SD :  [0.045  0.0399 0.1234]
+===> Distance :  MSE
+	MEAN :  [0.0046 0.0036 0.0302]
+	SD :  [0.01   0.008  0.0863]
+===> Distance :  RMSE
+	RMSE :  [0.0677 0.0597 0.1739]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.15379986
+	RMSE-DISTANCE-2 :  0.19593365
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0335 0.0386 0.121 ]
+	SD :  [0.0279 0.0337 0.1218]
+===> Distance :  MSE
+	MEAN :  [0.0019 0.0026 0.0295]
+	SD :  [0.0044 0.0057 0.0857]
+===> Distance :  RMSE
+	RMSE :  [0.0436 0.0512 0.1717]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.1410407
+	RMSE-DISTANCE-2 :  0.18435496
+****************************************************************************************************
+[#] Runtime : 1.4871148586273193+-0.14938018977385673
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predh_tennis/intr_azim_elev_predh_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_azim_elev_predh_tennis/intr_azim_elev_predh_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_azim_elev_predh_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0062 0.018  0.084 ]
+	SD :  [0.0092 0.017  0.0873]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0147]
+	SD :  [0.001  0.0019 0.0648]
+===> Distance :  RMSE
+	RMSE :  [0.0111 0.0248 0.1211]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.086352944
+	RMSE-DISTANCE-2 :  0.124149755
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0055 0.0157 0.0734]
+	SD :  [0.0092 0.0179 0.0918]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0138]
+	SD :  [0.0007 0.0019 0.0565]
+===> Distance :  RMSE
+	RMSE :  [0.0108 0.0238 0.1175]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.07548107
+	RMSE-DISTANCE-2 :  0.12041328
+****************************************************************************************************
+[#] Runtime : 1.4812357425689697+-0.1466067983267563
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/uv_rt_predxyz_tennis/uv_rt_predxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/uv_rt_predxyz_tennis/uv_rt_predxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/uv_rt_predxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.1038 0.0835 0.2153]
+	SD :  [0.0748 0.0699 0.1992]
+===> Distance :  MSE
+	MEAN :  [0.0164 0.0118 0.086 ]
+	SD :  [0.0256 0.0213 0.18  ]
+===> Distance :  RMSE
+	RMSE :  [0.128  0.1088 0.2933]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.28046712
+	RMSE-DISTANCE-2 :  0.3379925
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.1245 0.0912 0.2195]
+	SD :  [0.0724 0.0713 0.1999]
+===> Distance :  MSE
+	MEAN :  [0.0207 0.0134 0.0881]
+	SD :  [0.0239 0.0216 0.1787]
+===> Distance :  RMSE
+	RMSE :  [0.144  0.1157 0.2968]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.29720494
+	RMSE-DISTANCE-2 :  0.34966004
+****************************************************************************************************
+[#] Runtime : 1.46905517578125+-0.14253542931553195
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/uv_rt_predh_tennis/uv_rt_predh_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/uv_rt_predh_tennis/uv_rt_predh_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/uv_rt_predh_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0057 0.0165 0.0763]
+	SD :  [0.0099 0.0194 0.0972]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0153]
+	SD :  [0.0012 0.0032 0.0858]
+===> Distance :  RMSE
+	RMSE :  [0.0114 0.0254 0.1235]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.07851075
+	RMSE-DISTANCE-2 :  0.1266523
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0053 0.0154 0.0711]
+	SD :  [0.0098 0.0194 0.0972]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0145]
+	SD :  [0.0012 0.0031 0.0851]
+===> Distance :  RMSE
+	RMSE :  [0.0111 0.0247 0.1204]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.073164165
+	RMSE-DISTANCE-2 :  0.12344169
+****************************************************************************************************
+[#] Runtime : 1.4764674186706543+-0.14582171164170926
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/intr_hori_vert_predxyz_tennis/intr_hori_vert_predxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/intr_hori_vert_predxyz_tennis/intr_hori_vert_predxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> xyz.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/intr_hori_vert_predxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0275 0.0361 0.1301]
+	SD :  [0.025  0.031  0.1162]
+===> Distance :  MSE
+	MEAN :  [0.0014 0.0023 0.0304]
+	SD :  [0.0038 0.0045 0.0639]
+===> Distance :  RMSE
+	RMSE :  [0.0372 0.0476 0.1744]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.14488524
+	RMSE-DISTANCE-2 :  0.18460289
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0129 0.0235 0.089 ]
+	SD :  [0.014  0.0205 0.0877]
+===> Distance :  MSE
+	MEAN :  [0.0004 0.001  0.0156]
+	SD :  [0.0012 0.0022 0.0407]
+===> Distance :  RMSE
+	RMSE :  [0.019  0.0312 0.125 ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.09633899
+	RMSE-DISTANCE-2 :  0.13018455
+****************************************************************************************************
+[#] Runtime : 1.4997922420501708+-0.14645228979841055
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_features_ablation/uv_predh_tennis/uv_predh_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_features_ablation/uv_predh_tennis/uv_predh_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_features_ablation/uv_predh_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0069 0.0204 0.0936]
+	SD :  [0.0103 0.0215 0.1056]
+===> Distance :  MSE
+	MEAN :  [0.0002 0.0009 0.0199]
+	SD :  [0.0008 0.0027 0.0749]
+===> Distance :  RMSE
+	RMSE :  [0.0124 0.0296 0.1411]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.09632942
+	RMSE-DISTANCE-2 :  0.14469312
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0066 0.0196 0.0901]
+	SD :  [0.0103 0.0219 0.1065]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0009 0.0195]
+	SD :  [0.0008 0.0028 0.0757]
+===> Distance :  RMSE
+	RMSE :  [0.0122 0.0294 0.1395]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.092687234
+	RMSE-DISTANCE-2 :  0.14308587
+****************************************************************************************************
+[#] Runtime : 1.5150525569915771+-0.1514600800316195
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_features_ablation/intr_sincos_azim_elev_predh_refxyz_tennis/intr_sincos_azim_elev_predh_refxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_features_ablation/intr_sincos_azim_elev_predh_refxyz_tennis/intr_sincos_azim_elev_predh_refxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_features_ablation/intr_sincos_azim_elev_predh_refxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0057 0.0166 0.0775]
+	SD :  [0.0085 0.0171 0.0871]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0136]
+	SD :  [0.0005 0.0022 0.0686]
+===> Distance :  RMSE
+	RMSE :  [0.0103 0.0239 0.1166]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.07967612
+	RMSE-DISTANCE-2 :  0.11945451
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0059 0.0155 0.0712]
+	SD :  [0.0084 0.019  0.0972]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0006 0.0145]
+	SD :  [0.0005 0.0022 0.0644]
+===> Distance :  RMSE
+	RMSE :  [0.0102 0.0245 0.1205]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.07368675
+	RMSE-DISTANCE-2 :  0.12338081
+****************************************************************************************************
+[#] Runtime : 1.500487756729126+-0.14941272593445998
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_features_ablation/uv_rt_predh_refxyz_tennis/uv_rt_predh_refxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_features_ablation/uv_rt_predh_refxyz_tennis/uv_rt_predh_refxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_features_ablation/uv_rt_predh_refxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0084 0.0248 0.113 ]
+	SD :  [0.0126 0.0247 0.1181]
+===> Distance :  MSE
+	MEAN :  [0.0002 0.0012 0.0267]
+	SD :  [0.0017 0.0049 0.1269]
+===> Distance :  RMSE
+	RMSE :  [0.0151 0.035  0.1635]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.116358355
+	RMSE-DISTANCE-2 :  0.16784929
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0085 0.0243 0.1131]
+	SD :  [0.0126 0.0247 0.1181]
+===> Distance :  MSE
+	MEAN :  [0.0002 0.0012 0.0267]
+	SD :  [0.0018 0.0049 0.1269]
+===> Distance :  RMSE
+	RMSE :  [0.0152 0.0346 0.1635]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.1163315
+	RMSE-DISTANCE-2 :  0.16780849
+****************************************************************************************************
+[#] Runtime : 1.4890785217285156+-0.1538334869675076
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_features_ablation/uv_predh_refxyz_tennis/uv_predh_refxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_features_ablation/uv_predh_refxyz_tennis/uv_predh_refxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_features_ablation/uv_predh_refxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.01   0.0291 0.1342]
+	SD :  [0.014  0.0269 0.1319]
+===> Distance :  MSE
+	MEAN :  [0.0003 0.0016 0.0354]
+	SD :  [0.0015 0.0042 0.1137]
+===> Distance :  RMSE
+	RMSE :  [0.0172 0.0397 0.1882]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.13807248
+	RMSE-DISTANCE-2 :  0.19308035
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0101 0.0291 0.1341]
+	SD :  [0.0139 0.0269 0.1319]
+===> Distance :  MSE
+	MEAN :  [0.0003 0.0016 0.0354]
+	SD :  [0.0015 0.0042 0.1137]
+===> Distance :  RMSE
+	RMSE :  [0.0172 0.0396 0.1881]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.13797803
+	RMSE-DISTANCE-2 :  0.19298291
+****************************************************************************************************
+[#] Runtime : 1.491591501235962+-0.1444715666247501
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = tennis_unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_features_ablation/intr_azim_elev_predh_refxyz_tennis/intr_azim_elev_predh_refxyz_tennis_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_features_ablation/intr_azim_elev_predh_refxyz_tennis/intr_azim_elev_predh_refxyz_tennis_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_features_ablation/intr_azim_elev_predh_refxyz_tennis"
+[#]Data : "../../Dataset/Simulation/TracknetV1_SimTennis/cont3_hf/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0063 0.0185 0.0853]
+	SD :  [0.0092 0.0185 0.0922]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0007 0.0158]
+	SD :  [0.0006 0.0022 0.0608]
+===> Distance :  RMSE
+	RMSE :  [0.0112 0.0262 0.1256]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.08780982
+	RMSE-DISTANCE-2 :  0.12883236
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0064 0.0175 0.0807]
+	SD :  [0.0091 0.0203 0.1044]
+===> Distance :  MSE
+	MEAN :  [0.0001 0.0007 0.0174]
+	SD :  [0.0007 0.0025 0.0749]
+===> Distance :  RMSE
+	RMSE :  [0.0111 0.0268 0.132 ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.08332283
+	RMSE-DISTANCE-2 :  0.13513921
+****************************************************************************************************
+[#] Runtime : 1.4919238567352295+-0.15594154469664334
+[#] Done

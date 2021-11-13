@@ -1,0 +1,587 @@
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/agg_mocap/agg_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/agg_mocap/agg_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/agg_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.5135 0.372  0.4508]
+	SD :  [0.6906 0.3821 0.5868]
+===> Distance :  MSE
+	MEAN :  [0.7405 0.2844 0.5474]
+	SD :  [2.7254 0.606  1.7559]
+===> Distance :  RMSE
+	RMSE :  [0.8605 0.5333 0.7399]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.8354874
+	RMSE-DISTANCE-2 :  1.2540412
+****************************************************************************************************
+[#] Runtime : 3.5139529705047607+-0.6027115803057324
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/agg_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_ref_mocap/agg_bl_ref_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_ref_mocap/agg_bl_ref_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/agg_bl_ref_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0072 0.0045 0.0057]
+	SD :  [0.0359 0.0184 0.0266]
+===> Distance :  MSE
+	MEAN :  [0.0013 0.0004 0.0007]
+	SD :  [0.0193 0.0047 0.0113]
+===> Distance :  RMSE
+	RMSE :  [0.0366 0.0189 0.0272]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.010984841
+	RMSE-DISTANCE-2 :  0.04937867
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0073 0.0045 0.0058]
+	SD :  [0.0359 0.0184 0.0266]
+===> Distance :  MSE
+	MEAN :  [0.0013 0.0004 0.0007]
+	SD :  [0.0193 0.0047 0.0113]
+===> Distance :  RMSE
+	RMSE :  [0.0366 0.0189 0.0272]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.011055353
+	RMSE-DISTANCE-2 :  0.049385466
+****************************************************************************************************
+[#] Runtime : 3.9600204706192015+-0.6551950632073903
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/agg_bl_ref_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/bl_mocap/bl_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/bl_mocap/bl_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/bl_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0035 0.002  0.003 ]
+	SD :  [0.0259 0.0102 0.0218]
+===> Distance :  MSE
+	MEAN :  [0.0007 0.0001 0.0005]
+	SD :  [0.0135 0.0015 0.0104]
+===> Distance :  RMSE
+	RMSE :  [0.0262 0.0104 0.022 ]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.005385073
+	RMSE-DISTANCE-2 :  0.035732083
+****************************************************************************************************
+[#] Runtime : 2.1194960355758665+-0.2145003359976504
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/bl_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/agg_ref_mocap/agg_ref_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/agg_ref_mocap/agg_ref_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/agg_ref_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.3552 0.239  0.2959]
+	SD :  [0.75   0.3649 0.6221]
+===> Distance :  MSE
+	MEAN :  [0.6884 0.1902 0.4744]
+	SD :  [6.7831 1.2315 5.5888]
+===> Distance :  RMSE
+	RMSE :  [0.8297 0.4361 0.6888]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.5546744
+	RMSE-DISTANCE-2 :  1.163426
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0648 0.0376 0.0469]
+	SD :  [0.4507 0.2131 0.3751]
+===> Distance :  MSE
+	MEAN :  [0.2073 0.0468 0.1428]
+	SD :  [4.0312 0.7148 3.4273]
+===> Distance :  RMSE
+	RMSE :  [0.4553 0.2164 0.3779]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.09258072
+	RMSE-DISTANCE-2 :  0.6300817
+****************************************************************************************************
+[#] Runtime : 3.857866358757019+-0.6592621251249299
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/agg_ref_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/intr_sincos_azim_elev_predh_mocap/intr_sincos_azim_elev_predh_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/intr_sincos_azim_elev_predh_mocap/intr_sincos_azim_elev_predh_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/intr_sincos_azim_elev_predh_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.2021 0.1354 0.1826]
+	SD :  [0.3915 0.1721 0.3421]
+===> Distance :  MSE
+	MEAN :  [0.1941 0.048  0.1504]
+	SD :  [1.247  0.1772 0.9791]
+===> Distance :  RMSE
+	RMSE :  [0.4406 0.219  0.3878]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.32685858
+	RMSE-DISTANCE-2 :  0.6265167
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.2096 0.1416 0.1898]
+	SD :  [0.3839 0.1671 0.3355]
+===> Distance :  MSE
+	MEAN :  [0.1913 0.048  0.1486]
+	SD :  [1.2122 0.1724 0.9513]
+===> Distance :  RMSE
+	RMSE :  [0.4374 0.2191 0.3855]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.33994094
+	RMSE-DISTANCE-2 :  0.6228874
+****************************************************************************************************
+[#] Runtime : 3.9800118684768675+-0.6742905983985609
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/intr_sincos_azim_elev_predh_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_ref_noeot_mocap/agg_bl_ref_noeot_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_ref_noeot_mocap/agg_bl_ref_noeot_mocap_best_traj_ma.pth
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/agg_bl_ref_noeot_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0086 0.0052 0.0063]
+	SD :  [0.0656 0.0346 0.0359]
+===> Distance :  MSE
+	MEAN :  [0.0044 0.0012 0.0013]
+	SD :  [0.1115 0.0307 0.0292]
+===> Distance :  RMSE
+	RMSE :  [0.0661 0.0349 0.0365]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.012670478
+	RMSE-DISTANCE-2 :  0.083196476
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0087 0.0053 0.0064]
+	SD :  [0.0656 0.0345 0.0359]
+===> Distance :  MSE
+	MEAN :  [0.0044 0.0012 0.0013]
+	SD :  [0.1115 0.0307 0.0292]
+===> Distance :  RMSE
+	RMSE :  [0.0661 0.0349 0.0365]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.012854689
+	RMSE-DISTANCE-2 :  0.08319189
+****************************************************************************************************
+[#] Runtime : 3.2413695812225343+-0.6175985315921596
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/agg_bl_ref_noeot_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_mocap/agg_bl_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/agg_bl_mocap/agg_bl_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/agg_bl_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0046 0.0029 0.004 ]
+	SD :  [0.0196 0.0087 0.0167]
+===> Distance :  MSE
+	MEAN :  [4.0449e-04 8.3724e-05 2.9573e-04]
+	SD :  [0.0058 0.0008 0.0046]
+===> Distance :  RMSE
+	RMSE :  [0.0201 0.0092 0.0172]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.007287201
+	RMSE-DISTANCE-2 :  0.02800331
+****************************************************************************************************
+[#] Runtime : 3.761540484428406+-0.6497140309016239
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/agg_bl_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week6_method_ablation/bl_ref_mocap/bl_ref_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week6_method_ablation/bl_ref_mocap/bl_ref_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week6_method_ablation/bl_ref_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0034 0.0018 0.0029]
+	SD :  [0.0251 0.0097 0.0213]
+===> Distance :  MSE
+	MEAN :  [6.4160e-04 9.6960e-05 4.6347e-04]
+	SD :  [0.0128 0.0013 0.0101]
+===> Distance :  RMSE
+	RMSE :  [0.0253 0.0098 0.0215]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.005117291
+	RMSE-DISTANCE-2 :  0.034677308
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0034 0.0018 0.0029]
+	SD :  [0.0251 0.0097 0.0213]
+===> Distance :  MSE
+	MEAN :  [6.4184e-04 9.6999e-05 4.6365e-04]
+	SD :  [0.0128 0.0013 0.0101]
+===> Distance :  RMSE
+	RMSE :  [0.0253 0.0098 0.0215]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.0051334877
+	RMSE-DISTANCE-2 :  0.034684118
+****************************************************************************************************
+[#] Runtime : 2.5283575773239138+-0.3272931660621766
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week6_method_ablation/bl_ref_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_method_ablation/agg_ref_mocap/agg_ref_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_method_ablation/agg_ref_mocap/agg_ref_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_method_ablation/agg_ref_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.3871 0.2784 0.3259]
+	SD :  [0.7007 0.4423 0.5906]
+===> Distance :  MSE
+	MEAN :  [0.6407 0.2731 0.455 ]
+	SD :  [3.0312 1.197  2.5642]
+===> Distance :  RMSE
+	RMSE :  [0.8004 0.5226 0.6745]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.61976135
+	RMSE-DISTANCE-2 :  1.1701045
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0793 0.068  0.0688]
+	SD :  [0.3196 0.3013 0.2836]
+===> Distance :  MSE
+	MEAN :  [0.1084 0.0954 0.0852]
+	SD :  [1.1358 0.7801 0.9646]
+===> Distance :  RMSE
+	RMSE :  [0.3293 0.3089 0.2919]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.13999878
+	RMSE-DISTANCE-2 :  0.53773266
+****************************************************************************************************
+[#] Runtime : 4.083576583862305+-0.6975154565420155
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week7_method_ablation/agg_ref_mocap
+[#] Done
+****************************************************************************************************
+[%]GPU Enabled
+===============================================Features===============================================
+Prediction = height, Environment = unity
+Available features :  ['x-0', 'y-1', 'z-2', 'u-3', 'v-4', 'd-5', 'intr_x-6', 'intr_y-7', 'intr_z-8', 'ray_x-9', 'ray_y-10', 'ray_z-11', 'eot-12', 'cd-13', 'og-14', 'hw-15', 'rad-16', 'f_sin-17', 'f_cos-18', 'fx-19', 'fy-20', 'fz-21', 'fx_norm-22', 'fy_norm-23', 'fz_norm-24', 'intrinsic-25', 'extrinsic-26', 'azimuth-27', 'elevation-28', 'extrinsic_inv-29', 'g-30']
+Selected features :  [12]
+1. input_col =  [6, 7, 8, 28, 27]
+2. gt_col =  [0, 1, 2]
+====================================================================================================
+[#]Testing : Trajectory Estimation
+===============================Dataset shape===============================
+Mixed : (500,)
+===========================================================================
+===>Load ckpt with Optimizer state, Decay and Scheduler state
+[#] Loading ... ../model_checkpoints//CVPR_Week7_method_ablation/bl_ref_mocap/bl_ref_mocap_best_traj_ma.pth
+====================================================================================================
+[#] Found the ckpt ===> ../model_checkpoints//CVPR_Week7_method_ablation/bl_ref_mocap/bl_ref_mocap_best_traj_ma.pth
+Module ===> flag.....Loaded!!!
+Module ===> height.....Loaded!!!
+Module ===> refinement.....Loaded!!!
+[#]Batch-0
+[#]Batch-1
+[#]Batch-2
+[#]Batch-3
+[#]Batch-4
+[#]Batch-5
+[#]Batch-6
+[#]Batch-7
+[#]Batch-8
+[#]Batch-9
+****************************************************************************************************
+[#]Evaluation Results : "CVPR_Week7_method_ablation/bl_ref_mocap"
+[#]Data : "../../Dataset/Simulation/Mocap/cont2_uniqE_defC_valcont/val2_set"
+****************************************************************************************************
+Space :  xyz
+===> Distance :  MAE
+	MEAN :  [0.0037 0.0021 0.0031]
+	SD :  [0.0259 0.0103 0.0219]
+===> Distance :  MSE
+	MEAN :  [0.0007 0.0001 0.0005]
+	SD :  [0.0132 0.0014 0.0099]
+===> Distance :  RMSE
+	RMSE :  [0.0262 0.0105 0.0221]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.005679704
+	RMSE-DISTANCE-2 :  0.03582923
+****************************************************************************************************
+Space :  xyz_refined
+===> Distance :  MAE
+	MEAN :  [0.0038 0.0021 0.0032]
+	SD :  [0.0259 0.0103 0.0219]
+===> Distance :  MSE
+	MEAN :  [0.0007 0.0001 0.0005]
+	SD :  [0.0132 0.0014 0.0099]
+===> Distance :  RMSE
+	RMSE :  [0.0262 0.0105 0.0221]
+===> Distance :  RMSE-DISTANCE
+	RMSE-DISTANCE-1 :  0.005761323
+	RMSE-DISTANCE-2 :  0.035819083
+****************************************************************************************************
+[#] Runtime : 2.5491116523742674+-0.26302856718968304
+[#] Saving reconstruction to ../reconstructed/Mocap_result/tags_CVPR_Week7_method_ablation/bl_ref_mocap
+[#] Done

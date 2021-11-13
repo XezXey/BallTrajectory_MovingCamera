@@ -1,6 +1,6 @@
 # Dataset
-dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/IPL/IPLc5c6/train_set/'
-dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/IPL/IPLc5c6/val_set/'
+dataset_train_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/IPL/IPLc1c2/train_set/'
+dataset_val_path : '/home/puntawat/Mint/Work/Vision/BallTrajectory_MovingCamera/Dataset/IPL/IPLc1c2/val_set/'
 trajectory_type: 'Mixed'
 env: 'unity'
 

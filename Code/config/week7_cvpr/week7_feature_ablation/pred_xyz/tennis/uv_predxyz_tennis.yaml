@@ -7,7 +7,7 @@ env: 'unity'
 # Wandb
 wandb_dir: '../'
 wandb_notes: null
-wandb_tags: 'CVPR_Week6_features_ablation'
+wandb_tags: 'CVPR_Week7_features_ablation'
 wandb_name: 'uv_predxyz_tennis'
 
 # Checkpoint
@@ -15,19 +15,19 @@ save_ckpt: '../model_checkpoints/'
 load_ckpt: null # Lastest or Best
 
 # Training parameters
-batch_size: 512
+batch_size: 256
 n_epochs: 100000
 lr: 0.001
 clip: 1
 decay_gamma: 0.7
-decay_cycle: 1000
+decay_cycle: 10000
 canonicalize: False
 noise: True
 annealing: False
 annealing_cycle: 1
 annealing_gamma:  0.7
 augment: True
-recon: 'clean'
+recon: 'noisy'
 optim_init_h: False
 
 # Visualization
@@ -76,7 +76,7 @@ pipeline:
     constraint_y: null #'lrelu' # 'relu', 'softplus' or null
     attn: False
     noise_space: 'uv'
-    noise_sd: 0.0
+    noise_sd: '0t2'
     agg: 'net_cat_h_agg'
 
   refinement:
