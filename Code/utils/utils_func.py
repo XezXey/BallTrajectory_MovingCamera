@@ -651,7 +651,7 @@ def save_cam_traj(trajectory, n):
                     "I" : I_tmp[j][:seq_len[j]].tolist(),
         }
 
-      traj_json[tid] = json_dat
+      traj_json[str(tid)] = json_dat
       tid+=1
 
   if args.save_suffix != '':

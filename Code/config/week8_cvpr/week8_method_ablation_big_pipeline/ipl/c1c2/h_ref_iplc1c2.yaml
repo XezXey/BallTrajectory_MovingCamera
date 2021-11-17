@@ -84,7 +84,7 @@ pipeline:
     noise_sd: 0.0
 
 # Features
-selected_features: [eot]
+selected_features: []
 sc: ''  # ''(+0), azim(+1), elev(+1), both(+2)
 
 # Loss
