@@ -220,6 +220,14 @@ def collate_fn_padd(batch, set_):
   if args.augment and set_ == 'train':
     batch = utils_func.augment_train(batch=batch)
 
+  if 'unity' not in args.env:
+      global u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z
+      u, v, intrinsic, extrinsic, extrinsic_inv, x, y, z = 0, 1, 2, 3, 4, 5, 6, 7
+      global input_col, gt_col, features_col
+      input_col = [u, v]
+      gt_col = [x, y, z]
+      features_col = []
+
   padding_value = -1000.0
   ## Get sequence lengths
   lengths = pt.tensor([trajectory.shape[0] for trajectory in batch])
@@ -289,7 +297,7 @@ if __name__ == '__main__':
 
   # Create Datasetloader for validation
   dataset_val = TrajectoryDataset(dataset_path=args.dataset_val_path, trajectory_type=args.trajectory_type)
-  dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='val'), pin_memory=True, drop_last=True)
+  dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='val'), pin_memory=True, drop_last=False)
 
   #utils_func.show_dataset_info(dataloader_train, 'Train')
   #utils_func.show_dataset_info(dataloader_val, 'Val')
@@ -340,7 +348,7 @@ if __name__ == '__main__':
   trajectory_val_iterloader = iter(dataloader_val)
   for epoch in range(start_epoch, args.n_epochs+1):
     # Data loader is refreshed every epoch(in case of augment)
-    dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='train'), pin_memory=True, drop_last=True)
+    dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='train'), pin_memory=True, drop_last=False)
     # Train/Val Loss
     accu_train_loss = []
     accu_val_loss = []
@@ -352,7 +360,7 @@ if __name__ == '__main__':
     try:
       batch_val = next(trajectory_val_iterloader)
     except StopIteration:
-      dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='val'), pin_memory=True, drop_last=True)
+      dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=10, shuffle=True, collate_fn=partial(collate_fn_padd, set_='val'), pin_memory=True, drop_last=False)
       trajectory_val_iterloader = iter(dataloader_val)
       batch_val = next(trajectory_val_iterloader)
 

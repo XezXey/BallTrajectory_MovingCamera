@@ -322,6 +322,7 @@ def load_ckpt_predict(model_dict, ckpt):
     for model in model_dict.keys():
       print("Module ===> {}.....".format(model), end='')
       # Lastest version of dict keys
+      print(model_dict[model])
       model_dict[model].load_state_dict(ckpt[model])
       model_dict['{}'.format(model)].load_state_dict(ckpt['{}'.format(model)])
       print("Loaded!!!")

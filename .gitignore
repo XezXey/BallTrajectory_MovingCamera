@@ -2,6 +2,7 @@
 /Public_dataset
 /Reconstructed
 /wandb
+/Rebuttal
 Code/utils/__pycache__/loss.cpython-36.pyc
 Code/utils/__pycache__/utils_vis.cpython-36.pyc
 visualize_html/tracknetV1_g1c1.html
@@ -190,3 +191,8 @@ Code/wandb/dryrun-20210929_080328-3luyydmf/code/Code/main/train.py
 Code/wandb/debug.log
 Code/wandb/debug.log
 Code/wandb/debug.log
+Rebuttal/Calendre_ball_size_experiment/ball_size_to_3d.ipynb
+Rebuttal/Calendre_ball_size_experiment/pingpong_pixel.png
+Rebuttal/Mocap_rebuttal/test_set/MixedTrajectory_Mocap_test.npy
+Rebuttal/Mocap_rebuttal/train_set/MixedTrajectory_Mocap_train.npy
+Rebuttal/Mocap_rebuttal/val_set/MixedTrajectory_Mocap_val.npy
